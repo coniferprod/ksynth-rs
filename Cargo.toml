@@ -3,6 +3,11 @@ name = "ksynth"
 version = "0.1.0"
 authors = ["Jere Käpyaho <2261936+jerekapyaho@users.noreply.github.com>"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/coniferprod/ksynth-rs"
+description = """
+Patch manipulation for Kawai digital synths
+"""
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
