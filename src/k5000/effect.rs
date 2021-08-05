@@ -4,6 +4,7 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::k5000::control;
 
+/// Effect type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Effect {
@@ -67,6 +68,7 @@ impl fmt::Display for Effect {
     }
 }
 
+/// Effect definition.
 pub struct EffectDefinition {
     pub effect: Effect,
     pub depth: u8,
@@ -114,6 +116,7 @@ impl SystemExclusiveData for EffectDefinition {
     }
 }
 
+/// Effect settings.
 pub struct EffectSettings {
     pub algorithm: u8,
     pub reverb: EffectDefinition,
@@ -171,6 +174,7 @@ impl SystemExclusiveData for EffectSettings {
     }
 }
 
+/// Effect destinations.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum EffectDestination {
@@ -188,6 +192,7 @@ impl Default for EffectDestination {
     fn default() -> Self { EffectDestination::Effect1DryWet }
 }
 
+/// Effect control source.
 pub struct ControlSource {
     pub source: control::ControlSource,
     pub destination: EffectDestination,
@@ -218,6 +223,7 @@ impl SystemExclusiveData for ControlSource {
     }
 }
 
+/// Effect control with two sources.
 pub struct Control {
     pub source1: ControlSource,
     pub source2: ControlSource,

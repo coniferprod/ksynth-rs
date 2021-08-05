@@ -1,7 +1,11 @@
+//! Data model for the harmonic levels and envelopes.
+//!
+
 use bit::BitIndex;
 use crate::SystemExclusiveData;
 use crate::k5000::morf::Loop;
 
+/// Harmonic levels (soft and loud).
 pub struct Levels {
     pub soft: [u8; 64],
     pub loud: [u8; 64],
@@ -46,6 +50,7 @@ impl SystemExclusiveData for Levels {
     }
 }
 
+/// Harmonic envelope segment.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
 pub struct EnvelopeSegment {
     pub rate: u8,
@@ -65,6 +70,7 @@ impl SystemExclusiveData for EnvelopeSegment {
     }
 }
 
+/// Harmonic envelope with four segments and loop type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Envelope {
     pub segment0: EnvelopeSegment,

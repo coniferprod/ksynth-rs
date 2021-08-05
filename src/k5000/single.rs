@@ -1,3 +1,6 @@
+//! Data model for single patches.
+//!
+
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
@@ -12,10 +15,7 @@ use crate::k5000::effect::{EffectSettings, Control as EffectControl};
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
 
-//
-// Single patch common data
-//
-
+/// Single patch common data.
 pub struct SingleCommon {
     pub name: String,
     pub volume: u8,

@@ -1,11 +1,11 @@
+//! Data model for the LFO.
+//!
+
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 
-//
-// LFO
-//
-
+/// LFO waveform type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Waveform {
@@ -20,6 +20,7 @@ impl Default for Waveform {
     fn default() -> Self { Waveform::Triangle }
 }
 
+/// LFO control settings.
 pub struct Control {
     pub depth: u8,
     pub key_scaling: i8,
@@ -47,6 +48,7 @@ impl SystemExclusiveData for Control {
     }
 }
 
+/// LFO settings.
 pub struct Lfo {
     pub waveform: Waveform,
     pub speed: u8,

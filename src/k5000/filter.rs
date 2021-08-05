@@ -2,16 +2,16 @@ use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 
+/// Filter mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-/// Filter mode.
 pub enum FilterMode {
     LowPass = 0,
     HighPass = 1,
 }
 
-#[derive(Debug)]
 /// Filter envelope.
+#[derive(Debug)]
 pub struct Envelope {
     pub attack_time: u32,
     pub decay1_time: u32,

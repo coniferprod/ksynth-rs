@@ -1,10 +1,13 @@
+//! Data model for a PCM source oscillator.
+//!
+
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::StringUtils;
 use crate::SystemExclusiveData;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 
-/// Oscillator.
+/// PCM oscillator.
 pub struct Oscillator {
     pub wave: u16,
     pub coarse: i8,
@@ -83,6 +86,7 @@ impl SystemExclusiveData for Oscillator {
     }
 }
 
+/// Key scaling type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum KeyScaling {

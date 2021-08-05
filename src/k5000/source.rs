@@ -1,3 +1,6 @@
+//! Data model for the source in a single patch.
+//!
+
 use crate::k5000::control::{VelocitySwitchSettings, ModulationSettings, PanSettings};
 use crate::SystemExclusiveData;
 use crate::k5000::osc::*;
@@ -5,10 +8,7 @@ use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
 
-//
-// SourceControl
-//
-
+/// Source control settings.
 pub struct SourceControl {
     zone_low: u8,
     zone_high: u8,
@@ -73,10 +73,7 @@ impl SystemExclusiveData for SourceControl {
     }
 }
 
-//
-// Source
-//
-
+/// Source.
 pub struct Source {
     pub oscillator: Oscillator,
     pub filter: Filter,
@@ -86,18 +83,22 @@ pub struct Source {
 }
 
 impl Source {
+    /// Makes a new PCM source with default values.
     pub fn pcm() -> Source {
         Default::default()
     }
 
+    /// Returns `true` if this source is ADD, false if PCM.
     pub fn is_additive(&self) -> bool {
         self.oscillator.wave == 512
     }
 
+    /// Returns `true` if this source is PCM, false if ADD.
     pub fn is_pcm(&self) -> bool {
         !self.is_additive()
     }
 
+    /// Makes a new ADD source with default values.
     pub fn additive() -> Source {
         Source {
             oscillator: Oscillator::additive(),
@@ -106,7 +107,6 @@ impl Source {
             lfo: Default::default(),
             control: Default::default(),
         }
-
     }
 }
 

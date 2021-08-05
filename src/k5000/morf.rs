@@ -1,7 +1,11 @@
+//! Data model for MORF.
+//!
+
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 
+/// Harmonic group.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum HarmonicGroup {
@@ -33,7 +37,6 @@ impl Default for HarmonicCommon {
             velocity_depth: 0,
         }
     }
-
 }
 
 impl SystemExclusiveData for HarmonicCommon {
@@ -60,6 +63,7 @@ impl SystemExclusiveData for HarmonicCommon {
     }
 }
 
+/// MORF harmonic copy parameters.
 pub struct MorfHarmonicCopyParameters {
     pub patch_number: u8,
     pub source_number: u8,
@@ -87,6 +91,7 @@ impl SystemExclusiveData for MorfHarmonicCopyParameters {
     }
 }
 
+/// MORF harmonic envelope loop type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Loop {
@@ -99,6 +104,7 @@ impl Default for Loop {
     fn default() -> Self { Loop::Off }
 }
 
+/// MORF harmonic envelope.
 pub struct MorfHarmonicEnvelope {
     pub time1: u8,
     pub time2: u8,
@@ -141,6 +147,7 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
     }
 }
 
+/// MORG harmonic settings.
 pub struct MorfHarmonic {
     pub copy1: MorfHarmonicCopyParameters,
     pub copy2: MorfHarmonicCopyParameters,
@@ -184,4 +191,3 @@ impl SystemExclusiveData for MorfHarmonic {
         result
     }
 }
-

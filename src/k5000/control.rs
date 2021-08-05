@@ -3,6 +3,7 @@ use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 use crate::SystemExclusiveData;
 
+/// Velocity switch settings.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum VelocitySwitch {
@@ -15,6 +16,7 @@ impl Default for VelocitySwitch {
     fn default() -> Self { VelocitySwitch::Off }
 }
 
+/// Velocity switch settings.
 pub struct VelocitySwitchSettings {
     pub switch_type: VelocitySwitch,
     pub threshold: u8,
@@ -69,6 +71,7 @@ impl SystemExclusiveData for VelocitySwitchSettings {
     }
 }
 
+/// Control source.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ControlSource {
@@ -92,6 +95,7 @@ impl Default for ControlSource {
     fn default() -> Self { ControlSource::Bender }
 }
 
+/// Control destination.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ControlDestination {
@@ -121,10 +125,7 @@ impl Default for ControlDestination {
     fn default() -> Self { ControlDestination::PitchOffset }
 }
 
-//
-// MacroController
-//
-
+/// Macro controller.
 pub struct MacroController {
     pub destination1: ControlDestination,
     pub depth1: i8,
@@ -157,6 +158,7 @@ impl SystemExclusiveData for MacroController {
     }
 }
 
+/// Assignable controller.
 pub struct AssignableController {
     pub source: ControlSource,
     pub destination: ControlDestination,
@@ -187,6 +189,7 @@ impl SystemExclusiveData for AssignableController {
     }
 }
 
+/// Modulation settings.
 pub struct ModulationSettings {
     pub pressure: MacroController,
     pub wheel: MacroController,
@@ -231,6 +234,7 @@ impl SystemExclusiveData for ModulationSettings {
     }
 }
 
+/// Pan type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum PanType {
@@ -244,6 +248,7 @@ impl Default for PanType {
     fn default() -> Self { PanType::Normal }
 }
 
+/// Pan settings.
 pub struct PanSettings {
     pub pan_type: PanType,
     pub pan_value: i8,
@@ -271,6 +276,7 @@ impl SystemExclusiveData for PanSettings {
     }
 }
 
+/// Switch kind.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Switch {
@@ -297,6 +303,7 @@ impl Default for Switch {
     fn default() -> Self { Switch::Off }
 }
 
+/// Switch control settings.
 pub struct SwitchControl {
     pub switch1: Switch,
     pub switch2: Switch,
@@ -330,6 +337,7 @@ impl SystemExclusiveData for SwitchControl {
     }
 }
 
+/// Polyphony type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Polyphony {
@@ -338,6 +346,7 @@ pub enum Polyphony {
     Solo2,
 }
 
+/// Amplitude modulation kind.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum AmplitudeModulation {

@@ -1,3 +1,6 @@
+//! System Exclusive data definitions.
+//!
+
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 
@@ -19,6 +22,7 @@ pub enum SystemExclusiveFunction {
     WriteErrorByNoExpandedMemory = 0x45,
 }
 
+/// K5000 System Exclusive Message.
 pub struct SystemExclusiveMessage {
     pub channel: u8,
     pub function: SystemExclusiveFunction,

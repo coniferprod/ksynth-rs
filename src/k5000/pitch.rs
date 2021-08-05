@@ -1,9 +1,9 @@
+//! Data model for the pitch envelope.
+//!
+
 use crate::SystemExclusiveData;
 
-//
-// PitchEnvelope
-//
-
+/// Pitch envelope.
 pub struct Envelope {
     pub start: i8,
     pub attack_time: u8,

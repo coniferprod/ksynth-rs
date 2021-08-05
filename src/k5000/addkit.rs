@@ -1,3 +1,6 @@
+//! Data model for the "additive kit" used by an ADD source.
+//!
+
 use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k5000::formant::FormantFilter;
@@ -5,10 +8,7 @@ use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
 use crate::k5000::harmonic::Levels;
 use crate::k5000::morf::{HarmonicCommon, MorfHarmonic, HarmonicGroup};
 
-//
-// AdditiveKit
-//
-
+/// Additive kit.
 pub struct AdditiveKit {
     pub common: HarmonicCommon,
     pub morf: MorfHarmonic,
@@ -32,6 +32,7 @@ impl Default for AdditiveKit {
 }
 
 impl AdditiveKit {
+    /// Makes a new additive kit with default values.
     pub fn new() -> Self {
         Default::default()
     }
@@ -157,4 +158,3 @@ impl Checksum for AdditiveKit {
         (total & 0x7f) as u8
     }
 }
-

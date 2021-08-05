@@ -47,6 +47,7 @@ impl SystemExclusiveData for Envelope {
     }
 }
 
+/// Key scaling control.
 pub struct KeyScalingControl {
     pub level: i8,
     pub attack_time: i8,
@@ -80,6 +81,7 @@ impl SystemExclusiveData for KeyScalingControl {
     }
 }
 
+/// Velocity control.
 pub struct VelocityControl {
     pub level: u8,
     pub attack_time: i8,
@@ -113,6 +115,7 @@ impl SystemExclusiveData for VelocityControl {
     }
 }
 
+/// Modulation settings for the amplifier section.
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_to_env: VelocityControl,

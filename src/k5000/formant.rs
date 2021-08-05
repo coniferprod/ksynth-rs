@@ -1,8 +1,12 @@
+//! Data model for the formant filter.
+//!
+
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::k5000::morf::Loop;
 
+/// Formant filter envelope mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Mode {
@@ -14,6 +18,7 @@ impl Default for Mode {
     fn default() -> Self { Mode::Envelope }
 }
 
+/// Envelope segment.
 #[derive(Default)]
 pub struct EnvelopeSegment {
     pub rate: u8,  // 0~127
@@ -33,6 +38,7 @@ impl SystemExclusiveData for EnvelopeSegment {
     }
 }
 
+/// Formant filter envelope.
 pub struct Envelope {
     pub attack: EnvelopeSegment,
     pub decay1: EnvelopeSegment,
@@ -83,6 +89,7 @@ impl SystemExclusiveData for Envelope {
     }
 }
 
+/// Formant filter LFO shape.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum LfoShape {
@@ -95,6 +102,7 @@ impl Default for LfoShape {
     fn default() -> Self { LfoShape::Triangle }
 }
 
+/// Formant filter LFO.
 pub struct Lfo {
     pub speed: u8,
     pub shape: LfoShape,
@@ -125,6 +133,7 @@ impl SystemExclusiveData for Lfo {
     }
 }
 
+/// Formant filter settings.
 pub struct FormantFilter {
     pub bias: i8,
     pub mode: Mode,
