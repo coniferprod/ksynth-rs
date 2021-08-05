@@ -3,12 +3,12 @@ use crate::SystemExclusiveData;
 /// Amplifier envelope.
 #[derive(Debug)]
 pub struct Envelope {
-    attack_time: u8,
-    decay1_time: u8,
-    decay1_level: u8,
-    decay2_time: u8,
-    decay2_level: u8,
-    release_time: u8,
+    pub attack_time: u8,
+    pub decay1_time: u8,
+    pub decay1_level: u8,
+    pub decay2_time: u8,
+    pub decay2_level: u8,
+    pub release_time: u8,
 }
 
 impl Envelope {
@@ -48,10 +48,10 @@ impl SystemExclusiveData for Envelope {
 }
 
 pub struct KeyScalingControl {
-    level: i8,
-    attack_time: i8,
-    decay1_time: i8,
-    release: i8,
+    pub level: i8,
+    pub attack_time: i8,
+    pub decay1_time: i8,
+    pub release: i8,
 }
 
 impl Default for KeyScalingControl {
@@ -81,10 +81,10 @@ impl SystemExclusiveData for KeyScalingControl {
 }
 
 pub struct VelocityControl {
-    level: u8,
-    attack_time: i8,
-    decay1_time: i8,
-    release: i8,
+    pub level: u8,
+    pub attack_time: i8,
+    pub decay1_time: i8,
+    pub release: i8,
 }
 
 impl Default for VelocityControl {
@@ -114,8 +114,8 @@ impl SystemExclusiveData for VelocityControl {
 }
 
 pub struct Modulation {
-    ks_to_env: KeyScalingControl,
-    vel_to_env: VelocityControl,
+    pub ks_to_env: KeyScalingControl,
+    pub vel_to_env: VelocityControl,
 }
 
 impl Default for Modulation {
@@ -147,9 +147,9 @@ impl SystemExclusiveData for Modulation {
 
 /// Amplifier.
 pub struct Amplifier {
-    velocity_curve: u8,
-    envelope: Envelope,
-    modulation: Modulation,
+    pub velocity_curve: u8,
+    pub envelope: Envelope,
+    pub modulation: Modulation,
 }
 
 impl Default for Amplifier {

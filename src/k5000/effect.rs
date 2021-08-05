@@ -6,7 +6,7 @@ use crate::k5000::control;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum Effect {
+pub enum Effect {
     Hall1,
     Hall2,
     Hall3,
@@ -68,12 +68,12 @@ impl fmt::Display for Effect {
 }
 
 pub struct EffectDefinition {
-    effect: Effect,
-    depth: u8,
-    parameter1: u8,
-    parameter2: u8,
-    parameter3: u8,
-    parameter4: u8,
+    pub effect: Effect,
+    pub depth: u8,
+    pub parameter1: u8,
+    pub parameter2: u8,
+    pub parameter3: u8,
+    pub parameter4: u8,
 }
 
 impl fmt::Display for EffectDefinition {
@@ -115,12 +115,12 @@ impl SystemExclusiveData for EffectDefinition {
 }
 
 pub struct EffectSettings {
-    algorithm: u8,
-    reverb: EffectDefinition,
-    effect1: EffectDefinition,
-    effect2: EffectDefinition,
-    effect3: EffectDefinition,
-    effect4: EffectDefinition,
+    pub algorithm: u8,
+    pub reverb: EffectDefinition,
+    pub effect1: EffectDefinition,
+    pub effect2: EffectDefinition,
+    pub effect3: EffectDefinition,
+    pub effect4: EffectDefinition,
 }
 
 impl fmt::Display for EffectSettings {
@@ -173,7 +173,7 @@ impl SystemExclusiveData for EffectSettings {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum EffectDestination {
+pub enum EffectDestination {
     Effect1DryWet,
     Effect1Parameter,
     Effect2DryWet,
@@ -188,15 +188,15 @@ impl Default for EffectDestination {
     fn default() -> Self { EffectDestination::Effect1DryWet }
 }
 
-pub struct EffectControlSource {
-    source: control::ControlSource,
-    destination: EffectDestination,
-    depth: i8,
+pub struct ControlSource {
+    pub source: control::ControlSource,
+    pub destination: EffectDestination,
+    pub depth: i8,
 }
 
-impl Default for EffectControlSource {
+impl Default for ControlSource {
     fn default() -> Self {
-        EffectControlSource {
+        ControlSource {
             source: Default::default(),
             destination: Default::default(),
             depth: 0,
@@ -204,9 +204,9 @@ impl Default for EffectControlSource {
     }
 }
 
-impl SystemExclusiveData for EffectControlSource {
+impl SystemExclusiveData for ControlSource {
     fn from_bytes(data: Vec<u8>) -> Self {
-        EffectControlSource {
+        ControlSource {
             source: control::ControlSource::try_from(data[0]).unwrap(),
             destination: EffectDestination::try_from(data[1]).unwrap(),
             depth: data[2] as i8,
@@ -218,24 +218,24 @@ impl SystemExclusiveData for EffectControlSource {
     }
 }
 
-pub struct EffectControl {
-    source1: EffectControlSource,
-    source2: EffectControlSource,
+pub struct Control {
+    pub source1: ControlSource,
+    pub source2: ControlSource,
 }
 
-impl Default for EffectControl {
+impl Default for Control {
     fn default() -> Self {
-        EffectControl {
+        Control {
             source1: Default::default(),
             source2: Default::default(),
         }
     }
 }
-impl SystemExclusiveData for EffectControl {
+impl SystemExclusiveData for Control {
     fn from_bytes(data: Vec<u8>) -> Self {
-        EffectControl {
-            source1: EffectControlSource::from_bytes(data[0..3].to_vec()),
-            source2: EffectControlSource::from_bytes(data[3..6].to_vec()),
+        Control {
+            source1: ControlSource::from_bytes(data[0..3].to_vec()),
+            source2: ControlSource::from_bytes(data[3..6].to_vec()),
         }
     }
 

@@ -5,12 +5,12 @@ use crate::SystemExclusiveData;
 //
 
 pub struct Envelope {
-    start: i8,
-    attack_time: u8,
-    attack_level: i8,
-    decay_time: u8,
-    time_vel_sens: i8,
-    level_vel_sens: i8,
+    pub start: i8,
+    pub attack_time: u8,
+    pub attack_level: i8,
+    pub decay_time: u8,
+    pub time_vel_sens: i8,
+    pub level_vel_sens: i8,
 }
 
 impl Envelope {

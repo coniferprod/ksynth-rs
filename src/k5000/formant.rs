@@ -5,19 +5,19 @@ use crate::k5000::morf::Loop;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum FormantFilterMode {
+pub enum Mode {
     Envelope,
     Lfo,
 }
 
-impl Default for FormantFilterMode {
-    fn default() -> Self { FormantFilterMode::Envelope }
+impl Default for Mode {
+    fn default() -> Self { Mode::Envelope }
 }
 
 #[derive(Default)]
 pub struct EnvelopeSegment {
-    rate: u8,  // 0~127
-    level: i8, // -63(1)~+63(127)
+    pub rate: u8,  // 0~127
+    pub level: i8, // -63(1)~+63(127)
 }
 
 impl SystemExclusiveData for EnvelopeSegment {
@@ -33,19 +33,19 @@ impl SystemExclusiveData for EnvelopeSegment {
     }
 }
 
-pub struct FormantFilterEnvelope {
-    attack: EnvelopeSegment,
-    decay1: EnvelopeSegment,
-    decay2: EnvelopeSegment,
-    release: EnvelopeSegment,
-    decay_loop: Loop,
-    velocity_depth: i8,
-    ks_depth: i8,
+pub struct Envelope {
+    pub attack: EnvelopeSegment,
+    pub decay1: EnvelopeSegment,
+    pub decay2: EnvelopeSegment,
+    pub release: EnvelopeSegment,
+    pub decay_loop: Loop,
+    pub velocity_depth: i8,
+    pub ks_depth: i8,
 }
 
-impl Default for FormantFilterEnvelope {
+impl Default for Envelope {
     fn default() -> Self {
-        FormantFilterEnvelope {
+        Envelope {
             attack: Default::default(),
             decay1: Default::default(),
             decay2: Default::default(),
@@ -57,9 +57,9 @@ impl Default for FormantFilterEnvelope {
     }
 }
 
-impl SystemExclusiveData for FormantFilterEnvelope {
+impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
-        FormantFilterEnvelope {
+        Envelope {
             attack: EnvelopeSegment::from_bytes(data[..2].to_vec()),
             decay1: EnvelopeSegment::from_bytes(data[2..4].to_vec()),
             decay2: EnvelopeSegment::from_bytes(data[4..6].to_vec()),
@@ -85,25 +85,25 @@ impl SystemExclusiveData for FormantFilterEnvelope {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum FormantFilterLfoShape {
+pub enum LfoShape {
     Triangle,
     Sawtooth,
     Random,
 }
 
-impl Default for FormantFilterLfoShape {
-    fn default() -> Self { FormantFilterLfoShape::Triangle }
+impl Default for LfoShape {
+    fn default() -> Self { LfoShape::Triangle }
 }
 
-pub struct FormantFilterLfo {
-    speed: u8,
-    shape: FormantFilterLfoShape,
-    depth: u8,
+pub struct Lfo {
+    pub speed: u8,
+    pub shape: LfoShape,
+    pub depth: u8,
 }
 
-impl Default for FormantFilterLfo {
+impl Default for Lfo {
     fn default() -> Self {
-        FormantFilterLfo {
+        Lfo {
             speed: 0,
             shape: Default::default(),
             depth: 0,
@@ -111,11 +111,11 @@ impl Default for FormantFilterLfo {
     }
 }
 
-impl SystemExclusiveData for FormantFilterLfo {
+impl SystemExclusiveData for Lfo {
     fn from_bytes(data: Vec<u8>) -> Self {
-        FormantFilterLfo {
+        Lfo {
             speed: data[0],
-            shape: FormantFilterLfoShape::try_from(data[1]).unwrap(),
+            shape: LfoShape::try_from(data[1]).unwrap(),
             depth: data[2],
         }
     }
@@ -126,11 +126,11 @@ impl SystemExclusiveData for FormantFilterLfo {
 }
 
 pub struct FormantFilter {
-    bias: i8,
-    mode: FormantFilterMode,
-    envelope_depth: i8,
-    envelope: FormantFilterEnvelope,
-    lfo: FormantFilterLfo,
+    pub bias: i8,
+    pub mode: Mode,
+    pub envelope_depth: i8,
+    pub envelope: Envelope,
+    pub lfo: Lfo,
 }
 
 impl Default for FormantFilter {
@@ -149,10 +149,10 @@ impl SystemExclusiveData for FormantFilter {
     fn from_bytes(data: Vec<u8>) -> Self {
         FormantFilter {
             bias: (data[0] - 64) as i8,
-            mode: FormantFilterMode::try_from(data[1]).unwrap(),
+            mode: Mode::try_from(data[1]).unwrap(),
             envelope_depth: (data[2] - 64) as i8,
-            envelope: FormantFilterEnvelope::from_bytes(data[3..14].to_vec()),
-            lfo: FormantFilterLfo::from_bytes(data[14..].to_vec()),
+            envelope: Envelope::from_bytes(data[3..14].to_vec()),
+            lfo: Lfo::from_bytes(data[14..].to_vec()),
         }
     }
 

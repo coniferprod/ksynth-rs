@@ -14,12 +14,12 @@ impl Default for HarmonicGroup {
 }
 
 pub struct HarmonicCommon {
-    morf_enabled: bool,
-    total_gain: u8,
-    group: HarmonicGroup,
-    ks_to_gain: i8,
-    velocity_curve: u8,
-    velocity_depth: u8,
+    pub morf_enabled: bool,
+    pub total_gain: u8,
+    pub group: HarmonicGroup,
+    pub ks_to_gain: i8,
+    pub velocity_curve: u8,
+    pub velocity_depth: u8,
 }
 
 impl Default for HarmonicCommon {
@@ -61,8 +61,8 @@ impl SystemExclusiveData for HarmonicCommon {
 }
 
 pub struct MorfHarmonicCopyParameters {
-    patch_number: u8,
-    source_number: u8,
+    pub patch_number: u8,
+    pub source_number: u8,
 }
 
 impl Default for MorfHarmonicCopyParameters {
@@ -100,11 +100,11 @@ impl Default for Loop {
 }
 
 pub struct MorfHarmonicEnvelope {
-    time1: u8,
-    time2: u8,
-    time3: u8,
-    time4: u8,
-    loop_type: Loop,
+    pub time1: u8,
+    pub time2: u8,
+    pub time3: u8,
+    pub time4: u8,
+    pub loop_type: Loop,
 }
 
 impl Default for MorfHarmonicEnvelope {
@@ -142,11 +142,11 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
 }
 
 pub struct MorfHarmonic {
-    copy1: MorfHarmonicCopyParameters,
-    copy2: MorfHarmonicCopyParameters,
-    copy3: MorfHarmonicCopyParameters,
-    copy4: MorfHarmonicCopyParameters,
-    envelope: MorfHarmonicEnvelope,
+    pub copy1: MorfHarmonicCopyParameters,
+    pub copy2: MorfHarmonicCopyParameters,
+    pub copy3: MorfHarmonicCopyParameters,
+    pub copy4: MorfHarmonicCopyParameters,
+    pub envelope: MorfHarmonicEnvelope,
 }
 
 impl Default for MorfHarmonic {

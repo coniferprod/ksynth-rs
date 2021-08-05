@@ -4,10 +4,7 @@ use crate::StringUtils;
 use crate::SystemExclusiveData;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 
-//
-// Oscillator
-//
-
+/// Oscillator.
 pub struct Oscillator {
     pub wave: u16,
     pub coarse: i8,

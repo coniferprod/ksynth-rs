@@ -8,7 +8,7 @@ use crate::k5000::control::{
     Polyphony, AmplitudeModulation, MacroController, SwitchControl,
     ControlDestination, Switch,
 };
-use crate::k5000::effect::{EffectSettings, EffectControl};
+use crate::k5000::effect::{EffectSettings, Control as EffectControl};
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
 
@@ -19,17 +19,17 @@ use crate::k5000::source::Source;
 pub struct SingleCommon {
     pub name: String,
     pub volume: u8,
-    polyphony: Polyphony,
+    pub polyphony: Polyphony,
     pub source_count: u8,
     pub source_mutes: [bool; 6],
     pub portamento_active: bool,
     pub portamento_speed: u8,
-    amplitude_modulation: AmplitudeModulation,
-    macros: [MacroController; 4],
-    switches: SwitchControl,
-    effects: EffectSettings,
+    pub amplitude_modulation: AmplitudeModulation,
+    pub macros: [MacroController; 4],
+    pub switches: SwitchControl,
+    pub effects: EffectSettings,
     pub geq: [i8; 7],
-    effect_control: EffectControl,
+    pub effect_control: EffectControl,
 }
 
 impl Default for SingleCommon {

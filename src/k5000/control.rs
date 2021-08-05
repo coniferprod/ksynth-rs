@@ -5,7 +5,7 @@ use crate::SystemExclusiveData;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum VelocitySwitch {
+pub enum VelocitySwitch {
     Off,
     Loud,
     Soft,
@@ -16,8 +16,8 @@ impl Default for VelocitySwitch {
 }
 
 pub struct VelocitySwitchSettings {
-    switch_type: VelocitySwitch,
-    threshold: u8,
+    pub switch_type: VelocitySwitch,
+    pub threshold: u8,
 }
 
 impl Default for VelocitySwitchSettings {
@@ -158,9 +158,9 @@ impl SystemExclusiveData for MacroController {
 }
 
 pub struct AssignableController {
-    source: ControlSource,
-    destination: ControlDestination,
-    depth: u8,
+    pub source: ControlSource,
+    pub destination: ControlDestination,
+    pub depth: u8,
 }
 
 impl Default for AssignableController {
@@ -188,11 +188,11 @@ impl SystemExclusiveData for AssignableController {
 }
 
 pub struct ModulationSettings {
-    pressure: MacroController,
-    wheel: MacroController,
-    expression: MacroController,
-    assignable1: AssignableController,
-    assignable2: AssignableController,
+    pub pressure: MacroController,
+    pub wheel: MacroController,
+    pub expression: MacroController,
+    pub assignable1: AssignableController,
+    pub assignable2: AssignableController,
 }
 
 impl Default for ModulationSettings {
@@ -233,7 +233,7 @@ impl SystemExclusiveData for ModulationSettings {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum PanType {
+pub enum PanType {
     Normal,
     Random,
     KeyScale,
@@ -245,8 +245,8 @@ impl Default for PanType {
 }
 
 pub struct PanSettings {
-    pan_type: PanType,
-    pan_value: i8,
+    pub pan_type: PanType,
+    pub pan_value: i8,
 }
 
 impl Default for PanSettings {

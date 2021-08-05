@@ -2,7 +2,7 @@ use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k5000::formant::FormantFilter;
 use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
-use crate::k5000::harmonic::HarmonicLevels;
+use crate::k5000::harmonic::Levels;
 use crate::k5000::morf::{HarmonicCommon, MorfHarmonic, HarmonicGroup};
 
 //
@@ -10,12 +10,12 @@ use crate::k5000::morf::{HarmonicCommon, MorfHarmonic, HarmonicGroup};
 //
 
 pub struct AdditiveKit {
-    common: HarmonicCommon,
-    morf: MorfHarmonic,
-    formant_filter: FormantFilter,
-    levels: HarmonicLevels,
-    bands: [u8; 128],
-    envelopes: [HarmonicEnvelope; 64],
+    pub common: HarmonicCommon,
+    pub morf: MorfHarmonic,
+    pub formant_filter: FormantFilter,
+    pub levels: Levels,
+    pub bands: [u8; 128],
+    pub envelopes: [HarmonicEnvelope; 64],
 }
 
 impl Default for AdditiveKit {
@@ -59,7 +59,7 @@ impl SystemExclusiveData for AdditiveKit {
             common: HarmonicCommon::from_bytes(data[1..6].to_vec()),
             morf: MorfHarmonic::from_bytes(data[6..19].to_vec()),
             formant_filter: FormantFilter::from_bytes(data[19..36].to_vec()),
-            levels: HarmonicLevels::from_bytes(data[36..164].to_vec()),
+            levels: Levels::from_bytes(data[36..164].to_vec()),
             bands: bands,
             envelopes: envelopes,
         }

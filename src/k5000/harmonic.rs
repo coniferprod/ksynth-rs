@@ -1,23 +1,22 @@
 use bit::BitIndex;
-
 use crate::SystemExclusiveData;
 use crate::k5000::morf::Loop;
 
-pub struct HarmonicLevels {
+pub struct Levels {
     pub soft: [u8; 64],
     pub loud: [u8; 64],
 }
 
-impl Default for HarmonicLevels {
+impl Default for Levels {
     fn default() -> Self {
-        HarmonicLevels {
+        Levels {
             soft: [0; 64],
             loud: [0; 64],
         }
     }
 }
 
-impl SystemExclusiveData for HarmonicLevels {
+impl SystemExclusiveData for Levels {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset = 0;
 
@@ -33,7 +32,7 @@ impl SystemExclusiveData for HarmonicLevels {
             offset += 1;
         }
 
-        HarmonicLevels {
+        Levels {
             soft: soft,
             loud: loud,
         }
@@ -49,8 +48,8 @@ impl SystemExclusiveData for HarmonicLevels {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
 pub struct EnvelopeSegment {
-    rate: u8,
-    level: u8,
+    pub rate: u8,
+    pub level: u8,
 }
 
 impl SystemExclusiveData for EnvelopeSegment {
@@ -68,11 +67,11 @@ impl SystemExclusiveData for EnvelopeSegment {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Envelope {
-    segment0: EnvelopeSegment,
-    segment1: EnvelopeSegment,
-    segment2: EnvelopeSegment,
-    segment3: EnvelopeSegment,
-    loop_type: Loop,
+    pub segment0: EnvelopeSegment,
+    pub segment1: EnvelopeSegment,
+    pub segment2: EnvelopeSegment,
+    pub segment3: EnvelopeSegment,
+    pub loop_type: Loop,
 }
 
 impl Default for Envelope {

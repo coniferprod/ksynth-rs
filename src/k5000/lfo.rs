@@ -8,7 +8,7 @@ use crate::SystemExclusiveData;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-enum Waveform {
+pub enum Waveform {
     Triangle,
     Square,
     Sawtooth,
@@ -20,23 +20,23 @@ impl Default for Waveform {
     fn default() -> Self { Waveform::Triangle }
 }
 
-pub struct LfoControl {
-    depth: u8,
-    key_scaling: i8,
+pub struct Control {
+    pub depth: u8,
+    pub key_scaling: i8,
 }
 
-impl Default for LfoControl {
+impl Default for Control {
     fn default() -> Self {
-        LfoControl {
+        Control {
             depth: 0,
             key_scaling: 0,
         }
     }
 }
 
-impl SystemExclusiveData for LfoControl {
+impl SystemExclusiveData for Control {
     fn from_bytes(data: Vec<u8>) -> Self {
-        LfoControl {
+        Control {
             depth: data[0],
             key_scaling: (data[1] - 64) as i8,
         }
@@ -48,14 +48,14 @@ impl SystemExclusiveData for LfoControl {
 }
 
 pub struct Lfo {
-    waveform: Waveform,
-    speed: u8,
-    fade_in_time: u8,
-    fade_in_to_speed: u8,
-    delay_onset: u8,
-    vibrato: LfoControl,
-    growl: LfoControl,
-    tremolo: LfoControl,
+    pub waveform: Waveform,
+    pub speed: u8,
+    pub fade_in_time: u8,
+    pub fade_in_to_speed: u8,
+    pub delay_onset: u8,
+    pub vibrato: Control,
+    pub growl: Control,
+    pub tremolo: Control,
 }
 
 impl Default for Lfo {
@@ -81,15 +81,15 @@ impl SystemExclusiveData for Lfo {
             fade_in_time: data[2],
             fade_in_to_speed: data[3],
             delay_onset: data[4],
-            vibrato: LfoControl {
+            vibrato: Control {
                 depth: data[5],
                 key_scaling: data[6] as i8,
             },
-            growl: LfoControl {
+            growl: Control {
                 depth: data[7],
                 key_scaling: data[8] as i8,
             },
-            tremolo: LfoControl {
+            tremolo: Control {
                 depth: data[9],
                 key_scaling: data[10] as i8,
             },
