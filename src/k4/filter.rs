@@ -1,6 +1,8 @@
 use std::convert::TryInto;
 use std::fmt;
 use bit::BitIndex;
+use crate::SystemExclusiveData;
+use crate::k4::amp::{LevelModulation, TimeModulation};
 
 pub struct Envelope {
     pub attack: u8,
@@ -35,7 +37,7 @@ impl fmt::Display for Envelope {
     }
 }
 
-impl crate::SystemExclusiveData for Envelope {
+impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         Envelope {
             attack: data[0],
@@ -56,22 +58,18 @@ impl crate::SystemExclusiveData for Envelope {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        4
-    }
-    */
+    fn data_size(&self) -> usize { 4 }
 }
 
 pub struct Filter {
     pub cutoff: u8,
     pub resonance: u8,  // 0~7
-    pub cutoff_mod: crate::k4::amp::LevelModulation,
+    pub cutoff_mod: LevelModulation,
     pub lfo_modulates_cutoff: bool,
     pub envelope: Envelope,
     pub env_depth: i8,
     pub env_vel_depth: i8,
-    pub time_mod: crate::k4::amp::TimeModulation,
+    pub time_mod: TimeModulation,
 }
 
 impl Default for Filter {
@@ -104,7 +102,7 @@ impl fmt::Display for Filter {
     }
 }
 
-impl crate::SystemExclusiveData for Filter {
+impl SystemExclusiveData for Filter {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
         let mut start: usize = 0;
@@ -123,7 +121,7 @@ impl crate::SystemExclusiveData for Filter {
         start = offset;
         end = start + 3;
         let cutoff_mod_bytes = data[start..end].to_vec();
-        let cutoff_mod = crate::k4::amp::LevelModulation::from_bytes(cutoff_mod_bytes);
+        let cutoff_mod = LevelModulation::from_bytes(cutoff_mod_bytes);
 
         offset += 3;
         b = data[offset];
@@ -137,13 +135,13 @@ impl crate::SystemExclusiveData for Filter {
         start = offset;
         end = start + 4;
         let envelope_bytes = data[start..end].to_vec();
-        let envelope = crate::k4::filter::Envelope::from_bytes(envelope_bytes);
+        let envelope = Envelope::from_bytes(envelope_bytes);
         offset += 4;
 
         start = offset;
         end = start + 3;
         let time_mod_bytes = data[start..end].to_vec();
-        let time_mod = crate::k4::amp::TimeModulation::from_bytes(time_mod_bytes);
+        let time_mod = TimeModulation::from_bytes(time_mod_bytes);
 
         Filter {
             cutoff,
@@ -176,7 +174,6 @@ impl crate::SystemExclusiveData for Filter {
         buf
     }
 
-    /*
     fn data_size(&self) -> usize {
         2
             + self.cutoff_mod.data_size()
@@ -184,5 +181,4 @@ impl crate::SystemExclusiveData for Filter {
             + self.envelope.data_size()
             + self.time_mod.data_size()
     }
-    */
 }

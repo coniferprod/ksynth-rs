@@ -1,9 +1,10 @@
 use std::fmt;
 use bit::BitIndex;
+use crate::k4::wave::Wave;
 
 pub struct Source {
     pub delay: u8,
-    pub wave: crate::k4::wave::Wave,
+    pub wave: Wave,
     pub ks_curve: u8,
     pub coarse: i8,
     pub key_track: KeyTrack,
@@ -63,7 +64,7 @@ impl crate::SystemExclusiveData for Source {
         let wave_low = data[offset] & 0x7f;
         offset += 1;
 
-        let wave = crate::k4::wave::Wave::from_bytes(vec![wave_high, wave_low]);
+        let wave = Wave::from_bytes(vec![wave_high, wave_low]);
 
         b = data[offset];
         offset += 1;
@@ -144,11 +145,7 @@ impl crate::SystemExclusiveData for Source {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        7
-    }
-    */
+    fn data_size(&self) -> usize { 7 }
 }
 
 pub enum KeyTrack {

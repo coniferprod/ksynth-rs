@@ -1,12 +1,15 @@
 use std::convert::TryInto;
 use std::convert::TryFrom;
 use bit::BitIndex;
-use crate::SystemExclusiveData;
-use crate::Checksum;
+use crate::{SystemExclusiveData, Checksum, every_nth_byte};
 use num_enum::TryFromPrimitive;
 use std::fmt;
+use crate::k4::{NAME_LENGTH, get_effect_number};
 use crate::k4::source::Source;
 use crate::k4::lfo::*;
+use crate::k4::amp::Amplifier;
+use crate::k4::filter::Filter;
+use crate::k4::effect::Submix;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
@@ -110,7 +113,7 @@ impl fmt::Display for AutoBend {
     }
 }
 
-impl crate::SystemExclusiveData for AutoBend {
+impl SystemExclusiveData for AutoBend {
     fn from_bytes(data: Vec<u8>) -> Self {
         AutoBend {
             time: data[0] & 0x7f,
@@ -134,18 +137,14 @@ impl crate::SystemExclusiveData for AutoBend {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        4
-    }
-    */
+    fn data_size(&self) -> usize { 4 }
 }
 
 pub struct SinglePatch {
     pub name: String,
     pub volume: u8,  // 0~100
     pub effect: u8,  // 1~32 (in SysEx 0~31)
-    pub submix: crate::k4::effect::Submix,
+    pub submix: Submix,
     pub source_mode: SourceMode,
     pub polyphony_mode: PolyphonyMode,
     pub am12: bool,
@@ -159,9 +158,9 @@ pub struct SinglePatch {
     pub vibrato: Vibrato,
     pub press_freq: i8,
     pub sources: [Source; 4],
-    pub amplifiers: [crate::k4::amp::Amplifier; 4],
-    pub filter1: crate::k4::filter::Filter,
-    pub filter2: crate::k4::filter::Filter,
+    pub amplifiers: [Amplifier; 4],
+    pub filter1: Filter,
+    pub filter2: Filter,
 }
 
 impl SinglePatch {
@@ -170,7 +169,7 @@ impl SinglePatch {
             name: "NewSound  ".to_string(),
             volume: 100,
             effect: 1,
-            submix: crate::k4::effect::Submix::A,
+            submix: Submix::A,
             source_mode: SourceMode::Normal,
             polyphony_mode: PolyphonyMode::Poly1,
             am12: false,
@@ -308,7 +307,7 @@ impl fmt::Display for SinglePatch {
     }
 }
 
-impl crate::SystemExclusiveData for SinglePatch {
+impl SystemExclusiveData for SinglePatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
         let mut start: usize = 0;
@@ -316,10 +315,10 @@ impl crate::SystemExclusiveData for SinglePatch {
 
         // name = s00 ... s09
         start = 0;
-        end = start + crate::k4::NAME_LENGTH;
+        end = start + NAME_LENGTH;
         let name = String::from_utf8(data[start..end].to_vec()).unwrap();
 
-        offset += crate::k4::NAME_LENGTH;
+        offset += NAME_LENGTH;
 
         let mut b: u8;
         b = data[offset];
@@ -329,13 +328,13 @@ impl crate::SystemExclusiveData for SinglePatch {
         // effect = s11 bits 0...4
         b = data[offset];
         offset += 1;
-        let effect = crate::k4::get_effect_number(b);
+        let effect = get_effect_number(b);
 
         // output select = s12 bits 0...2
         b = data[offset];
         offset += 1;
         let output_name_index = b & 0b00000111;
-        let submix = crate::k4::effect::Submix::try_from(output_name_index).unwrap();
+        let submix = Submix::try_from(output_name_index).unwrap();
 
         // source mode = s13 bits 0...1
         b = data[offset];
@@ -409,10 +408,10 @@ impl crate::SystemExclusiveData for SinglePatch {
         end = start + total_source_data_size;
         let all_source_data = data[start..end].to_vec();
 
-        let s1 = Source::from_bytes(crate::every_nth_byte(&all_source_data, 4, 0));
-        let s2 = Source::from_bytes(crate::every_nth_byte(&all_source_data, 4, 1));
-        let s3 = Source::from_bytes(crate::every_nth_byte(&all_source_data, 4, 2));
-        let s4 = Source::from_bytes(crate::every_nth_byte(&all_source_data, 4, 3));
+        let s1 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 0));
+        let s2 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 1));
+        let s3 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 2));
+        let s4 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 3));
 
         offset += total_source_data_size;
 
@@ -421,10 +420,10 @@ impl crate::SystemExclusiveData for SinglePatch {
         end = start + total_amp_data_size;
         let all_amp_data = data[start..end].to_vec();
 
-        let a1 = crate::k4::amp::Amplifier::from_bytes(crate::every_nth_byte(&all_amp_data, 4, 0));
-        let a2 = crate::k4::amp::Amplifier::from_bytes(crate::every_nth_byte(&all_amp_data, 4, 1));
-        let a3 = crate::k4::amp::Amplifier::from_bytes(crate::every_nth_byte(&all_amp_data, 4, 2));
-        let a4 = crate::k4::amp::Amplifier::from_bytes(crate::every_nth_byte(&all_amp_data, 4, 3));
+        let a1 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 0));
+        let a2 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 1));
+        let a3 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 2));
+        let a4 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 3));
 
         offset += total_amp_data_size;
 
@@ -433,8 +432,8 @@ impl crate::SystemExclusiveData for SinglePatch {
         end = start + total_filter_data_size;
         let all_filter_data = data[start..end].to_vec();
 
-        let f1 = crate::k4::filter::Filter::from_bytes(crate::every_nth_byte(&all_filter_data, 2, 0));
-        let f2 = crate::k4::filter::Filter::from_bytes(crate::every_nth_byte(&all_filter_data, 2, 1));
+        let f1 = Filter::from_bytes(every_nth_byte(&all_filter_data, 2, 0));
+        let f2 = Filter::from_bytes(every_nth_byte(&all_filter_data, 2, 1));
 
         offset += total_filter_data_size;
 
@@ -474,11 +473,7 @@ impl crate::SystemExclusiveData for SinglePatch {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        131
-    }
-    */
+    fn data_size(&self) -> usize { 131 }
 }
 
 impl Checksum for SinglePatch {
@@ -513,5 +508,4 @@ mod tests {
         )
     }
     */
-
 }

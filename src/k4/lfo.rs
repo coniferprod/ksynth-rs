@@ -62,7 +62,7 @@ impl fmt::Display for Lfo {
     }
 }
 
-impl crate::SystemExclusiveData for Lfo {
+impl SystemExclusiveData for Lfo {
     fn from_bytes(data: Vec<u8>) -> Self {
         Lfo {
             shape: Shape::try_from(data[0] & 0x03).unwrap(),
@@ -88,11 +88,7 @@ impl crate::SystemExclusiveData for Lfo {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        5
-    }
-    */
+    fn data_size(&self) -> usize { 5 }
 }
 
 pub struct Vibrato {
@@ -128,7 +124,7 @@ impl fmt::Display for Vibrato {
     }
 }
 
-impl crate::SystemExclusiveData for Vibrato {
+impl SystemExclusiveData for Vibrato {
     fn from_bytes(data: Vec<u8>) -> Self {
         Vibrato {
             shape: Shape::try_from((data[0] >> 4) & 0x03).unwrap(),
@@ -152,9 +148,5 @@ impl crate::SystemExclusiveData for Vibrato {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        4
-    }
-    */
+    fn data_size(&self) -> usize { 4 }
 }

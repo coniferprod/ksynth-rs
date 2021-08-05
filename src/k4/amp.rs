@@ -1,16 +1,17 @@
 use std::convert::TryInto;
 use std::fmt;
+use crate::SystemExclusiveData;
 
-pub struct AmplifierEnvelope {
+pub struct Envelope {
     pub attack: u8,
     pub decay: u8,
     pub sustain: u8,
     pub release: u8,
 }
 
-impl AmplifierEnvelope {
-    pub fn new() -> AmplifierEnvelope {
-        AmplifierEnvelope {
+impl Envelope {
+    pub fn new() -> Envelope {
+        Envelope {
             attack: 54,
             decay: 72,
             sustain: 90,
@@ -19,21 +20,21 @@ impl AmplifierEnvelope {
     }
 }
 
-impl Default for AmplifierEnvelope {
+impl Default for Envelope {
     fn default() -> Self {
-        AmplifierEnvelope::new()
+        Envelope::new()
     }
 }
 
-impl fmt::Display for AmplifierEnvelope {
+impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "A={} D={} S={} R={}", self.attack, self.decay, self.sustain, self.release)
     }
 }
 
-impl crate::SystemExclusiveData for AmplifierEnvelope {
+impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
-        AmplifierEnvelope {
+        Envelope {
             attack: data[0] & 0x7f,
             decay: data[1] & 0x7f,
             sustain: data[2] & 0x7f,
@@ -50,11 +51,9 @@ impl crate::SystemExclusiveData for AmplifierEnvelope {
         ]
     }
 
-    /*
     fn data_size(&self) -> usize {
         4
     }
-    */
 }
 
 pub struct LevelModulation {
@@ -89,7 +88,7 @@ impl fmt::Display for LevelModulation {
     }
 }
 
-impl crate::SystemExclusiveData for LevelModulation {
+impl SystemExclusiveData for LevelModulation {
     fn from_bytes(data: Vec<u8>) -> Self {
         LevelModulation {
             velocity_depth: (data[0] as i8) - 50,
@@ -106,11 +105,9 @@ impl crate::SystemExclusiveData for LevelModulation {
         ]
     }
 
-    /*
     fn data_size(&self) -> usize {
         3
     }
-    */
 }
 
 pub struct TimeModulation {
@@ -145,7 +142,7 @@ impl fmt::Display for TimeModulation {
     }
 }
 
-impl crate::SystemExclusiveData for TimeModulation {
+impl SystemExclusiveData for TimeModulation {
     fn from_bytes(data: Vec<u8>) -> Self {
         TimeModulation {
             attack_velocity: (data[0] as i8) - 50,
@@ -162,16 +159,14 @@ impl crate::SystemExclusiveData for TimeModulation {
         ]
     }
 
-    /*
     fn data_size(&self) -> usize {
         3
     }
-    */
 }
 
 pub struct Amplifier {
     pub level: u8,
-    pub envelope: AmplifierEnvelope,
+    pub envelope: Envelope,
     pub level_modulation: LevelModulation,
     pub time_modulation: TimeModulation,
 }
@@ -203,7 +198,7 @@ impl fmt::Display for Amplifier {
     }
 }
 
-impl crate::SystemExclusiveData for Amplifier {
+impl SystemExclusiveData for Amplifier {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
         let mut start: usize = 0;
@@ -217,19 +212,19 @@ impl crate::SystemExclusiveData for Amplifier {
         start = offset;
         end = start + 4;
         let envelope_bytes = data[start..end].to_vec();
-        let envelope = crate::k4::amp::AmplifierEnvelope::from_bytes(envelope_bytes);
+        let envelope = Envelope::from_bytes(envelope_bytes);
         offset += 4;
 
         start = offset;
         end = start + 3;
         let level_mod_bytes = data[start..end].to_vec();
-        let level_modulation = crate::k4::amp::LevelModulation::from_bytes(level_mod_bytes);
+        let level_modulation = LevelModulation::from_bytes(level_mod_bytes);
         offset += 3;
 
         start = offset;
         end = start + 3;
         let time_mod_bytes = data[start..end].to_vec();
-        let time_modulation = crate::k4::amp::TimeModulation::from_bytes(time_mod_bytes);
+        let time_modulation = TimeModulation::from_bytes(time_mod_bytes);
 
         Amplifier {
             level,
@@ -250,14 +245,12 @@ impl crate::SystemExclusiveData for Amplifier {
         buf
     }
 
-    /*
     fn data_size(&self) -> usize {
         1
             + self.envelope.data_size()
             + self.level_modulation.data_size()
             + self.time_modulation.data_size()
     }
-    */
 }
 
 #[cfg(test)]
@@ -266,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_amplifier_envelope() {
-        let env = AmplifierEnvelope {
+        let env = Envelope {
             attack: 10,
             decay: 5,
             sustain: 20,

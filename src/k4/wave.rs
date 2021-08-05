@@ -322,11 +322,7 @@ impl SystemExclusiveData for Wave {
         ]
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        2
-    }
-    */
+    fn data_size(&self) -> usize { 2 }
 }
 
 #[cfg(test)]

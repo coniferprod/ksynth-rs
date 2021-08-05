@@ -4,6 +4,7 @@ pub mod k4;
 pub trait SystemExclusiveData {
     fn from_bytes(data: Vec<u8>) -> Self;
     fn to_bytes(&self) -> Vec<u8>;
+    fn data_size(&self) -> usize { 0 }
 }
 
 pub trait Checksum {
@@ -44,14 +45,6 @@ fn every_nth_byte(v: &Vec<u8>, n: usize, start: usize) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /*
-    #[test]
-    fn test_submix_name() {
-        let submix = effect::Submix::A;
-        assert_eq!(submix.name(), "A");
-    }
-    */
 
     #[test]
     fn test_every_nth_byte() {

@@ -38,7 +38,7 @@ impl fmt::Display for MultiPatch {
     }
 }
 
-impl crate::SystemExclusiveData for MultiPatch {
+impl SystemExclusiveData for MultiPatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
         let mut start: usize = 0;
@@ -71,11 +71,7 @@ impl crate::SystemExclusiveData for MultiPatch {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        8
-    }
-    */
+    fn data_size(&self) -> usize { 8 }
 }
 
 impl Checksum for MultiPatch {
@@ -124,7 +120,7 @@ impl Default for Section {
     }
 }
 
-impl crate::SystemExclusiveData for Section {
+impl SystemExclusiveData for Section {
     fn from_bytes(data: Vec<u8>) -> Self {
         Section {
             single_number: data[0],
@@ -161,11 +157,7 @@ impl crate::SystemExclusiveData for Section {
         buf
     }
 
-    /*
-    fn data_size(&self) -> usize {
-        8
-    }
-    */
+    fn data_size(&self) -> usize { 8 }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
