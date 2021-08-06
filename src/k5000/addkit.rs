@@ -6,7 +6,7 @@ use crate::Checksum;
 use crate::k5000::formant::FormantFilter;
 use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
 use crate::k5000::harmonic::Levels;
-use crate::k5000::morf::{HarmonicCommon, MorfHarmonic, HarmonicGroup};
+use crate::k5000::morf::{HarmonicCommon, MorfHarmonic};
 
 /// Additive kit.
 pub struct AdditiveKit {

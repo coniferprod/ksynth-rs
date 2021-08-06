@@ -12,3 +12,5 @@ pub mod harmonic;
 pub mod formant;
 pub mod addkit;
 pub mod sysex;
+
+pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch

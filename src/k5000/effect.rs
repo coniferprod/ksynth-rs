@@ -177,7 +177,7 @@ impl SystemExclusiveData for EffectSettings {
 /// Effect destinations.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-pub enum EffectDestination {
+pub enum Destination {
     Effect1DryWet,
     Effect1Parameter,
     Effect2DryWet,
@@ -188,14 +188,14 @@ pub enum EffectDestination {
     Effect4Parameter,
 }
 
-impl Default for EffectDestination {
-    fn default() -> Self { EffectDestination::Effect1DryWet }
+impl Default for Destination {
+    fn default() -> Self { Destination::Effect1DryWet }
 }
 
 /// Effect control source.
 pub struct ControlSource {
     pub source: control::ControlSource,
-    pub destination: EffectDestination,
+    pub destination: Destination,
     pub depth: i8,
 }
 
@@ -213,7 +213,7 @@ impl SystemExclusiveData for ControlSource {
     fn from_bytes(data: Vec<u8>) -> Self {
         ControlSource {
             source: control::ControlSource::try_from(data[0]).unwrap(),
-            destination: EffectDestination::try_from(data[1]).unwrap(),
+            destination: Destination::try_from(data[1]).unwrap(),
             depth: data[2] as i8,
         }
     }
@@ -224,22 +224,22 @@ impl SystemExclusiveData for ControlSource {
 }
 
 /// Effect control with two sources.
-pub struct Control {
+pub struct EffectControl {
     pub source1: ControlSource,
     pub source2: ControlSource,
 }
 
-impl Default for Control {
+impl Default for EffectControl {
     fn default() -> Self {
-        Control {
+        EffectControl {
             source1: Default::default(),
             source2: Default::default(),
         }
     }
 }
-impl SystemExclusiveData for Control {
+impl SystemExclusiveData for EffectControl {
     fn from_bytes(data: Vec<u8>) -> Self {
-        Control {
+        EffectControl {
             source1: ControlSource::from_bytes(data[0..3].to_vec()),
             source2: ControlSource::from_bytes(data[3..6].to_vec()),
         }

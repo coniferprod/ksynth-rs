@@ -11,12 +11,12 @@ use crate::k5000::control::{
     Polyphony, AmplitudeModulation, MacroController, SwitchControl,
     ControlDestination, Switch,
 };
-use crate::k5000::effect::{EffectSettings, Control as EffectControl};
+use crate::k5000::effect::{EffectSettings, EffectControl};
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
 
 /// Single patch common data.
-pub struct SingleCommon {
+pub struct Common {
     pub name: String,
     pub volume: u8,
     pub polyphony: Polyphony,
@@ -32,9 +32,9 @@ pub struct SingleCommon {
     pub effect_control: EffectControl,
 }
 
-impl Default for SingleCommon {
+impl Default for Common {
     fn default() -> Self {
-        SingleCommon {
+        Common {
             name: "NewSound".to_string(),
             volume: 99,
             polyphony: Polyphony::Poly,
@@ -52,7 +52,7 @@ impl Default for SingleCommon {
     }
 }
 
-impl fmt::Display for SingleCommon {
+impl fmt::Display for Common {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)
     }
@@ -72,7 +72,7 @@ fn get_bit_at(input: u32, n: u8) -> bool {
     }
 }
 
-impl SystemExclusiveData for SingleCommon {
+impl SystemExclusiveData for Common {
     fn from_bytes(data: Vec<u8>) -> Self {
         eprintln!("SingleCommon");
 
@@ -133,7 +133,7 @@ impl SystemExclusiveData for SingleCommon {
             },
         ];
 
-        SingleCommon {
+        Common {
             effects: effects,
             geq: vec_to_array(geq_values),
             name: name,
@@ -197,9 +197,9 @@ impl SystemExclusiveData for SingleCommon {
     }
 }
 
-/// Single patch
+/// Single patch.
 pub struct SinglePatch {
-    pub common: SingleCommon,
+    pub common: Common,
     pub sources: Vec<Source>,
     pub additive_kits: BTreeMap<String, AdditiveKit>,  // keeps the keys in order
 }
@@ -237,13 +237,13 @@ impl SinglePatch {
         }
     }
 
-    pub fn get_size(data: Vec<u8>) -> u16 {
+    pub fn get_size(data: Vec<u8>) -> usize {
         let mut offset = 0;
 
         let original_checksum = data[0];
         eprintln!("original checksum = {:#02x}", original_checksum);
 
-        let common = SingleCommon::from_bytes(data[1..82].to_vec());
+        let common = Common::from_bytes(data[1..82].to_vec());
         offset += 81;
         let mut sources = Vec::<Source>::new();
         for i in 0..common.source_count {
@@ -256,19 +256,6 @@ impl SinglePatch {
         let additive_source_count = sources.iter().filter(|s| s.is_additive()).count();
 
         (82 + pcm_source_count * 86 + additive_source_count * 462).try_into().unwrap()
-
-        /*
-        match (pcm_source_count, additive_source_count) {
-            (2, 0) => 254,
-            (3, 0) => 340,
-            (4, 0) => 426,
-            (5, 0) => 512,
-            (6, 0) => 598,
-            (1, 1) => 1060,
-            (2, 1) =>
-
-        }
-        */
     }
 }
 
@@ -322,7 +309,7 @@ impl SystemExclusiveData for SinglePatch {
         let original_checksum = data[0];
         eprintln!("original checksum = {:#02x}", original_checksum);
 
-        let common = SingleCommon::from_bytes(data[1..82].to_vec());
+        let common = Common::from_bytes(data[1..82].to_vec());
         offset += 81;
         let mut sources = Vec::<Source>::new();
         for i in 0..common.source_count {

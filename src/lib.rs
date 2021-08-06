@@ -1,6 +1,11 @@
+//! # ksynth
+//!
+//! Patch manipulation helpers for Kawai digital synths.
+
 pub mod k5000;
 pub mod k4;
 
+/// Parsing and generating MIDI System Exclusive data.
 pub trait SystemExclusiveData {
     fn from_bytes(data: Vec<u8>) -> Self;
     fn to_bytes(&self) -> Vec<u8>;
