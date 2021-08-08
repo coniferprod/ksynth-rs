@@ -6,11 +6,14 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::Checksum;
 
+const SECTION_COUNT: usize = 8;  // number of sections in a multi
+
+#[derive(Clone)]
 pub struct MultiPatch {
     pub name: String,
     pub volume: u8,
     pub effect: u8,
-    pub sections: [Section; 8],
+    pub sections: Vec<Section>,
 }
 
 impl MultiPatch {
@@ -26,6 +29,17 @@ impl MultiPatch {
         }
 
         buf
+    }
+}
+
+impl Default for MultiPatch {
+    fn default() -> Self {
+        MultiPatch {
+            name: "NewMulti  ".to_string(),
+            volume: 100,
+            effect: 1,
+            sections: vec![Default::default(); SECTION_COUNT],
+        }
     }
 }
 
@@ -49,9 +63,9 @@ impl SystemExclusiveData for MultiPatch {
         let name = String::from_utf8(data[start..end].to_vec()).unwrap();
         offset += crate::k4::NAME_LENGTH + 2;  // skip over name, volume and effect to sections
 
-        let mut sections = [Section::new(); 8];
-        for i in 0..8 {
-            sections[i] = Section::from_bytes(data[offset .. offset + 8].to_vec());
+        let mut sections = Vec::<Section>::new();
+        for i in 0..SECTION_COUNT {
+            sections.push(Section::from_bytes(data[offset .. offset + 8].to_vec()));
             offset += 8;
         }
 

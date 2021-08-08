@@ -79,6 +79,7 @@ impl fmt::Display for WheelAssign {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct AutoBend {
     pub time: u8,
     pub depth: i8,
@@ -140,6 +141,7 @@ impl SystemExclusiveData for AutoBend {
     fn data_size(&self) -> usize { 4 }
 }
 
+#[derive(Clone)]
 pub struct SinglePatch {
     pub name: String,
     pub volume: u8,  // 0~100

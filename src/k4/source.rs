@@ -2,6 +2,7 @@ use std::fmt;
 use bit::BitIndex;
 use crate::k4::wave::Wave;
 
+#[derive(Copy, Clone)]
 pub struct Source {
     pub delay: u8,
     pub wave: Wave,
@@ -148,6 +149,7 @@ impl crate::SystemExclusiveData for Source {
     fn data_size(&self) -> usize { 7 }
 }
 
+#[derive(Copy, Clone)]
 pub enum KeyTrack {
     On,
     FixedKey(u8),

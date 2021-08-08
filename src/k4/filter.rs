@@ -4,6 +4,7 @@ use bit::BitIndex;
 use crate::SystemExclusiveData;
 use crate::k4::amp::{LevelModulation, TimeModulation};
 
+#[derive(Copy, Clone)]
 pub struct Envelope {
     pub attack: u8,
     pub decay: u8,
@@ -61,6 +62,7 @@ impl SystemExclusiveData for Envelope {
     fn data_size(&self) -> usize { 4 }
 }
 
+#[derive(Copy, Clone)]
 pub struct Filter {
     pub cutoff: u8,
     pub resonance: u8,  // 0~7

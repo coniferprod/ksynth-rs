@@ -273,6 +273,7 @@ static WAVE_NAMES: &[&str] = &[
     "LOOP 12"
 ];
 
+#[derive(Copy, Clone)]
 pub struct Wave {
     pub number: u16,  // 1~256
 }

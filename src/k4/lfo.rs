@@ -27,6 +27,7 @@ impl fmt::Display for Shape {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Lfo {
     pub shape: Shape,
     pub speed: u8,
@@ -91,6 +92,7 @@ impl SystemExclusiveData for Lfo {
     fn data_size(&self) -> usize { 5 }
 }
 
+#[derive(Copy, Clone)]
 pub struct Vibrato {
     pub shape: Shape,
     pub speed: u8,  // 0~100

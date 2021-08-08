@@ -2,6 +2,7 @@ use std::convert::TryInto;
 use std::fmt;
 use crate::SystemExclusiveData;
 
+#[derive(Copy, Clone)]
 pub struct Envelope {
     pub attack: u8,
     pub decay: u8,
@@ -56,6 +57,7 @@ impl SystemExclusiveData for Envelope {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct LevelModulation {
     pub velocity_depth: i8,
     pub pressure_depth: i8,
@@ -110,6 +112,7 @@ impl SystemExclusiveData for LevelModulation {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct TimeModulation {
     pub attack_velocity: i8,
     pub release_velocity: i8,
@@ -164,6 +167,7 @@ impl SystemExclusiveData for TimeModulation {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Amplifier {
     pub level: u8,
     pub envelope: Envelope,
