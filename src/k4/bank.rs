@@ -1,4 +1,5 @@
 use std::fmt;
+use log::{info, warn, error, debug};
 use crate::{SystemExclusiveData};
 use crate::k4::single::SinglePatch;
 use crate::k4::multi::MultiPatch;
@@ -45,12 +46,12 @@ impl SystemExclusiveData for Bank {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset = 0;
 
-        eprintln!("Parsing single patches, offset = {}", offset);
+        debug!("Parsing single patches, offset = {}", offset);
 
         let mut singles = Vec::<SinglePatch>::new();
         for i in 0..SINGLE_PATCH_COUNT {
             let single = SinglePatch::from_bytes(data[offset..].to_vec());
-            eprintln!("{}: {}", i, single.name);
+            debug!("{}: {}", i, single.name);
             offset += single.data_size();
             singles.push(single);
         }
@@ -61,12 +62,12 @@ impl SystemExclusiveData for Bank {
 
         assert_eq!(offset, total);
 
-        eprintln!("Parsing multi patches, offset = {}", offset);
+        debug!("Parsing multi patches, offset = {}", offset);
 
         let mut multis = Vec::<MultiPatch>::new();
         for i in 0..MULTI_PATCH_COUNT {
             let multi = MultiPatch::from_bytes(data[offset..].to_vec());
-            eprintln!("{}: {}", i, multi.name);
+            debug!("{}: {}", i, multi.name);
             offset += multi.data_size();
             multis.push(multi);
         }
@@ -75,7 +76,7 @@ impl SystemExclusiveData for Bank {
         total += block_size;
         assert_eq!(offset, total);
 
-        eprintln!("Parsing drum patches, offset = {}", offset);
+        debug!("Parsing drum patches, offset = {}", offset);
 
         let drum = DrumPatch::from_bytes(data[offset..].to_vec());
         offset += drum.data_size();
@@ -84,12 +85,12 @@ impl SystemExclusiveData for Bank {
         total += block_size;
         assert_eq!(offset, total);
 
-        eprintln!("Parsing effect patches, offset = {}", offset);
+        debug!("Parsing effect patches, offset = {}", offset);
 
         let mut effects = Vec::<EffectPatch>::new();
         for i in 0..EFFECT_PATCH_COUNT {
             let effect = EffectPatch::from_bytes(data[offset..].to_vec());
-            eprintln!("{}: {}", i, effect.effect);
+            debug!("{}: {}", i, effect.effect);
             offset += effect.data_size();
             effects.push(effect);
         }
@@ -108,7 +109,23 @@ impl SystemExclusiveData for Bank {
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
-        // TODO: emit the bank bytes
+
+        for i in 0..SINGLE_PATCH_COUNT {
+            buf.extend(self.singles[i].to_bytes());
+        }
+
+        for i in 0..MULTI_PATCH_COUNT {
+            buf.extend(self.multis[i].to_bytes());
+        }
+
+        buf.extend(self.drum.to_bytes());
+
+        for i in 0..EFFECT_PATCH_COUNT {
+            buf.extend(self.effects[i].to_bytes());
+        }
+
+        assert_eq!(buf.len(), 15123 - 8 - 1);  // full bank minus SysEx header and terminator
+
         buf
     }
 
