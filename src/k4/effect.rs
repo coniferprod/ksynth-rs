@@ -1,7 +1,9 @@
+use std::fmt;
 use std::convert::TryFrom;
 use std::convert::TryInto;
+use std::collections::HashMap;
+use lazy_static::lazy_static;
 use num_enum::TryFromPrimitive;
-use std::fmt;
 use crate::k4::SUBMIX_COUNT;
 use crate::{SystemExclusiveData, Checksum};
 
@@ -25,7 +27,7 @@ static EFFECT_NAMES: &[&str] = &[
     "Chorus + Stereo Panpot Delay",
 ];
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash)]
 #[repr(u8)]
 pub enum Effect {
     None,  // not really used, just to align the names
@@ -62,6 +64,29 @@ pub struct EffectPatch {
     pub submixes: [SubmixSettings; SUBMIX_COUNT],
 }
 
+lazy_static! {
+    static ref EFFECT_PARAMETER_NAMES: HashMap<&'static Effect, Vec<&'static str>> = {
+        let mut map = HashMap::new();
+        map.insert(&Effect::Reverb1, vec!["Pre.delay", "Rev.Time", "Tone"]);
+        map.insert(&Effect::Reverb2, vec!["Pre.delay", "Rev.Time", "Tone"]);
+        map.insert(&Effect::Reverb3, vec!["Pre.delay", "Rev.Time", "Tone"]);
+        map.insert(&Effect::Reverb4, vec!["Pre.delay", "Rev.Time", "Tone"]);
+        map.insert(&Effect::GateReverb, vec!["Pre.delay", "Gate Time", "Tone"]);
+        map.insert(&Effect::ReverseGate, vec!["Pre.delay", "Gate Time", "Tone"]);
+        map.insert(&Effect::NormalDelay, vec!["Feedback", "Tone", "Delay"]);
+        map.insert(&Effect::StereoPanpotDelay, vec!["Feedback", "L/R Delay", "Delay"]);
+        map.insert(&Effect::Chorus, vec!["Width", "Feedback", "Rate"]);
+        map.insert(&Effect::OverdrivePlusFlanger, vec!["Drive", "Fl.Type", "1-2 Bal"]);
+        map.insert(&Effect::OverdrivePlusNormalDelay, vec!["Drive", "Delay Time", "1-2 Bal"]);
+        map.insert(&Effect::OverdrivePlusReverb, vec!["Drive", "Rev.Type", "1-2 Bal"]);
+        map.insert(&Effect::NormalDelayPlusNormalDelay, vec!["Delay1", "Delay2", "1-2 Bal"]);
+        map.insert(&Effect::NormalDelayPlusStereoPanpotDelay, vec!["Delay1", "Delay2", "1-2 Bal"]);
+        map.insert(&Effect::ChorusPlusNormalDelay, vec!["Chorus", "Delay", "1-2 Bal"]);
+        map.insert(&Effect::ChorusPlusStereoPanpotDelay, vec!["Chorus", "Delay", "1-2 Bal"]);
+        map
+    };
+}
+
 impl Default for EffectPatch {
     fn default() -> Self {
         EffectPatch {
@@ -78,8 +103,11 @@ impl fmt::Display for EffectPatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "effect = {}, param1 = {}, param2 = {}, param3 = {}",
-            EFFECT_NAMES[self.effect as usize].to_string(), self.param1, self.param2, self.param3
+            "{}, {} = {}, {} = {}, {} = {}",
+            EFFECT_NAMES[self.effect as usize].to_string(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3
         )
     }
 }
@@ -237,5 +265,24 @@ mod tests {
         let data: [u8; 35] = include!("a401effect32.in");
         let patch = EffectPatch::from_bytes(data.to_vec());
         assert_eq!(patch.effect, Effect::Reverb1);
+    }
+
+    #[test]
+    fn test_effect_parameter_names() {
+        let effect = EffectPatch {
+            effect: Effect::Reverb1,
+            param1: 7,
+            param2: 5,
+            param3: 31,
+            submixes: [Default::default(); SUBMIX_COUNT],
+        };
+
+        if let Some(param_names) = EFFECT_PARAMETER_NAMES.get(&effect.effect) {
+            assert_eq!(param_names[0], "Pre.delay");
+        }
+        else {
+            assert_eq!(true, false);
+
+        }
     }
 }
