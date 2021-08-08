@@ -498,16 +498,4 @@ mod tests {
         assert_eq!(single_patch.name, "Melo Vox 1");
         assert_eq!(single_patch.volume, 100);
     }
-
-    /*
-    #[test]
-    fn test_single_patch_format() {
-        let data: [u8; 131] = include!("melovox1.in");
-        let single_patch = SinglePatch::from_bytes(data.to_vec());
-        assert_eq!(
-            format!("{}", single_patch),
-            "Melo Vox 1 volume=100 effect=1 submix=G source mode=Normal polyphony mode=Poly 2 AM1>2=OFF AM3>4=OFF"
-        )
-    }
-    */
 }

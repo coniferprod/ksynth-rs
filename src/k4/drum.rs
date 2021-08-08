@@ -38,6 +38,21 @@ impl DrumPatch {
     }
 }
 
+impl fmt::Display for DrumPatch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut notes_str = String::new();
+        for i in 0..DRUM_NOTE_COUNT {
+            notes_str.push_str(&format!("{}: {}", i, self.notes[i]));
+        }
+
+        write!(
+            f,
+            "COMMON: {}\nNOTES:\n{}",
+            self.common, notes_str
+        )
+    }
+}
+
 impl SystemExclusiveData for DrumPatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let common = Common::from_bytes(data[0..].to_vec());
@@ -185,6 +200,16 @@ impl Note {
     }
 }
 
+impl fmt::Display for Note {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "submix = {}, source 1 = {}, source 2 = {}",
+            self.submix, self.source1, self.source2
+        )
+    }
+}
+
 impl Checksum for Note {
     fn checksum(&self) -> u8 {
         let data = self.collect_data();
@@ -254,6 +279,16 @@ impl Default for Source {
             tune: 0,
             level: 100,
         }
+    }
+}
+
+impl fmt::Display for Source {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "wave = {} ({}), decay = {}, tune = {}, level = {}",
+            self.wave.name(), self.wave.number, self.decay, self.tune, self.level
+        )
     }
 }
 

@@ -1,17 +1,13 @@
-use std::convert::TryFrom;
-use std::convert::TryInto;
-use num_enum::TryFromPrimitive;
 use std::fmt;
-use crate::k4::SUBMIX_COUNT;
-use crate::{SystemExclusiveData, Checksum};
+use crate::{SystemExclusiveData};
 use crate::k4::single::SinglePatch;
 use crate::k4::multi::MultiPatch;
 use crate::k4::effect::EffectPatch;
 use crate::k4::drum::DrumPatch;
 
-const SINGLE_PATCH_COUNT: usize = 64;  // number of single patches in a bank
-const MULTI_PATCH_COUNT: usize = 64;   // number of multi patches in a bank
-const EFFECT_PATCH_COUNT: usize = 32;  // number of effect patches in a bank
+pub const SINGLE_PATCH_COUNT: usize = 64;  // number of single patches in a bank
+pub const MULTI_PATCH_COUNT: usize = 64;   // number of multi patches in a bank
+pub const EFFECT_PATCH_COUNT: usize = 32;  // number of effect patches in a bank
 
 pub struct Bank {
     pub singles: Vec<SinglePatch>,
