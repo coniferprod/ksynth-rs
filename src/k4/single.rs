@@ -493,7 +493,7 @@ mod tests {
 
     #[test]
     fn test_single_patch_from_bytes() {
-        let data: [u8; 131] = include!("melovox1.in");
+        let data: [u8; 131] = include!("a401single1.in");
         let single_patch = SinglePatch::from_bytes(data.to_vec());
         assert_eq!(single_patch.name, "Melo Vox 1");
         assert_eq!(single_patch.volume, 100);

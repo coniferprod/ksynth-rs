@@ -47,6 +47,12 @@ pub enum Effect {
     ChorusPlusStereoPanpotDelay,
 }
 
+impl fmt::Display for Effect {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", EFFECT_NAMES[*self as usize].to_string())
+    }
+}
+
 #[derive(Clone)]
 pub struct EffectPatch {
     pub effect: Effect,
@@ -177,7 +183,7 @@ impl SystemExclusiveData for SubmixSettings {
         vec![(self.pan + 7).try_into().unwrap(), self.send1 as u8, self.send2 as u8]
     }
 
-    fn data_size(&self) -> usize { 35 }
+    fn data_size(&self) -> usize { 3 }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -223,5 +229,13 @@ mod tests {
     fn test_submix_name() {
         let submix = Submix::A;
         assert_eq!(submix.name(), "A");
+    }
+
+
+    #[test]
+    fn test_effect_patch_from_bytes() {
+        let data: [u8; 35] = include!("a401effect32.in");
+        let patch = EffectPatch::from_bytes(data.to_vec());
+        assert_eq!(patch.effect, Effect::Reverb1);
     }
 }

@@ -85,7 +85,7 @@ impl SystemExclusiveData for MultiPatch {
         buf
     }
 
-    fn data_size(&self) -> usize { 8 }
+    fn data_size(&self) -> usize { 77 }
 }
 
 impl Checksum for MultiPatch {
@@ -194,4 +194,17 @@ pub enum PlayMode {
     Keyboard,
     Midi,
     Mix,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    #[test]
+    fn test_multi_patch_from_bytes() {
+        let data: [u8; 77] = include!("a401multi1.in");
+        let patch = MultiPatch::from_bytes(data.to_vec());
+        assert_eq!(patch.name, "Fatt!Anna5");
+        assert_eq!(patch.volume, 0x50);
+    }
 }
