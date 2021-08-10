@@ -1,11 +1,64 @@
 use std::convert::TryFrom;
 use std::fmt;
+use std::collections::HashMap;
 use num_enum::TryFromPrimitive;
+use lazy_static::lazy_static;
 use crate::SystemExclusiveData;
 use crate::k5000::control;
 
+static EFFECT_NAMES: &[&str] = &[
+    "None",  // just to align with 1...16
+    "Hall 1",
+    "Hall 2",
+    "Hall 3",
+    "Room 1",
+    "Room 2",
+    "Room 3",
+    "Plate 1",
+    "Plate 2",
+    "Plate 3",
+    "Reverse",
+    "Early Reflection 1",
+    "Early Reflection 2",
+    "Tap Delay 1",
+    "Tap Delay 2",
+    "Single Delay",
+    "Dual Delay",
+    "Stereo Delay",
+    "Cross Delay",
+    "Auto Pan",
+    "Auto Pan & Delay",
+    "Chorus 1",
+    "Chorus 2",
+    "Chorus 1 & Delay",
+    "Chorus 2 & Delay",
+    "Flanger 1",
+    "Flanger 2",
+    "Flanger 1 & Delay",
+    "Flanger 2 & Delay",
+    "Ensemble",
+    "Ensemble & Delay",
+    "Celeste",
+    "Celeste & Delay",
+    "Tremolo",
+    "Tremolo & Delay",
+    "Phaser 1",
+    "Phaser 2",
+    "Phaser 1 & Delay",
+    "Phaser 2 & Delay",
+    "Rotary",
+    "Auto Wah",
+    "Bandpass",
+    "Exciter",
+    "Enhancer",
+    "Overdrive",
+    "Distortion",
+    "Overdrive & Delay",
+    "Distortion & Delay",
+];
+
 /// Effect type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash)]
 #[repr(u8)]
 pub enum Effect {
     Hall1,
@@ -64,8 +117,63 @@ impl Default for Effect {
 
 impl fmt::Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{}", EFFECT_NAMES[*self as usize].to_string())
     }
+}
+
+lazy_static! {
+    static ref EFFECT_PARAMETER_NAMES: HashMap<&'static Effect, Vec<&'static str>> = {
+        let mut map = HashMap::new();
+        /*  0 */ map.insert(&Effect::Hall1, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  1 */ map.insert(&Effect::Hall2, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  2 */ map.insert(&Effect::Hall3, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  3 */ map.insert(&Effect::Room1, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  4 */ map.insert(&Effect::Room2, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  5 */ map.insert(&Effect::Room3, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  6 */ map.insert(&Effect::Plate1, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  7 */ map.insert(&Effect::Plate2, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  8 */ map.insert(&Effect::Plate3, vec!["Dry/Wet 2", "Reverb Time", "Predelay Time", "High Frequency Damping"]);
+        /*  9 */ map.insert(&Effect::Reverse, vec!["Dry/Wet 2", "Feedback", "Predelay Time", "High Frequency Damping"]);
+        /* 10 */ map.insert(&Effect::LongDelay, vec!["Dry/Wet 2", "Feedback", "Delay Time", "High Frequency Damping"]);
+        /* 11 */ map.insert(&Effect::EarlyReflection1, vec!["Slope", "Predelay Time", "Feedback", "?"]);
+        /* 12 */ map.insert(&Effect::EarlyReflection2, vec!["Slope", "Predelay Time", "Feedback", "?"]);
+        /* 13 */ map.insert(&Effect::TapDelay1, vec!["Delay Time 1", "Tap Level", "Delay Time 2", "?"]);
+        /* 14 */ map.insert(&Effect::TapDelay2, vec!["Delay Time 1", "Tap Level", "Delay Time 2", "?"]);
+        /* 15 */ map.insert(&Effect::SingleDelay, vec!["Delay Time Fine", "Delay Time Coarse", "Feedback", "?"]);
+        /* 16 */ map.insert(&Effect::DualDelay, vec!["Delay Time Left", "Feedback Left", "Delay Time Right", "Feedback Right"]);
+        /* 17 */ map.insert(&Effect::StereoDelay, vec!["Delay Time", "Feedback", "?", "?"]);
+        /* 18 */ map.insert(&Effect::CrossDelay, vec!["Delay Time", "Feedback", "?", "?"]);
+        /* 19 */ map.insert(&Effect::AutoPan, vec!["Speed", "Depth", "Predelay Time", "Wave"]);
+        /* 20 */ map.insert(&Effect::AutoPanAndDelay, vec!["Speed", "Depth", "Delay Time", "Wave"]);
+        /* 21 */ map.insert(&Effect::Chorus1, vec!["Speed", "Depth", "Predelay Time", "Wave"]);
+        /* 22 */ map.insert(&Effect::Chorus2, vec!["Speed", "Depth", "Predelay Time", "Wave"]);
+        /* 23 */ map.insert(&Effect::Chorus1AndDelay, vec!["Speed", "Depth", "Delay Time", "Wave"]);
+        /* 24 */ map.insert(&Effect::Chorus2AndDelay, vec!["Speed", "Depth", "Delay Time", "Wave"]);
+        /* 25 */ map.insert(&Effect::Flanger1, vec!["Speed", "Depth", "Predelay Time", "Feedback"]);
+        /* 26 */ map.insert(&Effect::Flanger2, vec!["Speed", "Depth", "Predelay Time", "Feedback"]);
+        /* 27 */ map.insert(&Effect::Flanger1AndDelay, vec!["Speed", "Depth", "Delay Time", "Feedback"]);
+        /* 28 */ map.insert(&Effect::Flanger2AndDelay, vec!["Speed", "Depth", "Delay Time", "Feedback"]);
+        /* 29 */ map.insert(&Effect::Ensemble, vec!["Depth", "Predelay Time", "?", "?"]);
+        /* 30 */ map.insert(&Effect::EnsembleAndDelay, vec!["Depth", "Delay Time", "?", "?"]);
+        /* 31 */ map.insert(&Effect::Celeste, vec!["Speed", "Depth", "Predelay Time", "?"]);
+        /* 32 */ map.insert(&Effect::CelesteAndDelay, vec!["Speed", "Depth", "Delay Time", "?"]);
+        /* 33 */ map.insert(&Effect::Tremolo, vec!["Speed", "Depth", "Predelay Time", "Wave"]);
+        /* 34 */ map.insert(&Effect::TremoloAndDelay, vec!["Speed", "Depth", "Delay Time", "Wave"]);
+        /* 35 */ map.insert(&Effect::Phaser1, vec!["Speed", "Depth", "Predelay Time", "Feedback"]);
+        /* 36 */ map.insert(&Effect::Phaser2, vec!["Speed", "Depth", "Predelay Time", "Feedback"]);
+        /* 37 */ map.insert(&Effect::Phaser1AndDelay, vec!["Speed", "Depth", "Delay Time", "Feedback"]);
+        /* 38 */ map.insert(&Effect::Phaser2AndDelay, vec!["Speed", "Depth", "Delay Time", "Feedback"]);
+        /* 39 */ map.insert(&Effect::Rotary, vec!["Slow Speed", "Fast Speed", "Acceleration", "Slow/Fast Switch"]);
+        /* 40 */ map.insert(&Effect::AutoWah, vec!["Sense", "Frequency Bottom", "Frequency Top", "Resonance"]);
+        /* 41 */ map.insert(&Effect::Bandpass, vec!["Center Frequency", "Bandwidth", "?", "?"]);
+        /* 42 */ map.insert(&Effect::Exciter, vec!["EQ Low", "EQ High", "Intensity", "?"]);
+        /* 43 */ map.insert(&Effect::Enhancer, vec!["EQ Low", "EQ High", "Intensity", "?"]);
+        /* 44 */ map.insert(&Effect::Overdrive, vec!["EQ Low", "EQ High", "Output Level", "Drive"]);
+        /* 45 */ map.insert(&Effect::Distortion, vec!["EQ Low", "EQ High", "Output Level", "Drive"]);
+        /* 46 */ map.insert(&Effect::OverdriveAndDelay, vec!["EQ Low", "EQ High", "Delay Time", "Drive"]);
+        /* 47 */ map.insert(&Effect::DistortionAndDelay, vec!["EQ Low", "EQ High", "Delay Time", "Drive"]);
+        map
+    };
 }
 
 /// Effect definition.
@@ -80,8 +188,16 @@ pub struct EffectDefinition {
 
 impl fmt::Display for EffectDefinition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "effect = {}\ndepth = {}\nparameter1 = {}\nparameter2 = {}\nparameter3 = {}\nparameter4 = {}",
-            self.effect, self.depth, self.parameter1, self.parameter2, self.parameter3, self.parameter4)
+        write!(
+            f,
+            "{}, depth = {}, {} = {}, {} = {}, {} = {}, {} = {}",
+            EFFECT_NAMES[self.effect as usize].to_string(),
+            self.depth,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.parameter3,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[3], self.parameter4
+        )
     }
 }
 
@@ -250,5 +366,30 @@ impl SystemExclusiveData for EffectControl {
         result.extend(self.source1.to_bytes());
         result.extend(self.source2.to_bytes());
         result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    #[test]
+    fn test_effect_parameter_names() {
+        let effect = EffectDefinition {
+            effect: Effect::Hall1,
+            depth: 100,
+            parameter1: 7,
+            parameter2: 5,
+            parameter3: 31,
+            parameter4: 0,
+        };
+
+        if let Some(param_names) = EFFECT_PARAMETER_NAMES.get(&effect.effect) {
+            assert_eq!(param_names[1], "Reverb Time");
+        }
+        else {
+            assert_eq!(true, false);
+
+        }
     }
 }

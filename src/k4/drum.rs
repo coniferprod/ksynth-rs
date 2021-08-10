@@ -4,6 +4,7 @@
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
+use log::{info, warn, error, debug};
 use bit::BitIndex;
 use crate::{SystemExclusiveData, Checksum};
 use crate::k4::DRUM_NOTE_COUNT;
@@ -42,7 +43,7 @@ impl fmt::Display for DrumPatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut notes_str = String::new();
         for i in 0..DRUM_NOTE_COUNT {
-            notes_str.push_str(&format!("{}: {}", i, self.notes[i]));
+            notes_str.push_str(&format!("{}: {}\n", i, self.notes[i]));
         }
 
         write!(
@@ -60,7 +61,7 @@ impl SystemExclusiveData for DrumPatch {
         let mut notes = [Default::default(); DRUM_NOTE_COUNT];
 
         for i in 0..DRUM_NOTE_COUNT {
-            eprintln!("Parsing drum note {}, offset = {}", i, offset);
+            debug!("Parsing drum note {}, offset = {}", i, offset);
 
             let note = Note::from_bytes(data[offset..].to_vec());
             notes[i] = note;
