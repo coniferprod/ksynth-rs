@@ -7,33 +7,34 @@ use crate::k5000::osc::*;
 use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
+use crate::k5000::{RangedValue, RangeKind};
 
 /// Source control settings.
 pub struct SourceControl {
-    zone_low: u8,
-    zone_high: u8,
+    zone_low: RangedValue,
+    zone_high: RangedValue,
     vel_sw: VelocitySwitchSettings,
     effect_path: u8,
-    volume: u8,
-    bender_pitch: u8,
-    bender_cutoff: u8,
+    volume: RangedValue,
+    bender_pitch: RangedValue,
+    bender_cutoff: RangedValue,
     modulation: ModulationSettings,
-    key_on_delay: u8,
+    key_on_delay: RangedValue,
     pan: PanSettings,
 }
 
 impl Default for SourceControl {
     fn default() -> Self {
         SourceControl {
-            zone_low: 0,
-            zone_high: 127,
+            zone_low: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            zone_high: RangedValue::from_int(RangeKind::PositiveLevel, 127),
             vel_sw: Default::default(),
             effect_path: 0,
-            volume: 0,
-            bender_pitch: 0,
-            bender_cutoff: 0,
+            volume: RangedValue::from_int(RangeKind::PositiveLevel, 100),
+            bender_pitch: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            bender_cutoff: RangedValue::from_int(RangeKind::PositiveLevel, 0),
             modulation: Default::default(),
-            key_on_delay: 0,
+            key_on_delay: RangedValue::from_int(RangeKind::PositiveLevel, 0),
             pan: Default::default(),
         }
     }
@@ -42,15 +43,15 @@ impl Default for SourceControl {
 impl SystemExclusiveData for SourceControl {
     fn from_bytes(data: Vec<u8>) -> Self {
         SourceControl {
-            zone_low: data[0],
-            zone_high: data[1],
+            zone_low: RangedValue::from_byte(RangeKind::PositiveLevel, data[0]),
+            zone_high: RangedValue::from_byte(RangeKind::PositiveLevel, data[1]),
             vel_sw: VelocitySwitchSettings::from_bytes(vec![data[2]]),
             effect_path: data[3],
-            volume: data[4],
-            bender_pitch: data[5],
-            bender_cutoff: data[6],
+            volume: RangedValue::from_byte(RangeKind::PositiveLevel, data[4]),
+            bender_pitch: RangedValue::from_byte(RangeKind::PositiveLevel, data[5]),
+            bender_cutoff: RangedValue::from_byte(RangeKind::PositiveLevel, data[6]),
             modulation: ModulationSettings::from_bytes(data[7..25].to_vec()),
-            key_on_delay: data[25],
+            key_on_delay: RangedValue::from_byte(RangeKind::PositiveLevel, data[25]),
             pan: PanSettings::from_bytes(data[26..28].to_vec()),
         }
     }
@@ -58,15 +59,15 @@ impl SystemExclusiveData for SourceControl {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.push(self.zone_low);
-        result.push(self.zone_high);
+        result.push(self.zone_low.as_byte());
+        result.push(self.zone_high.as_byte());
         result.extend(self.vel_sw.to_bytes());
         result.push(self.effect_path);
-        result.push(self.volume);
-        result.push(self.bender_pitch);
-        result.push(self.bender_cutoff);
+        result.push(self.volume.as_byte());
+        result.push(self.bender_pitch.as_byte());
+        result.push(self.bender_cutoff.as_byte());
         result.extend(self.modulation.to_bytes());
-        result.push(self.key_on_delay);
+        result.push(self.key_on_delay.as_byte());
         result.extend(self.pan.to_bytes());
 
         result

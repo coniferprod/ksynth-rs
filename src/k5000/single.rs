@@ -14,16 +14,17 @@ use crate::k5000::control::{
 use crate::k5000::effect::{EffectSettings, EffectControl};
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
+use crate::k5000::{RangedValue, RangeKind};
 
 /// Single patch common data.
 pub struct Common {
     pub name: String,
-    pub volume: u8,
+    pub volume: RangedValue,
     pub polyphony: Polyphony,
     pub source_count: u8,
     pub source_mutes: [bool; 6],
     pub portamento_active: bool,
-    pub portamento_speed: u8,
+    pub portamento_speed: RangedValue,
     pub amplitude_modulation: AmplitudeModulation,
     pub macros: [MacroController; 4],
     pub switches: SwitchControl,
@@ -36,12 +37,12 @@ impl Default for Common {
     fn default() -> Self {
         Common {
             name: "NewSound".to_string(),
-            volume: 99,
+            volume: RangedValue::from_int(RangeKind::PositiveLevel, 99),
             polyphony: Polyphony::Poly,
             source_count: 2,
             source_mutes: [false, false, true, true, true, true],
             portamento_active: false,
-            portamento_speed: 0,
+            portamento_speed: RangedValue::from_int(RangeKind::PositiveLevel, 0),
             amplitude_modulation: Default::default(),
             macros: [Default::default(), Default::default(), Default::default(), Default::default()],
             switches: Default::default(),
@@ -96,40 +97,40 @@ impl SystemExclusiveData for Common {
             macro_destinations.push(data[offset]);
             offset += 1;
         }
-        let mut macro_depths = Vec::<i8>::new();
+        let mut macro_depths = Vec::<u8>::new();
         for i in 0..8 {
             eprintln!("Macro {} depth: data = {}", i + 1, data[offset]);
-            macro_depths.push(data[offset] as i8 - 64);
+            macro_depths.push(data[offset]);
             offset += 1;
         }
 
         let macros: [MacroController; 4] = [
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[0]).unwrap(),
-                depth1: macro_depths[0],
+                depth1: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[0]),
                 destination2: ControlDestination::try_from(macro_destinations[1]).unwrap(),
-                depth2: macro_depths[1],
+                depth2: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[1]),
             },
 
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[2]).unwrap(),
-                depth1: macro_depths[2],
+                depth1: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[2]),
                 destination2: ControlDestination::try_from(macro_destinations[3]).unwrap(),
-                depth2: macro_depths[3],
+                depth2: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[3]),
             },
 
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[4]).unwrap(),
-                depth1: macro_depths[4],
+                depth1: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[4]),
                 destination2: ControlDestination::try_from(macro_destinations[5]).unwrap(),
-                depth2: macro_depths[5],
+                depth2: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[5]),
             },
 
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[6]).unwrap(),
-                depth1: macro_depths[6],
+                depth1: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[6]),
                 destination2: ControlDestination::try_from(macro_destinations[7]).unwrap(),
-                depth2: macro_depths[7],
+                depth2: RangedValue::from_byte(RangeKind::MacroDepth, macro_depths[7]),
             },
         ];
 
@@ -137,14 +138,14 @@ impl SystemExclusiveData for Common {
             effects: effects,
             geq: vec_to_array(geq_values),
             name: name,
-            volume: data[46],
+            volume: RangedValue::from_byte(RangeKind::PositiveLevel, data[46]),
             polyphony: Polyphony::try_from(data[47]).unwrap(),
             source_count: data[49],
             source_mutes: mutes,
             amplitude_modulation: AmplitudeModulation::try_from(data[51]).unwrap(),
             effect_control: EffectControl::from_bytes(data[52..58].to_vec()),
             portamento_active: if data[58] == 1 { true } else { false },
-            portamento_speed: data[59],
+            portamento_speed: RangedValue::from_byte(RangeKind::PositiveLevel, data[59]),
             macros: macros,
             switches: SwitchControl {
                 switch1: Switch::try_from(data[76]).unwrap(),
@@ -162,7 +163,7 @@ impl SystemExclusiveData for Common {
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.push(0);  // drum_mark
         result.extend(self.name.clone().into_bytes());  // note clone()
-        result.push(self.volume);
+        result.push(self.volume.as_byte());
         result.push(self.polyphony as u8);
         result.push(0);
         result.push(self.source_count);
@@ -178,7 +179,7 @@ impl SystemExclusiveData for Common {
         result.push(self.amplitude_modulation as u8);
         result.extend(self.effect_control.to_bytes());
         result.push(if self.portamento_active { 1 } else { 0 });
-        result.push(self.portamento_speed);
+        result.push(self.portamento_speed.as_byte());
 
         // Pick out the destinations and depths as the SysEx spec wants them.
         for m in &self.macros {
@@ -187,8 +188,8 @@ impl SystemExclusiveData for Common {
         }
 
         for m in &self.macros {
-            result.push((m.depth1 + 64) as u8); // -31(33)~+31(95)
-            result.push((m.depth2 + 64) as u8);
+            result.push(m.depth1.as_byte()); // -31(33)~+31(95)
+            result.push(m.depth2.as_byte());
         }
 
         result.extend(self.switches.to_bytes());

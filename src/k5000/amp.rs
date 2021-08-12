@@ -1,25 +1,29 @@
+//! Data model for the amplifier (DCA).
+//!
+
 use crate::SystemExclusiveData;
+use crate::k5000::{RangedValue, RangeKind};
 
 /// Amplifier envelope.
 #[derive(Debug)]
 pub struct Envelope {
-    pub attack_time: u8,
-    pub decay1_time: u8,
-    pub decay1_level: u8,
-    pub decay2_time: u8,
-    pub decay2_level: u8,
-    pub release_time: u8,
+    pub attack_time: RangedValue,
+    pub decay1_time: RangedValue,
+    pub decay1_level: RangedValue,
+    pub decay2_time: RangedValue,
+    pub decay2_level: RangedValue,
+    pub release_time: RangedValue,
 }
 
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack_time: 0,
-            decay1_time: 0,
-            decay1_level: 0,
-            decay2_time: 0,
-            decay2_level: 0,
-            release_time: 0,
+            attack_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay1_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay1_level: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay2_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay2_level: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            release_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
         }
     }
 }
@@ -33,35 +37,42 @@ impl Default for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         Envelope {
-            attack_time: data[0],
-            decay1_time: data[1],
-            decay1_level: data[2],
-            decay2_time: data[3],
-            decay2_level: data[4],
-            release_time: data[5],
+            attack_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[0]),
+            decay1_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[1]),
+            decay1_level: RangedValue::from_byte(RangeKind::PositiveLevel, data[2]),
+            decay2_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[3]),
+            decay2_level: RangedValue::from_byte(RangeKind::PositiveLevel, data[4]),
+            release_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[5]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.attack_time, self.decay1_time, self.decay1_level, self.decay2_time, self.decay2_level, self.release_time]
+        vec![
+            self.attack_time.as_byte(),
+            self.decay1_time.as_byte(),
+            self.decay1_level.as_byte(),
+            self.decay2_time.as_byte(),
+            self.decay2_level.as_byte(),
+            self.release_time.as_byte()
+        ]
     }
 }
 
 /// Key scaling control.
 pub struct KeyScalingControl {
-    pub level: i8,
-    pub attack_time: i8,
-    pub decay1_time: i8,
-    pub release: i8,
+    pub level: RangedValue,
+    pub attack_time: RangedValue,
+    pub decay1_time: RangedValue,
+    pub release: RangedValue,
 }
 
 impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
-            level: 0,
-            attack_time: 0,
-            decay1_time: 0,
-            release: 0,
+            level: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            attack_time: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            decay1_time: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            release: RangedValue::from_int(RangeKind::SignedLevel, 0),
         }
     }
 }
@@ -69,33 +80,38 @@ impl Default for KeyScalingControl {
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: Vec<u8>) -> Self {
         KeyScalingControl {
-            level: data[0] as i8,
-            attack_time: data[1] as i8,
-            decay1_time: data[2] as i8,
-            release: data[3] as i8,
+            level: RangedValue::from_byte(RangeKind::SignedLevel, data[0]),
+            attack_time: RangedValue::from_byte(RangeKind::SignedLevel, data[1]),
+            decay1_time: RangedValue::from_byte(RangeKind::SignedLevel, data[2]),
+            release: RangedValue::from_byte(RangeKind::SignedLevel, data[3]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![(self.level - 64) as u8, (self.attack_time - 64) as u8, (self.decay1_time - 64) as u8, (self.release - 64) as u8]
+        vec![
+            self.level.as_byte(),
+            self.attack_time.as_byte(),
+            self.decay1_time.as_byte(),
+            self.release.as_byte()
+        ]
     }
 }
 
 /// Velocity control.
 pub struct VelocityControl {
-    pub level: u8,
-    pub attack_time: i8,
-    pub decay1_time: i8,
-    pub release: i8,
+    pub level: RangedValue,
+    pub attack_time: RangedValue,
+    pub decay1_time: RangedValue,
+    pub release: RangedValue,
 }
 
 impl Default for VelocityControl {
     fn default() -> Self {
         VelocityControl {
-            level: 0,
-            attack_time: 0,
-            decay1_time: 0,
-            release: 0,
+            level: RangedValue::from_int(RangeKind::UnsignedLevel, 0),
+            attack_time: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            decay1_time: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            release: RangedValue::from_int(RangeKind::SignedLevel, 0),
         }
     }
 }
@@ -103,15 +119,20 @@ impl Default for VelocityControl {
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: Vec<u8>) -> Self {
         VelocityControl {
-            level: data[0],
-            attack_time: data[1] as i8,
-            decay1_time: data[2] as i8,
-            release: data[3] as i8,
+            level: RangedValue::from_byte(RangeKind::SignedLevel, data[0]),
+            attack_time: RangedValue::from_byte(RangeKind::SignedLevel, data[1]),
+            decay1_time: RangedValue::from_byte(RangeKind::SignedLevel, data[2]),
+            release: RangedValue::from_byte(RangeKind::SignedLevel, data[3]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.level, (self.attack_time - 64) as u8, (self.decay1_time - 64) as u8, (self.release - 64) as u8]
+        vec![
+            self.level.as_byte(),
+            self.attack_time.as_byte(),
+            self.decay1_time.as_byte(),
+            self.release.as_byte()
+        ]
     }
 }
 
@@ -150,7 +171,7 @@ impl SystemExclusiveData for Modulation {
 
 /// Amplifier.
 pub struct Amplifier {
-    pub velocity_curve: u8,
+    pub velocity_curve: RangedValue,  // 1...12 (stored as 0~11)
     pub envelope: Envelope,
     pub modulation: Modulation,
 }
@@ -158,7 +179,7 @@ pub struct Amplifier {
 impl Default for Amplifier {
     fn default() -> Self {
         Amplifier {
-            velocity_curve: 1,
+            velocity_curve: RangedValue::from_int(RangeKind::VelocityCurve, 1),
             envelope: Default::default(),
             modulation: Default::default(),
         }
@@ -168,7 +189,7 @@ impl Default for Amplifier {
 impl SystemExclusiveData for Amplifier {
     fn from_bytes(data: Vec<u8>) -> Self {
         Amplifier {
-            velocity_curve: data[0] + 1,  // 0-11 to 1-12
+            velocity_curve: RangedValue::from_byte(RangeKind::VelocityCurve, data[0] + 1),  // 0-11 to 1-12
             envelope: Envelope::from_bytes(data[1..7].to_vec()),
             modulation: Modulation::from_bytes(data[7..15].to_vec()),
         }
@@ -177,7 +198,7 @@ impl SystemExclusiveData for Amplifier {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.push(self.velocity_curve - 1);
+        result.push(self.velocity_curve.as_byte() - 1);  // 1~12 to 0~11
         result.extend(self.envelope.to_bytes());
         result.extend(self.modulation.to_bytes());
 

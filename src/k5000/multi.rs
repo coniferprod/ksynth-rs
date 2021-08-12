@@ -14,7 +14,8 @@ use crate::k5000::control::{
 use crate::k5000::effect::{EffectSettings, EffectControl};
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
-use crate::k5000::SECTION_COUNT;
+
+pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
 
 /// Multi patch common settings.
 pub struct Common {

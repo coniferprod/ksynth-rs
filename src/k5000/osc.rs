@@ -6,12 +6,13 @@ use num_enum::TryFromPrimitive;
 use crate::StringUtils;
 use crate::SystemExclusiveData;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
+use crate::k5000::{RangedValue, RangeKind};
 
 /// PCM oscillator.
 pub struct Oscillator {
     pub wave: u16,
-    pub coarse: i8,
-    pub fine: i8,
+    pub coarse: RangedValue,
+    pub fine: RangedValue,
     pub ks_to_pitch: KeyScaling,
     pub fixed_key: u8,
     pub pitch_envelope: PitchEnvelope,
@@ -21,8 +22,8 @@ impl Oscillator {
     pub fn new() -> Oscillator {
         Oscillator {
             wave: 384,
-            coarse: 0,
-            fine: 0,
+            coarse: RangedValue::from_int(RangeKind::CoarseTuning, 0),
+            fine: RangedValue::from_int(RangeKind::SignedLevel, 0),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: 60,
             pitch_envelope: PitchEnvelope::new(),
@@ -32,8 +33,8 @@ impl Oscillator {
     pub fn additive() -> Oscillator {
         Oscillator {
             wave: 512, // ADD
-            coarse: 0,
-            fine: 0,
+            coarse: RangedValue::from_int(RangeKind::CoarseTuning, 0),
+            fine: RangedValue::from_int(RangeKind::SignedLevel, 0),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: 60,
             pitch_envelope: PitchEnvelope::new(),
@@ -51,8 +52,8 @@ impl SystemExclusiveData for Oscillator {
     fn from_bytes(data: Vec<u8>) -> Self {
         Oscillator {
             wave: 384,  // TODO: actually parse wave number
-            coarse: (data[2] - 24) as i8,
-            fine: (data[3] - 64) as i8,
+            coarse: RangedValue::from_byte(RangeKind::CoarseTuning, data[2]),
+            fine: RangedValue::from_byte(RangeKind::SignedLevel, data[3]),
             ks_to_pitch: KeyScaling::try_from(data[4]).unwrap(),
             fixed_key: data[5],
             pitch_envelope: PitchEnvelope::from_bytes(data[6..].to_vec()),
@@ -74,8 +75,8 @@ impl SystemExclusiveData for Oscillator {
         result.push(lsb);
 
         let bs = vec![
-            (self.coarse + 24) as u8,
-            (self.fine + 64) as u8,
+            self.coarse.as_byte(),
+            self.fine.as_byte(),
             self.fixed_key,
             self.ks_to_pitch as u8,
         ];

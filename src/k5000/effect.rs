@@ -1,3 +1,6 @@
+//! Data model for effect settings.
+//!
+
 use std::convert::TryFrom;
 use std::fmt;
 use std::collections::HashMap;
@@ -5,6 +8,7 @@ use num_enum::TryFromPrimitive;
 use lazy_static::lazy_static;
 use crate::SystemExclusiveData;
 use crate::k5000::control;
+use crate::k5000::{RangedValue, RangeKind};
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -179,11 +183,11 @@ lazy_static! {
 /// Effect definition.
 pub struct EffectDefinition {
     pub effect: Effect,
-    pub depth: u8,
-    pub parameter1: u8,
-    pub parameter2: u8,
-    pub parameter3: u8,
-    pub parameter4: u8,
+    pub depth: RangedValue,
+    pub parameter1: RangedValue,
+    pub parameter2: RangedValue,
+    pub parameter3: RangedValue,
+    pub parameter4: RangedValue,
 }
 
 impl fmt::Display for EffectDefinition {
@@ -205,11 +209,11 @@ impl Default for EffectDefinition {
     fn default() -> Self {
         EffectDefinition {
             effect: Default::default(),
-            depth: 0,
-            parameter1: 0,
-            parameter2: 0,
-            parameter3: 0,
-            parameter4: 0,
+            depth: RangedValue::from_int(RangeKind::EffectDepth, 0),
+            parameter1: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            parameter2: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            parameter3: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            parameter4: RangedValue::from_int(RangeKind::PositiveLevel, 0),
         }
     }
 }
@@ -219,16 +223,23 @@ impl SystemExclusiveData for EffectDefinition {
         eprintln!("EffectDefinition, data = {:02X?}", data);
         EffectDefinition {
             effect: Effect::try_from(data[0]).unwrap(),
-            depth: data[1],
-            parameter1: data[2],
-            parameter2: data[3],
-            parameter3: data[4],
-            parameter4: data[5],
+            depth: RangedValue::from_byte(RangeKind::EffectDepth, data[1]),
+            parameter1: RangedValue::from_byte(RangeKind::PositiveLevel, data[2]),
+            parameter2: RangedValue::from_byte(RangeKind::PositiveLevel, data[3]),
+            parameter3: RangedValue::from_byte(RangeKind::PositiveLevel, data[4]),
+            parameter4: RangedValue::from_byte(RangeKind::PositiveLevel, data[5]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.effect as u8, self.depth, self.parameter1, self.parameter2, self.parameter3, self.parameter4]
+        vec![
+            self.effect as u8,
+            self.depth.as_byte(),
+            self.parameter1.as_byte(),
+            self.parameter2.as_byte(),
+            self.parameter3.as_byte(),
+            self.parameter4.as_byte()
+        ]
     }
 }
 
@@ -377,11 +388,11 @@ mod tests {
     fn test_effect_parameter_names() {
         let effect = EffectDefinition {
             effect: Effect::Hall1,
-            depth: 100,
-            parameter1: 7,
-            parameter2: 5,
-            parameter3: 31,
-            parameter4: 0,
+            depth: RangedValue::from_int(RangeKind::EffectDepth, 100),
+            parameter1: RangedValue::from_int(RangeKind::PositiveLevel, 7),
+            parameter2: RangedValue::from_int(RangeKind::PositiveLevel, 5),
+            parameter3: RangedValue::from_int(RangeKind::PositiveLevel, 31),
+            parameter4: RangedValue::from_int(RangeKind::PositiveLevel, 0),
         };
 
         if let Some(param_names) = EFFECT_PARAMETER_NAMES.get(&effect.effect) {
@@ -389,7 +400,6 @@ mod tests {
         }
         else {
             assert_eq!(true, false);
-
         }
     }
 }

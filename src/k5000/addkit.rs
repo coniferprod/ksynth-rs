@@ -8,14 +8,17 @@ use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
 use crate::k5000::harmonic::Levels;
 use crate::k5000::morf::{HarmonicCommon, MorfHarmonic};
 
+pub const HARMONIC_COUNT: usize = 64;
+pub const BAND_COUNT: usize = 128;
+
 /// Additive kit.
 pub struct AdditiveKit {
     pub common: HarmonicCommon,
     pub morf: MorfHarmonic,
     pub formant_filter: FormantFilter,
     pub levels: Levels,
-    pub bands: [u8; 128],
-    pub envelopes: [HarmonicEnvelope; 64],
+    pub bands: [u8; BAND_COUNT],
+    pub envelopes: Vec::<HarmonicEnvelope>,
 }
 
 impl Default for AdditiveKit {
@@ -25,8 +28,8 @@ impl Default for AdditiveKit {
             morf: Default::default(),
             formant_filter: Default::default(),
             levels: Default::default(),
-            bands: [0; 128],
-            envelopes: [Default::default(); 64],
+            bands: [0; BAND_COUNT],
+            envelopes: vec![Default::default(); HARMONIC_COUNT],
         }
     }
 }
@@ -41,18 +44,17 @@ impl AdditiveKit {
 impl SystemExclusiveData for AdditiveKit {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset = 0;
-        let original_checksum = data[offset];
 
         offset = 164;  // FF bands should start here
-        let mut bands: [u8; 128] = [0; 128];
-        for i in 0..128 {
+        let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
+        for i in 0..BAND_COUNT {
             bands[i] = data[offset];
             offset += 1;
         }
 
-        let mut envelopes: [HarmonicEnvelope; 64] = [HarmonicEnvelope::new(); 64];
-        for i in 0..64 {
-            envelopes[i] = HarmonicEnvelope::from_bytes(data[offset..offset + 8].to_vec());
+        let mut envelopes: Vec::<HarmonicEnvelope> = vec![HarmonicEnvelope::new(); HARMONIC_COUNT];
+        for _ in 0..HARMONIC_COUNT {
+            envelopes.push(HarmonicEnvelope::from_bytes(data[offset..offset + 8].to_vec()));
             offset += 8;
         }
 
@@ -91,26 +93,22 @@ impl Checksum for AdditiveKit {
         // Additive kit checksum:
         // {(HCKIT sum) + (HCcode1 sum) + (HCcode2 sum) + (FF sum) + (HCenv sum) + (loud sense select) + 0xA5} & 0x7F
         let mut total = 0;
-        let mut count = 0;
 
         // HCKIT sum:
         let common_data = self.common.to_bytes();
         let mut common_sum: u32 = 0;
         for d in common_data {
             common_sum += (d & 0xff) as u32;
-            count += 1;
         }
 
         let morf_data = self.morf.to_bytes();
         for d in morf_data {
             common_sum += (d & 0xff) as u32;
-            count += 1;
         }
 
         let ff_data = self.formant_filter.to_bytes();
         for d in ff_data {
             common_sum += (d & 0xff) as u32;
-            count += 1;
         }
 
         total += common_sum & 0xff;
@@ -119,7 +117,6 @@ impl Checksum for AdditiveKit {
         let mut hc1_sum: u32 = 0;
         for h in self.levels.soft.iter() {
             hc1_sum += (h & 0xff) as u32;
-            count += 1;
         }
 
         total += hc1_sum;
@@ -127,7 +124,6 @@ impl Checksum for AdditiveKit {
         let mut hc2_sum: u32 = 0;
         for h in self.levels.loud.iter() {
             hc2_sum += (h & 0xff) as u32;
-            count += 1;
         }
         total += hc2_sum;
 
@@ -135,7 +131,6 @@ impl Checksum for AdditiveKit {
         let mut ff_sum: u32 = 0;
         for f in self.bands.iter() {
             ff_sum += (f & 0xff) as u32;
-            count += 1;
         }
 
         total += ff_sum;
@@ -146,14 +141,11 @@ impl Checksum for AdditiveKit {
             let ed = env.to_bytes();
             for e in ed {
                 hcenv_sum += (e & 0xff) as u32;
-                count += 1;
             }
         }
 
         total += hcenv_sum & 0xff;
-
         total += 0xa5;
-        count += 1;
 
         (total & 0x7f) as u8
     }

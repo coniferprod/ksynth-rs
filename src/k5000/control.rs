@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 use crate::SystemExclusiveData;
+use crate::k5000::{RangedValue, RangeKind};
 
 /// Velocity switch settings.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -128,18 +129,18 @@ impl Default for ControlDestination {
 /// Macro controller.
 pub struct MacroController {
     pub destination1: ControlDestination,
-    pub depth1: i8,
+    pub depth1: RangedValue,
     pub destination2: ControlDestination,
-    pub depth2: i8,
+    pub depth2: RangedValue,
 }
 
 impl Default for MacroController {
     fn default() -> Self {
         MacroController {
             destination1: Default::default(),
-            depth1: 0,
+            depth1: RangedValue::from_int(RangeKind::MacroDepth, 0),
             destination2: Default::default(),
-            depth2: 0,
+            depth2: RangedValue::from_int(RangeKind::MacroDepth, 0),
         }
     }
 }
@@ -147,14 +148,19 @@ impl SystemExclusiveData for MacroController {
     fn from_bytes(data: Vec<u8>) -> Self {
         MacroController {
             destination1: ControlDestination::try_from(data[0]).unwrap(),
-            depth1: data[1] as i8,
+            depth1: RangedValue::from_byte(RangeKind::MacroDepth, data[1]),
             destination2: ControlDestination::try_from(data[2]).unwrap(),
-            depth2: data[3] as i8,
+            depth2: RangedValue::from_byte(RangeKind::MacroDepth, data[3]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.destination1 as u8, (self.depth1 + 64) as u8, self.destination2 as u8, (self.depth2 + 64) as u8]
+        vec![
+            self.destination1 as u8,
+            self.depth1.as_byte(),
+            self.destination2 as u8,
+            self.depth2.as_byte()
+        ]
     }
 }
 
@@ -237,28 +243,28 @@ impl SystemExclusiveData for ModulationSettings {
 /// Pan type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-pub enum PanType {
+pub enum PanKind {
     Normal,
     Random,
     KeyScale,
     NegativeKeyScale,
 }
 
-impl Default for PanType {
-    fn default() -> Self { PanType::Normal }
+impl Default for PanKind {
+    fn default() -> Self { PanKind::Normal }
 }
 
 /// Pan settings.
 pub struct PanSettings {
-    pub pan_type: PanType,
-    pub pan_value: i8,
+    pub pan_type: PanKind,
+    pub pan_value: RangedValue,
 }
 
 impl Default for PanSettings {
     fn default() -> Self {
         PanSettings {
             pan_type: Default::default(),
-            pan_value: 0,
+            pan_value: RangedValue::from_int(RangeKind::SignedLevel, 0),
         }
     }
 }
@@ -266,13 +272,13 @@ impl Default for PanSettings {
 impl SystemExclusiveData for PanSettings {
     fn from_bytes(data: Vec<u8>) -> Self {
         PanSettings {
-            pan_type: PanType::try_from(data[0]).unwrap(),
-            pan_value: (data[1] - 64) as i8,
+            pan_type: PanKind::try_from(data[0]).unwrap(),
+            pan_value: RangedValue::from_byte(RangeKind::SignedLevel, data[1]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.pan_type as u8, (self.pan_value - 64) as u8]
+        vec![self.pan_type as u8, self.pan_value.as_byte()]
     }
 }
 

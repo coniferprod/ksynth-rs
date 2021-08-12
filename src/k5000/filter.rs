@@ -1,6 +1,10 @@
+//! Data model for the filter (DCF).
+//!
+
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
+use crate::k5000::{RangedValue, RangeKind};
 
 /// Filter mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -13,33 +17,33 @@ pub enum FilterMode {
 /// Filter envelope.
 #[derive(Debug)]
 pub struct Envelope {
-    pub attack_time: u32,
-    pub decay1_time: u32,
-    pub decay1_level: i32,
-    pub decay2_time: u32,
-    pub decay2_level: i32,
-    pub release_time: u32,
-    pub ks_to_attack: i32,
-    pub ks_to_decay1: i32,
-    pub vel_to_envelope: i32,
-    pub vel_to_attack: i32,
-    pub vel_to_decay1: i32,
+    pub attack_time: RangedValue,
+    pub decay1_time: RangedValue,
+    pub decay1_level: RangedValue,
+    pub decay2_time: RangedValue,
+    pub decay2_level: RangedValue,
+    pub release_time: RangedValue,
+    pub ks_to_attack: RangedValue,
+    pub ks_to_decay1: RangedValue,
+    pub vel_to_envelope: RangedValue,
+    pub vel_to_attack: RangedValue,
+    pub vel_to_decay1: RangedValue,
 }
 
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack_time: 0,
-            decay1_time: 0,
-            decay1_level: 0,
-            decay2_time: 0,
-            decay2_level: 0,
-            release_time: 0,
-            ks_to_attack: 0,
-            ks_to_decay1: 0,
-            vel_to_envelope: 0,
-            vel_to_attack: 0,
-            vel_to_decay1: 0,
+            attack_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay1_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay1_level: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            decay2_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            decay2_level: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            release_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            ks_to_attack: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            ks_to_decay1: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            vel_to_envelope: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            vel_to_attack: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            vel_to_decay1: RangedValue::from_int(RangeKind::SignedLevel, 0),
         }
     }
 }
@@ -53,17 +57,17 @@ impl Default for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         Envelope {
-            attack_time: data[0] as u32,
-            decay1_time: data[1] as u32,
-            decay1_level: (data[2] - 64) as i32,
-            decay2_time: data[3] as u32,
-            decay2_level: (data[4] - 64) as i32,
-            release_time: data[5] as u32,
-            ks_to_attack: (data[6] - 64) as i32,
-            ks_to_decay1: (data[7] - 64) as i32,
-            vel_to_envelope: (data[8] - 64) as i32,
-            vel_to_attack: (data[9] - 64) as i32,
-            vel_to_decay1: (data[10] - 64) as i32,
+            attack_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[0]),
+            decay1_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[1]),
+            decay1_level: RangedValue::from_byte(RangeKind::SignedLevel, data[2]),
+            decay2_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[3]),
+            decay2_level: RangedValue::from_byte(RangeKind::SignedLevel, data[4]),
+            release_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[5]),
+            ks_to_attack: RangedValue::from_byte(RangeKind::SignedLevel, data[6]),
+            ks_to_decay1: RangedValue::from_byte(RangeKind::SignedLevel, data[7]),
+            vel_to_envelope: RangedValue::from_byte(RangeKind::SignedLevel, data[8]),
+            vel_to_attack: RangedValue::from_byte(RangeKind::SignedLevel, data[9]),
+            vel_to_decay1: RangedValue::from_byte(RangeKind::SignedLevel, data[10]),
         }
     }
 
@@ -71,17 +75,17 @@ impl SystemExclusiveData for Envelope {
         let mut result: Vec<u8> = Vec::new();
 
         let bs = vec![
-            self.attack_time as u8,
-            self.decay1_time as u8,
-            (self.decay1_level + 64) as u8,
-            self.decay2_time as u8,
-            (self.decay2_level + 64) as u8,
-            self.release_time as u8,
-            (self.ks_to_attack + 64) as u8,
-            (self.ks_to_decay1 + 64) as u8,
-            (self.vel_to_envelope + 64) as u8,
-            (self.vel_to_attack + 64) as u8,
-            (self.vel_to_decay1 + 64) as u8,
+            self.attack_time.as_byte(),
+            self.decay1_time.as_byte(),
+            self.decay1_level.as_byte(),
+            self.decay2_time.as_byte(),
+            self.decay2_level.as_byte(),
+            self.release_time.as_byte(),
+            self.ks_to_attack.as_byte(),
+            self.ks_to_decay1.as_byte(),
+            self.vel_to_envelope.as_byte(),
+            self.vel_to_attack.as_byte(),
+            self.vel_to_decay1.as_byte(),
         ];
         result.extend(bs);
 
@@ -92,14 +96,14 @@ impl SystemExclusiveData for Envelope {
 /// Filter settings.
 pub struct Filter {
     pub is_active: bool,
-    pub cutoff: u32,
-    pub resonance: u32,
+    pub cutoff: RangedValue,
+    pub resonance: RangedValue,
     pub mode: FilterMode,
-    pub velocity_curve: u32,
-    pub level: u32,
-    pub ks_to_cutoff: i32,
-    pub vel_to_cutoff: i32,
-    pub envelope_depth: i32,
+    pub velocity_curve: RangedValue,
+    pub level: RangedValue,
+    pub ks_to_cutoff: RangedValue,
+    pub vel_to_cutoff: RangedValue,
+    pub envelope_depth: RangedValue,
     pub envelope: Envelope,
 }
 
@@ -107,14 +111,14 @@ impl Filter {
     pub fn new() -> Filter {
         Filter {
             is_active: true,
-            cutoff: 0,
-            resonance: 0,
+            cutoff: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            resonance: RangedValue::from_int(RangeKind::FilterResonance, 0),
             mode: FilterMode::LowPass,
-            velocity_curve: 1,
-            level: 0,
-            ks_to_cutoff: 0,
-            vel_to_cutoff: 0,
-            envelope_depth: 0,
+            velocity_curve: RangedValue::from_int(RangeKind::VelocityCurve, 1),
+            level: RangedValue::from_int(RangeKind::FilterLevel, 0),
+            ks_to_cutoff: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            vel_to_cutoff: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            envelope_depth: RangedValue::from_int(RangeKind::SignedLevel, 0),
             envelope: Envelope::new(),
         }
     }
@@ -131,13 +135,13 @@ impl SystemExclusiveData for Filter {
         Filter {
             is_active: if data[0] == 1 { false } else { true },  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
-            velocity_curve: data[2] as u32 + 1,  // adjust from 0 ~ 11 to 1 ~ 12
-            resonance: data[3] as u32,
-            level: data[4] as u32,
-            cutoff: data[5] as u32,
-            ks_to_cutoff: data[6] as i32 - 64,
-            vel_to_cutoff: data[7] as i32 - 64,
-            envelope_depth: data[8] as i32 - 64,
+            velocity_curve: RangedValue::from_byte(RangeKind::VelocityCurve, data[2] + 1),  // adjust from 0 ~ 11 to 1 ~ 12
+            resonance: RangedValue::from_byte(RangeKind::FilterResonance, data[3]),
+            level: RangedValue::from_byte(RangeKind::FilterLevel, data[4]),
+            cutoff: RangedValue::from_byte(RangeKind::PositiveLevel, data[5]),
+            ks_to_cutoff: RangedValue::from_byte(RangeKind::SignedLevel, data[6]),
+            vel_to_cutoff: RangedValue::from_byte(RangeKind::SignedLevel, data[7]),
+            envelope_depth: RangedValue::from_byte(RangeKind::SignedLevel, data[8]),
             envelope: Envelope::from_bytes(data[9..].to_vec())
         }
     }
@@ -148,13 +152,13 @@ impl SystemExclusiveData for Filter {
         let bs = vec![
             if self.is_active { 0 } else { 1 },  // is this the right way around?
             self.mode as u8,
-            self.velocity_curve as u8 - 1,
-            self.resonance as u8,
-            self.level as u8,
-            self.cutoff as u8,
-            (self.ks_to_cutoff + 64) as u8,
-            (self.vel_to_cutoff + 64) as u8,
-            (self.envelope_depth + 64) as u8,
+            self.velocity_curve.as_byte() - 1,  // adjust from 1~12 to 0~11
+            self.resonance.as_byte(),
+            self.level.as_byte(),
+            self.cutoff.as_byte(),
+            self.ks_to_cutoff.as_byte(),
+            self.vel_to_cutoff.as_byte(),
+            self.envelope_depth.as_byte(),
         ];
         result.extend(bs);
         result.extend(self.envelope.to_bytes());
