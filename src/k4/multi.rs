@@ -5,6 +5,7 @@ use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::Checksum;
+use crate::k4;
 
 const SECTION_COUNT: usize = 8;  // number of sections in a multi
 
@@ -180,6 +181,14 @@ pub struct Zone {
     pub high_key: u8,
 }
 
+impl fmt::Display for Zone {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} ... {}",
+            k4::get_note_name(self.low_key),
+            k4::get_note_name(self.high_key))
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum VelocitySwitch {
@@ -188,12 +197,32 @@ pub enum VelocitySwitch {
     Loud,
 }
 
+impl fmt::Display for VelocitySwitch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            VelocitySwitch::All => "All",
+            VelocitySwitch::Soft => "Soft",
+            VelocitySwitch::Loud => "Loud",
+        })
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum PlayMode {
     Keyboard,
     Midi,
     Mix,
+}
+
+impl fmt::Display for PlayMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            PlayMode::Keyboard => "Keyboard",
+            PlayMode::Midi => "MIDI",
+            PlayMode::Mix => "Mix",
+        })
+    }
 }
 
 #[cfg(test)]

@@ -128,6 +128,14 @@ impl EffectPatch {
 
         buf
     }
+
+    pub fn parameter_names(&self) -> Vec<String> {
+        let mut result = Vec::<String>::new();
+        result.push(EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0].to_string());
+        result.push(EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1].to_string());
+        result.push(EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2].to_string());
+        result
+    }
 }
 
 impl SystemExclusiveData for EffectPatch {
@@ -282,7 +290,19 @@ mod tests {
         }
         else {
             assert_eq!(true, false);
-
         }
+    }
+
+    #[test]
+    fn test_effect_get_parameter_names() {
+        let effect = EffectPatch {
+            effect: Effect::Reverb1,
+            param1: 7,
+            param2: 5,
+            param3: 31,
+            submixes: [Default::default(); SUBMIX_COUNT],
+        };
+
+        assert_eq!(effect.parameter_names(), vec!["Pre.delay", "Rev.Time", "Tone"]);
     }
 }
