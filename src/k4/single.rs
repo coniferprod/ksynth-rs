@@ -302,7 +302,7 @@ impl fmt::Display for SinglePatch {
             self.bender_range, self.wheel_assign, self.wheel_depth, self.vibrato, self.auto_bend, self.lfo, self.press_freq
         ));
 
-        writeln!(f,
+        write!(f,
             "{} volume={} effect={} submix={} source mode={} polyphony mode={} AM1>2={} AM3>4={}\n{}\n{}",
             self.name, self.volume, self.effect, self.submix, self.source_mode, self.polyphony_mode,
             if self.am12 { "ON"} else { "OFF" }, if self.am34 { "ON" } else { "OFF" }, source_s, param_s)

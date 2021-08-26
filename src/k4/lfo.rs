@@ -15,7 +15,7 @@ pub enum Shape {
 
 impl fmt::Display for Shape {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f,
+        write!(f,
             "{}",
             match self {
                 Shape::Triangle => "TRI",
@@ -56,7 +56,7 @@ impl Default for Lfo {
 
 impl fmt::Display for Lfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f,
+        write!(f,
             "shape = {}, speed = {}, delay = {}, depth = {}, prs.depth = {}",
             self.shape, self.speed, self.delay, self.depth, self.pressure_depth
         )
@@ -119,7 +119,7 @@ impl Default for Vibrato {
 
 impl fmt::Display for Vibrato {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f,
+        write!(f,
             "shape = {}, speed = {}, pressure = {}, depth = {}",
             self.shape, self.speed, self.pressure, self.depth
         )

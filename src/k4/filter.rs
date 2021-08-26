@@ -31,7 +31,7 @@ impl Envelope {
 
 impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f,
+        write!(f,
             "A={} D={} S={} R={}",
             self.attack, self.decay, self.sustain, self.release
         )
@@ -97,7 +97,7 @@ impl Filter {
 
 impl fmt::Display for Filter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f,
+        write!(f,
             "cutoff = {}, resonance = {}, LFO sw = {}, cutoff mod = {}, env = {}, env depth = {}, env vel.depth = {}",
             self.cutoff, self.resonance, self.lfo_modulates_cutoff, self.cutoff_mod, self.envelope, self.env_depth, self.env_vel_depth
         )
