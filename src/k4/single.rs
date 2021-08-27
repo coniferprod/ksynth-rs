@@ -318,7 +318,9 @@ impl SystemExclusiveData for SinglePatch {
         // name = s00 ... s09
         start = 0;
         end = start + NAME_LENGTH;
-        let name = String::from_utf8(data[start..end].to_vec()).unwrap();
+
+        let name = String::from_utf8(data[start..end].to_vec()).expect("Found invalid UTF-8");
+        let name = str::replace(&name, char::from(0), " ").to_string();
 
         offset += NAME_LENGTH;
 
@@ -497,5 +499,12 @@ mod tests {
         let single_patch = SinglePatch::from_bytes(data.to_vec());
         assert_eq!(single_patch.name, "Melo Vox 1");
         assert_eq!(single_patch.volume, 100);
+    }
+
+    #[test]
+    fn test_nul_in_name() {
+        let name = "A-9 Solo Now!\x00";
+        let name = str::replace(&name, char::from(0), " ").to_string();
+        assert_eq!(name, "A-9 Solo Now! "); // NUL should be replaced with SPACE
     }
 }
