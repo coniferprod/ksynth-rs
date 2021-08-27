@@ -84,26 +84,27 @@ impl SystemExclusiveData for EnvelopeSegment {
 /// Harmonic envelope with four segments and loop type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Envelope {
-    pub segment0: EnvelopeSegment,
-    pub segment1: EnvelopeSegment,
-    pub segment2: EnvelopeSegment,
-    pub segment3: EnvelopeSegment,
+    pub attack: EnvelopeSegment,
+    pub decay1: EnvelopeSegment,
+    pub decay2: EnvelopeSegment,
+    pub release: EnvelopeSegment,
     pub loop_type: Loop,
 }
 
 impl Default for Envelope {
     fn default() -> Self {
         Envelope {
-            segment0: Default::default(),
-            segment1: Default::default(),
-            segment2: Default::default(),
-            segment3: Default::default(),
+            attack: Default::default(),
+            decay1: Default::default(),
+            decay2: Default::default(),
+            release: Default::default(),
             loop_type: Default::default(),
         }
     }
 }
 
 impl Envelope {
+    /// Creates a harmonic envelope with default values.
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
             rate: RangedValue::from_int(RangeKind::PositiveLevel, 0),
@@ -111,10 +112,10 @@ impl Envelope {
         };
 
         Envelope {
-            segment0: zero_segment.clone(),
-            segment1: zero_segment.clone(),
-            segment2: zero_segment.clone(),
-            segment3: zero_segment.clone(),
+            attack: zero_segment.clone(),
+            decay1: zero_segment.clone(),
+            decay2: zero_segment.clone(),
+            release: zero_segment.clone(),
             loop_type: Loop::Off,
         }
     }
@@ -137,19 +138,19 @@ impl SystemExclusiveData for Envelope {
         let segment3_level = RangedValue::from_byte(RangeKind::PositiveLevel, data[7]);
 
         Envelope {
-            segment0: EnvelopeSegment {
+            attack: EnvelopeSegment {
                 rate: segment0_rate,
                 level: segment0_level,
             },
-            segment1: EnvelopeSegment {
+            decay1: EnvelopeSegment {
                 rate: segment1_rate,
                 level: segment1_level,
             },
-            segment2: EnvelopeSegment {
+            decay2: EnvelopeSegment {
                 rate: segment2_rate,
                 level: segment2_level,
             },
-            segment3: EnvelopeSegment {
+            release: EnvelopeSegment {
                 rate: segment3_rate,
                 level: segment3_level,
             },
@@ -167,38 +168,38 @@ impl SystemExclusiveData for Envelope {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.extend(self.segment0.to_bytes());
+        result.extend(self.attack.to_bytes());
 
-        // When emitting segment1 and segment2 data,
+        // When emitting decay1 and decay2 data,
         // we need to bake the loop type into the levels.
 
-        let mut segment1_level_byte = self.segment1.level.as_byte();
-        let mut segment2_level_byte = self.segment2.level.as_byte();
+        let mut decay1_level_byte = self.decay1.level.as_byte();
+        let mut decay2_level_byte = self.decay2.level.as_byte();
 
         match self.loop_type {
             Loop::Loop1 => {
-                segment1_level_byte.set_bit(6, true);
-                segment2_level_byte.set_bit(6, true);
+                decay1_level_byte.set_bit(6, true);
+                decay2_level_byte.set_bit(6, true);
             },
             Loop::Loop2 => {
-                segment1_level_byte.set_bit(6, false);
-                segment2_level_byte.set_bit(6, true);
+                decay1_level_byte.set_bit(6, false);
+                decay2_level_byte.set_bit(6, true);
             },
             Loop::Off => {
-                segment1_level_byte.set_bit(6, false);
-                segment2_level_byte.set_bit(6, false);
+                decay1_level_byte.set_bit(6, false);
+                decay2_level_byte.set_bit(6, false);
             }
         }
 
-        let mut segment1_data = self.segment1.to_bytes();
-        segment1_data[1] = segment1_level_byte;
-        result.extend(segment1_data);
+        let mut decay1_data = self.decay1.to_bytes();
+        decay1_data[1] = decay1_level_byte;
+        result.extend(decay1_data);
 
-        let mut segment2_data = self.segment2.to_bytes();
-        segment2_data[1] = segment2_level_byte;
-        result.extend(segment2_data);
+        let mut decay2_data = self.decay2.to_bytes();
+        decay2_data[1] = decay2_level_byte;
+        result.extend(decay2_data);
 
-        result.extend(self.segment3.to_bytes());
+        result.extend(self.release.to_bytes());
 
         result
     }

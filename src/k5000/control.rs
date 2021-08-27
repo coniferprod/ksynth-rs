@@ -1,3 +1,6 @@
+//! Data models for controllers and macros.
+//!
+
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;

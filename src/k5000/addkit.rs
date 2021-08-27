@@ -8,7 +8,10 @@ use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
 use crate::k5000::harmonic::Levels;
 use crate::k5000::morf::{HarmonicCommon, MorfHarmonic};
 
+/// Number of harmonics.
 pub const HARMONIC_COUNT: usize = 64;
+
+/// Number of formant filter bands.
 pub const BAND_COUNT: usize = 128;
 
 /// Additive kit.
