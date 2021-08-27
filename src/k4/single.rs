@@ -10,6 +10,7 @@ use crate::k4::lfo::*;
 use crate::k4::amp::Amplifier;
 use crate::k4::filter::Filter;
 use crate::k4::effect::Submix;
+use crate::k4::bank::Bank;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
@@ -503,8 +504,14 @@ mod tests {
 
     #[test]
     fn test_nul_in_name() {
-        let name = "A-9 Solo Now!\x00";
+        let data: [u8; 15123] = include!("a403.in");
+
+        // Skip the SysEx header when constructing the bank
+        let bank = Bank::from_bytes(data[8..].to_vec());
+
+        let multi = &bank.multis[8];
+        let name = &multi.name;
         let name = str::replace(&name, char::from(0), " ").to_string();
-        assert_eq!(name, "A-9 Solo Now! "); // NUL should be replaced with SPACE
+        assert_eq!(name, "Solo Now! "); // NUL should be replaced with SPACE
     }
 }

@@ -6,6 +6,7 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k4;
+use crate::k4::bank::Bank;
 
 const SECTION_COUNT: usize = 8;  // number of sections in a multi
 
@@ -61,7 +62,10 @@ impl SystemExclusiveData for MultiPatch {
 
         // name = M0 ... M9
         end = start + crate::k4::NAME_LENGTH;
-        let name = String::from_utf8(data[start..end].to_vec()).unwrap();
+
+        let name = String::from_utf8(data[start..end].to_vec()).expect("Found invalid UTF-8");
+        let name = str::replace(&name, char::from(0), " ").to_string();
+
         offset += crate::k4::NAME_LENGTH + 2;  // skip over name, volume and effect to sections
 
         let mut sections = Vec::<Section>::new();
@@ -235,5 +239,17 @@ mod tests {
         let patch = MultiPatch::from_bytes(data.to_vec());
         assert_eq!(patch.name, "Fatt!Anna5");
         assert_eq!(patch.volume, 0x50);
+    }
+
+    #[test]
+    fn test_a403_multi_a9() {
+        let data: [u8; 15123] = include!("a403.in");
+
+        // Skip the SysEx header when constructing the bank
+        let bank = Bank::from_bytes(data[8..].to_vec());
+
+        let multi = &bank.multis[8];
+
+        assert_eq!(multi.name, "Solo Now! ");  // trailing NUL replaced by SPACE
     }
 }
