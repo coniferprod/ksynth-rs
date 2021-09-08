@@ -5,12 +5,16 @@ use bit::BitIndex;
 use crate::SystemExclusiveData;
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
-use crate::k5000::{RangedValue, RangeKind};
+use crate::k5000::{UnsignedDepth, UnsignedLevel};
+
+pub type Level = u8;
+pub type EnvelopeRate = UnsignedLevel;
+pub type EnvelopeLevel = UnsignedDepth;
 
 /// Harmonic levels (soft and loud).
 pub struct Levels {
-    pub soft: [u8; HARMONIC_COUNT],
-    pub loud: [u8; HARMONIC_COUNT],
+    pub soft: [Level; HARMONIC_COUNT],
+    pub loud: [Level; HARMONIC_COUNT],
 }
 
 impl Default for Levels {
@@ -53,17 +57,17 @@ impl SystemExclusiveData for Levels {
 }
 
 /// Harmonic envelope segment.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct EnvelopeSegment {
-    pub rate: RangedValue,
-    pub level: RangedValue,
+    pub rate: EnvelopeRate,
+    pub level: EnvelopeLevel,
 }
 
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            level: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            rate: EnvelopeRate::from(0),
+            level: EnvelopeLevel::from(0),
         }
     }
 }
@@ -71,8 +75,8 @@ impl Default for EnvelopeSegment {
 impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: Vec<u8>) -> Self {
         EnvelopeSegment {
-            rate: RangedValue::from_byte(RangeKind::PositiveLevel, data[0]),
-            level: RangedValue::from_byte(RangeKind::PositiveLevel, data[1]),
+            rate: EnvelopeRate::from(data[0]),
+            level: EnvelopeLevel::from(data[1]),
         }
     }
 
@@ -82,7 +86,7 @@ impl SystemExclusiveData for EnvelopeSegment {
 }
 
 /// Harmonic envelope with four segments and loop type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Envelope {
     pub attack: EnvelopeSegment,
     pub decay1: EnvelopeSegment,
@@ -107,8 +111,8 @@ impl Envelope {
     /// Creates a harmonic envelope with default values.
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
-            rate: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            level: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            rate: EnvelopeRate::from(0),
+            level: EnvelopeLevel::from(0),
         };
 
         Envelope {
@@ -119,23 +123,22 @@ impl Envelope {
             loop_type: Loop::Off,
         }
     }
-
 }
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
-        let segment0_rate = RangedValue::from_byte(RangeKind::PositiveLevel, data[0]);
-        let segment0_level = RangedValue::from_byte(RangeKind::PositiveLevel, data[1]);
-        let segment1_rate = RangedValue::from_byte(RangeKind::PositiveLevel, data[2]);
-        let segment1_level = RangedValue::from_byte(RangeKind::PositiveLevel, data[3]);
+        let segment0_rate = EnvelopeRate::from(data[0]);
+        let segment0_level = EnvelopeLevel::from(data[1]);
+        let segment1_rate = EnvelopeRate::from(data[2]);
+        let segment1_level = EnvelopeLevel::from(data[3]);
         let segment1_level_bit6 = data[3].bit(6);
-        let segment2_rate = RangedValue::from_byte(RangeKind::PositiveLevel, data[4]);
+        let segment2_rate = EnvelopeRate::from(data[4]);
         let mut segment2_level_byte = data[5];
         let segment2_level_bit6 = data[5].bit(6);
         segment2_level_byte.set_bit(6, false);
-        let segment2_level = RangedValue::from_byte(RangeKind::PositiveLevel, segment2_level_byte);
-        let segment3_rate = RangedValue::from_byte(RangeKind::PositiveLevel, data[6]);
-        let segment3_level = RangedValue::from_byte(RangeKind::PositiveLevel, data[7]);
+        let segment2_level = EnvelopeLevel::from(segment2_level_byte);
+        let segment3_rate = EnvelopeRate::from(data[6]);
+        let segment3_level = EnvelopeLevel::from(data[7]);
 
         Envelope {
             attack: EnvelopeSegment {

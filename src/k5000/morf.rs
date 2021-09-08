@@ -2,9 +2,15 @@
 //!
 
 use std::convert::TryFrom;
+
 use num_enum::TryFromPrimitive;
+
 use crate::SystemExclusiveData;
-use crate::k5000::{RangedValue, RangeKind};
+use crate::k5000::{UnsignedLevel, SignedLevel};
+use crate::k5000::control::VelocityCurve;
+
+pub type VelocityDepth = UnsignedLevel;
+pub type EnvelopeTime = UnsignedLevel;
 
 /// Harmonic group.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -18,13 +24,14 @@ impl Default for HarmonicGroup {
     fn default() -> Self { HarmonicGroup::Low }
 }
 
+/// Harmonic common settings.
 pub struct HarmonicCommon {
     pub morf_enabled: bool,
     pub total_gain: u8,
     pub group: HarmonicGroup,
-    pub ks_to_gain: RangedValue,
-    pub velocity_curve: RangedValue,
-    pub velocity_depth: u8,
+    pub ks_to_gain: SignedLevel,
+    pub velocity_curve: VelocityCurve,
+    pub velocity_depth: VelocityDepth,
 }
 
 impl Default for HarmonicCommon {
@@ -33,9 +40,9 @@ impl Default for HarmonicCommon {
             morf_enabled: false,
             total_gain: 0,
             group: Default::default(),
-            ks_to_gain: RangedValue::from_int(RangeKind::SignedLevel, 0),
-            velocity_curve: RangedValue::from_int(RangeKind::VelocityCurve, 1),
-            velocity_depth: 0,
+            ks_to_gain: SignedLevel::from(0),
+            velocity_curve: VelocityCurve::Curve1,
+            velocity_depth: VelocityDepth::from(0),
         }
     }
 }
@@ -46,9 +53,9 @@ impl SystemExclusiveData for HarmonicCommon {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
             group: HarmonicGroup::try_from(data[2]).unwrap(),
-            ks_to_gain: RangedValue::from_byte(RangeKind::SignedLevel, data[3]),
-            velocity_curve: RangedValue::from_byte(RangeKind::VelocityCurve, data[4] + 1), // 0~11 to 1~12
-            velocity_depth: data[5],
+            ks_to_gain: SignedLevel::from(data[3]),
+            velocity_curve: VelocityCurve::try_from(data[4]).unwrap(), // 0~11 maps to enum
+            velocity_depth: VelocityDepth::from(data[5]),
         }
     }
 
@@ -58,8 +65,8 @@ impl SystemExclusiveData for HarmonicCommon {
             self.total_gain,
             self.group as u8,
             self.ks_to_gain.as_byte(),
-            self.velocity_curve.as_byte(),
-            self.velocity_depth,
+            self.velocity_curve as u8,
+            self.velocity_depth.as_byte(),
         ]
     }
 }
@@ -107,20 +114,20 @@ impl Default for Loop {
 
 /// MORF harmonic envelope.
 pub struct MorfHarmonicEnvelope {
-    pub time1: RangedValue,
-    pub time2: RangedValue,
-    pub time3: RangedValue,
-    pub time4: RangedValue,
+    pub time1: EnvelopeTime,
+    pub time2: EnvelopeTime,
+    pub time3: EnvelopeTime,
+    pub time4: EnvelopeTime,
     pub loop_type: Loop,
 }
 
 impl Default for MorfHarmonicEnvelope {
     fn default() -> Self {
         MorfHarmonicEnvelope {
-            time1: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            time2: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            time3: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            time4: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            time1: EnvelopeTime::from(0),
+            time2: EnvelopeTime::from(0),
+            time3: EnvelopeTime::from(0),
+            time4: EnvelopeTime::from(0),
             loop_type: Default::default(),
         }
     }
@@ -129,10 +136,10 @@ impl Default for MorfHarmonicEnvelope {
 impl SystemExclusiveData for MorfHarmonicEnvelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         MorfHarmonicEnvelope {
-            time1: RangedValue::from_byte(RangeKind::PositiveLevel, data[0]),
-            time2: RangedValue::from_byte(RangeKind::PositiveLevel, data[1]),
-            time3: RangedValue::from_byte(RangeKind::PositiveLevel, data[2]),
-            time4: RangedValue::from_byte(RangeKind::PositiveLevel, data[3]),
+            time1: EnvelopeTime::from(data[0]),
+            time2: EnvelopeTime::from(data[1]),
+            time3: EnvelopeTime::from(data[2]),
+            time4: EnvelopeTime::from(data[3]),
             loop_type: Loop::try_from(data[4]).unwrap(),
         }
     }

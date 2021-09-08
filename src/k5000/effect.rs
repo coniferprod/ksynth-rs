@@ -4,11 +4,15 @@
 use std::convert::TryFrom;
 use std::fmt;
 use std::collections::HashMap;
+
 use num_enum::TryFromPrimitive;
 use lazy_static::lazy_static;
+
 use crate::SystemExclusiveData;
 use crate::k5000::control;
-use crate::k5000::{RangedValue, RangeKind};
+use crate::k5000::{Depth, UnsignedLevel};
+
+type EffectParameter = UnsignedLevel;
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -180,14 +184,35 @@ lazy_static! {
     };
 }
 
+/// Effect algorithm.
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash)]
+#[repr(u8)]
+pub enum EffectAlgorithm {
+    Algorithm1,
+    Algorithm2,
+    Algorithm3,
+    Algorithm4,
+}
+
+impl fmt::Display for EffectAlgorithm {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            EffectAlgorithm::Algorithm1 => "Algorithm 1",
+            EffectAlgorithm::Algorithm2 => "Algorithm 2",
+            EffectAlgorithm::Algorithm3 => "Algorithm 3",
+            EffectAlgorithm::Algorithm4 => "Algorithm 4",
+        })
+    }
+}
+
 /// Effect definition.
 pub struct EffectDefinition {
     pub effect: Effect,
-    pub depth: RangedValue,
-    pub parameter1: RangedValue,
-    pub parameter2: RangedValue,
-    pub parameter3: RangedValue,
-    pub parameter4: RangedValue,
+    pub depth: Depth,
+    pub parameter1: EffectParameter,
+    pub parameter2: EffectParameter,
+    pub parameter3: EffectParameter,
+    pub parameter4: EffectParameter,
 }
 
 impl fmt::Display for EffectDefinition {
@@ -196,11 +221,11 @@ impl fmt::Display for EffectDefinition {
             f,
             "{}, depth = {}, {} = {}, {} = {}, {} = {}, {} = {}",
             EFFECT_NAMES[self.effect as usize].to_string(),
-            self.depth,
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1,
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2,
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.parameter3,
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[3], self.parameter4
+            self.depth.as_byte(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1.as_byte(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2.as_byte(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.parameter3.as_byte(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[3], self.parameter4.as_byte()
         )
     }
 }
@@ -209,11 +234,11 @@ impl Default for EffectDefinition {
     fn default() -> Self {
         EffectDefinition {
             effect: Default::default(),
-            depth: RangedValue::from_int(RangeKind::EffectDepth, 0),
-            parameter1: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            parameter2: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            parameter3: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            parameter4: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            depth: Depth::from(0),
+            parameter1: EffectParameter::from(0),
+            parameter2: EffectParameter::from(0),
+            parameter3: EffectParameter::from(0),
+            parameter4: EffectParameter::from(0),
         }
     }
 }
@@ -223,11 +248,11 @@ impl SystemExclusiveData for EffectDefinition {
         eprintln!("EffectDefinition, data = {:02X?}", data);
         EffectDefinition {
             effect: Effect::try_from(data[0]).unwrap(),
-            depth: RangedValue::from_byte(RangeKind::EffectDepth, data[1]),
-            parameter1: RangedValue::from_byte(RangeKind::PositiveLevel, data[2]),
-            parameter2: RangedValue::from_byte(RangeKind::PositiveLevel, data[3]),
-            parameter3: RangedValue::from_byte(RangeKind::PositiveLevel, data[4]),
-            parameter4: RangedValue::from_byte(RangeKind::PositiveLevel, data[5]),
+            depth: Depth::from(data[1]),
+            parameter1: EffectParameter::from(data[2]),
+            parameter2: EffectParameter::from(data[3]),
+            parameter3: EffectParameter::from(data[4]),
+            parameter4: EffectParameter::from(data[5]),
         }
     }
 
@@ -245,7 +270,7 @@ impl SystemExclusiveData for EffectDefinition {
 
 /// Effect settings.
 pub struct EffectSettings {
-    pub algorithm: u8,
+    pub algorithm: EffectAlgorithm,
     pub reverb: EffectDefinition,
     pub effect1: EffectDefinition,
     pub effect2: EffectDefinition,
@@ -263,7 +288,7 @@ impl fmt::Display for EffectSettings {
 impl Default for EffectSettings {
     fn default() -> Self {
         EffectSettings {
-            algorithm: 1,
+            algorithm: EffectAlgorithm::Algorithm1,
             reverb: Default::default(),
             effect1: Default::default(),
             effect2: Default::default(),
@@ -277,7 +302,7 @@ impl SystemExclusiveData for EffectSettings {
     fn from_bytes(data: Vec<u8>) -> Self {
         eprintln!("EffectSettings");
         EffectSettings {
-            algorithm: data[0] + 1,  // adjust 0~3 to 1~4
+            algorithm: EffectAlgorithm::try_from(data[0]).unwrap(),  // 0~3 to enum
             reverb: EffectDefinition::from_bytes(data[1..7].to_vec()),
             effect1: EffectDefinition::from_bytes(data[7..13].to_vec()),
             effect2: EffectDefinition::from_bytes(data[13..19].to_vec()),
@@ -289,7 +314,7 @@ impl SystemExclusiveData for EffectSettings {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.push(self.algorithm - 1); // adjust back to 0~3
+        result.push(self.algorithm as u8); // enum raw value maps to 0~3
 
         result.extend(self.reverb.to_bytes());
         result.extend(self.effect1.to_bytes());
@@ -388,11 +413,11 @@ mod tests {
     fn test_effect_parameter_names() {
         let effect = EffectDefinition {
             effect: Effect::Hall1,
-            depth: RangedValue::from_int(RangeKind::EffectDepth, 100),
-            parameter1: RangedValue::from_int(RangeKind::PositiveLevel, 7),
-            parameter2: RangedValue::from_int(RangeKind::PositiveLevel, 5),
-            parameter3: RangedValue::from_int(RangeKind::PositiveLevel, 31),
-            parameter4: RangedValue::from_int(RangeKind::PositiveLevel, 0),
+            depth: Depth::from(100),
+            parameter1: EffectParameter::from(7),
+            parameter2: EffectParameter::from(5),
+            parameter3: EffectParameter::from(31),
+            parameter4: EffectParameter::from(0),
         };
 
         if let Some(param_names) = EFFECT_PARAMETER_NAMES.get(&effect.effect) {

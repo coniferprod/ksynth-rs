@@ -18,161 +18,339 @@ pub mod formant;
 pub mod addkit;
 pub mod sysex;
 
-/// Easier to use range definition.
-pub type IntegerRange = RangeInclusive<i16>;
-
-/// Semantic type of ranged value.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum RangeKind {
-    SignedLevel,
-    UnsignedLevel,
-    PositiveLevel,
-    VelocityCurve,
-    MacroDepth,
-    EffectDepth,
-    FilterLevel,
-    FilterResonance,
-    CoarseTuning,
-    BenderPitch,
-    BenderCutoff,
-}
-
-// Rust ranges are not Copy because reasons (see https://github.com/rust-lang/rfcs/issues/2848),
-// so let's use a wrapper:
+// Simple wrapper for an inclusive range of Ord types.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-struct RangeInclusiveWrapper {
-    start: i16,
-    end: i16,
+struct Wrapper<T> where T: Ord {
+    start: T,
+    end: T,
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub struct RangedValue {
-    kind: RangeKind,
-    value: i16,
-    range: RangeInclusiveWrapper, // used to be range: RangeInclusive<i16>,
+/// Generates random value that falls in the range of the type.
+pub trait RandomValue {
+    type T;
+    fn random_value(&self) -> Self::T;
 }
 
-impl Default for RangedValue {
-    fn default() -> Self {
-        RangedValue {
-            kind: RangeKind::PositiveLevel,
-            value: 0,
-            range: RangedValue::make_range(RangeKind::PositiveLevel),
-        }
-    }
-}
+// Experiment a little with the newtype pattern.
+// A newtype is a special case of a tuple struct,
+// with just one field.
 
-impl RangedValue {
-    fn make_range(kind: RangeKind) -> RangeInclusiveWrapper {
-        // It would have been so nice just to say `-63..=63`...
-        match kind {
-            RangeKind::SignedLevel => RangeInclusiveWrapper { start: -63, end: 63 },
-            RangeKind::UnsignedLevel => RangeInclusiveWrapper { start: 0, end: 63 },
-            RangeKind::PositiveLevel => RangeInclusiveWrapper { start: 0, end: 127 },
-            RangeKind::VelocityCurve => RangeInclusiveWrapper { start: 1, end: 12 },
-            RangeKind::MacroDepth => RangeInclusiveWrapper { start: -31, end: 31 },
-            RangeKind::EffectDepth => RangeInclusiveWrapper { start: 0, end: 100 },
-            RangeKind::FilterLevel => RangeInclusiveWrapper { start: 0, end: 7 },
-            RangeKind::FilterResonance => RangeInclusiveWrapper { start: 0, end: 7 },
-            RangeKind::CoarseTuning => RangeInclusiveWrapper { start: -24, end: 24 },
-            RangeKind::BenderPitch => RangeInclusiveWrapper { start: 0, end: 24 },
-            RangeKind::BenderCutoff => RangeInclusiveWrapper { start: 0, end: 31 },
-        }
+/// Signed level (-63...+63)
+#[derive(Debug, Clone, Copy)]
+pub struct SignedLevel(i8);
+
+impl SignedLevel {
+    fn range() -> Wrapper<i8> {
+        Wrapper { start: -63, end: 63 }
     }
 
-    /// Makes a new value from the given byte.
-    pub fn from_byte(kind: RangeKind, initial_value: u8) -> RangedValue {
-        let range = RangedValue::make_range(kind);
-
-        // If this were a regular RangeInclusive, these would be calls to start() and end().
-
-        let value = if range.start < 0 {  // need to adjust
-            initial_value as i16 - (range.end + 1) as i16
-        }
-        else {
-            initial_value as i16
-        };
-
-        RangedValue {
-            kind,
-            range,
-            value,
-        }
+    pub fn new(value: i8) -> SignedLevel {
+        let range = SignedLevel::range();
+        SignedLevel(num::clamp(value, range.start, range.end))
     }
 
-    /// Makes a new ranged value from the given integer.
-    pub fn from_int(kind: RangeKind, initial_value: i16) -> RangedValue {
-        let range = RangedValue::make_range(kind);
-
-
-        let value = if initial_value >= range.start && initial_value <= range.end {
-            initial_value
-        }
-        else {
-            num::clamp(initial_value, range.start, range.end)
-        };
-
-        RangedValue {
-            kind,
-            range,
-            value
-        }
-    }
-
-    /// Gets the range of this value.
-    pub fn get_range(&self) -> RangeInclusive<i16> {
-        // Make a new normal range from our wrapper
-        self.range.start..=self.range.end
-    }
-
-    // Gets the range kind of this value.
-    pub fn get_kind(&self) -> RangeKind {
-        self.kind
-    }
-
-    /// Gets the current value.
-    pub fn get(&self) -> i16 {
-        self.value
-    }
-
-    /// Sets the current value, clamping it if necessary.
-    pub fn set(&mut self, new_value: i16) {
-        self.value = if new_value >= self.range.start && new_value <= self.range.end {
-            new_value
-        }
-        else {
-            num::clamp(new_value, self.range.start, self.range.end)
-        }
-    }
-
-    /// Gets the value as a byte.
     pub fn as_byte(&self) -> u8 {
-        if self.range.start < 0 {
-            (self.value + self.range.end + 1) as u8
-        }
-        else {
-            self.value as u8
-        }
+        (self.0 + 64) as u8
     }
 
-    // Default implementation for random value.
-    pub fn random_value(&self) -> i16 {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(self.range.start..=self.range.end)
-    }
-
-    // Default implementation for random value from a subrange.
-    pub fn random_value_restricted(&self, subrange: IntegerRange) -> i16 {
-        assert!(subrange.start() >= &self.range.start && subrange.end() <= &self.range.end);
-
-        let mut rng = rand::thread_rng();
-        rng.gen_range(subrange)
+    pub fn value(&self) -> i8 {
+        self.0
     }
 }
 
-impl fmt::Display for RangedValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
+impl From<i8> for SignedLevel {
+    fn from(value: i8) -> SignedLevel {
+        SignedLevel::new(value)
+    }
+}
+
+impl From<u8> for SignedLevel {
+    fn from(value: u8) -> SignedLevel {
+        SignedLevel::new(value as i8 - 64)
+    }
+}
+
+impl From<i32> for SignedLevel {
+    fn from(value: i32) -> SignedLevel {
+        SignedLevel::new(value as i8)
+    }
+}
+
+impl RandomValue for SignedLevel {
+    type T = i8;
+
+    fn random_value(&self) -> Self::T {
+        let mut rng = rand::thread_rng();
+        let range = SignedLevel::range();
+        rng.gen_range(range.start..=range.end)
+    }
+}
+
+/// Unsigned level (0...127).
+#[derive(Debug, Clone, Copy)]
+pub struct UnsignedLevel(u8);
+
+impl UnsignedLevel {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 0, end: 127 }
+    }
+
+    pub fn new(value: u8) -> UnsignedLevel {
+        let range = UnsignedLevel::range();
+        UnsignedLevel(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for UnsignedLevel {
+    fn from(value: u8) -> UnsignedLevel {
+        UnsignedLevel::new(value)
+    }
+}
+
+/// Positive level (1...127).
+#[derive(Debug, Clone, Copy)]
+pub struct PositiveLevel(u8);
+
+impl PositiveLevel {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 1, end: 127 }
+    }
+
+    pub fn new(value: u8) -> PositiveLevel {
+        let range = PositiveLevel::range();
+        PositiveLevel(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for PositiveLevel {
+    fn from(value: u8) -> PositiveLevel {
+        PositiveLevel::new(value)
+    }
+}
+
+/// Signed depth (-31...+31) (in SysEx 33...95)
+#[derive(Debug, Clone, Copy)]
+pub struct SignedDepth(i8);
+
+impl SignedDepth {
+    fn range() -> Wrapper<i8> {
+        Wrapper { start: -31, end: 31 }
+    }
+
+    pub fn new(value: i8) -> SignedDepth {
+        let range = SignedDepth::range();
+        SignedDepth(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        (self.0 + 64) as u8
+    }
+}
+
+impl From<i8> for SignedDepth {
+    fn from(value: i8) -> SignedDepth {
+        SignedDepth::new(value)
+    }
+}
+
+impl From<u8> for SignedDepth {
+    fn from(value: u8) -> SignedDepth {
+        SignedDepth::new(value as i8 - 64)
+    }
+}
+
+/// Unsigned depth (0~63).
+#[derive(Debug, Clone, Copy)]
+pub struct UnsignedDepth(u8);
+
+impl UnsignedDepth {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 0, end: 63 }
+    }
+
+    pub fn new(value: u8) -> UnsignedDepth {
+        let range = UnsignedDepth::range();
+        UnsignedDepth(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for UnsignedDepth {
+    fn from(value: u8) -> UnsignedDepth {
+        UnsignedDepth::new(value)
+    }
+}
+
+/// Depth (0~100).
+#[derive(Debug, Clone, Copy)]
+pub struct Depth(u8);
+
+impl Depth {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 0, end: 100 }
+    }
+
+    pub fn new(value: u8) -> Depth {
+        let range = Depth::range();
+        Depth(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for Depth {
+    fn from(value: u8) -> Depth {
+        Depth::new(value)
+    }
+}
+
+/// Macro depth (-31 ... +31).
+#[derive(Debug, Clone, Copy)]
+pub struct MacroParameterDepth(i8);
+
+impl MacroParameterDepth {
+    fn range() -> Wrapper<i8> {
+        Wrapper { start: -31, end: 31 }
+    }
+
+    pub fn new(value: i8) -> MacroParameterDepth {
+        let range = MacroParameterDepth::range();
+        MacroParameterDepth(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        (self.0 + 64) as u8
+    }
+}
+
+impl From<u8> for MacroParameterDepth {
+    fn from(value: u8) -> MacroParameterDepth {
+        MacroParameterDepth::new(value as i8)
+    }
+}
+
+/// Medium depth (0~31).
+#[derive(Debug, Clone, Copy)]
+pub struct MediumDepth(u8);
+
+impl MediumDepth {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 0, end: 7 }
+    }
+
+    pub fn new(value: u8) -> MediumDepth {
+        let range = MediumDepth::range();
+        MediumDepth(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for MediumDepth {
+    fn from(value: u8) -> MediumDepth {
+        MediumDepth::new(value)
+    }
+}
+
+/// Small depth (0~7).
+#[derive(Debug, Clone, Copy)]
+pub struct SmallDepth(u8);
+
+impl SmallDepth {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 0, end: 7 }
+    }
+
+    pub fn new(value: u8) -> SmallDepth {
+        let range = SmallDepth::range();
+        SmallDepth(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for SmallDepth {
+    fn from(value: u8) -> SmallDepth {
+        SmallDepth::new(value)
+    }
+}
+
+/// Coarse tuning (-24...+24) (in SysEx 40...88)
+#[derive(Debug, Clone, Copy)]
+pub struct Coarse(i8);
+
+impl Coarse {
+    fn range() -> Wrapper<i8> {
+        Wrapper { start: -24, end: 24 }
+    }
+
+    pub fn new(value: i8) -> Coarse {
+        let range = Coarse::range();
+        Coarse(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        (self.0 + 64) as u8
+    }
+}
+
+impl From<i8> for Coarse {
+    fn from(value: i8) -> Coarse {
+        Coarse::new(value)
+    }
+}
+
+impl From<u8> for Coarse {
+    fn from(value: u8) -> Coarse {
+        Coarse::new(value as i8 - 64)
+    }
+}
+
+impl From<i32> for Coarse {
+    fn from(value: i32) -> Coarse {
+        Coarse::new(value as i8)
+    }
+}
+
+/// Unsigned coarse for bender pitch (0...24)
+#[derive(Debug, Clone, Copy)]
+pub struct UnsignedCoarse(u8);
+
+impl UnsignedCoarse {
+    fn range() -> Wrapper<u8> {
+        Wrapper { start: 0, end: 24 }
+    }
+
+    pub fn new(value: u8) -> UnsignedCoarse {
+        let range = UnsignedCoarse::range();
+        UnsignedCoarse(num::clamp(value, range.start, range.end))
+    }
+
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+
+impl From<u8> for UnsignedCoarse {
+    fn from(value: u8) -> UnsignedCoarse {
+        UnsignedCoarse::new(value)
     }
 }
 
@@ -181,44 +359,51 @@ mod tests {
     use super::{*};
 
     #[test]
-    fn test_ranged_value_from_byte() {
-        let level = RangedValue::from_byte(RangeKind::SignedLevel, 16u8);
-        assert_eq!(level.get(), -48);
+    fn test_unsigned_level() {
+        let level = UnsignedLevel::from(42);
+        assert_eq!(level.as_byte(), 42u8);
     }
 
     #[test]
-    fn test_ranged_value_from_int() {
-        let level = RangedValue::from_int(RangeKind::SignedLevel, 16);
-        assert_eq!(level.get(), 16);
+    fn test_unsigned_level_clamped() {
+        let level = UnsignedLevel::from(192);  // too big for range
+        assert_eq!(level.as_byte(), 127u8);  // should be clamped
     }
 
     #[test]
-    fn test_ranged_value_from_int_clamped() {
-        let level = RangedValue::from_int(RangeKind::SignedLevel, 100);
-
-        // The value should be clamped to the end of the range
-        assert_eq!(level.get(), 63);
+    fn test_unsigned_depth() {
+        let depth = UnsignedDepth::from(42);
+        assert_eq!(depth.as_byte(), 42u8);
     }
 
     #[test]
-    fn test_ranged_value_as_byte() {
-        let level = RangedValue::from_int(RangeKind::SignedLevel, 16);
-        assert_eq!(level.as_byte(), 80u8);
+    fn test_unsigned_depth_clamped() {
+        let depth = UnsignedDepth::from(128);  // too big for range
+        assert_eq!(depth.as_byte(), 63u8);  // should be clamped
     }
 
     #[test]
-    fn test_ranged_value_set() {
-        let mut level = RangedValue::from_int(RangeKind::SignedLevel, 16);
-        level.set(17);
-        assert_eq!(level.get(), 17);
+    fn test_signed_level() {
+        let ks = SignedLevel::from(1u8);
+        assert_eq!(ks.value(), -63i8);
     }
 
     #[test]
-    fn test_ranged_value_set_clamped() {
-        let mut level = RangedValue::from_int(RangeKind::SignedLevel, 16);
-        level.set(-100);  // deliberately out of the allowed range
+    fn test_signed_level_as_byte() {
+        let ks = SignedLevel::from(-63i8);
+        assert_eq!(ks.as_byte(), 1u8);
+    }
 
-        // The value should be clamped to the start of the range
-        assert_eq!(level.get(), -63);
+    #[test]
+    fn test_signed_level_clamped() {
+        let ks = SignedLevel::from(96i8);  // too big for range
+        assert_eq!(ks.value(), 63i8); // should be clamped
+        assert_eq!(ks.as_byte(), 127u8);
+    }
+
+    #[test]
+    fn test_signed_level_clamped_as_byte() {
+        let ks = SignedLevel::from(63i8);
+        assert_eq!(ks.as_byte(), 127u8);
     }
 }

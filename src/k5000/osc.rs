@@ -2,17 +2,21 @@
 //!
 
 use std::convert::TryFrom;
+
 use num_enum::TryFromPrimitive;
+
 use crate::StringUtils;
 use crate::SystemExclusiveData;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
-use crate::k5000::{RangedValue, RangeKind};
+use crate::k5000::{Coarse, SignedLevel};
+
+pub type Fine = SignedLevel;
 
 /// PCM oscillator.
 pub struct Oscillator {
     pub wave: u16,
-    pub coarse: RangedValue,
-    pub fine: RangedValue,
+    pub coarse: Coarse,
+    pub fine: Fine,
     pub ks_to_pitch: KeyScaling,
     pub fixed_key: u8,
     pub pitch_envelope: PitchEnvelope,
@@ -22,8 +26,8 @@ impl Oscillator {
     pub fn new() -> Oscillator {
         Oscillator {
             wave: 384,
-            coarse: RangedValue::from_int(RangeKind::CoarseTuning, 0),
-            fine: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            coarse: Coarse::from(0),
+            fine: Fine::from(0),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: 60,
             pitch_envelope: PitchEnvelope::new(),
@@ -33,8 +37,8 @@ impl Oscillator {
     pub fn additive() -> Oscillator {
         Oscillator {
             wave: 512, // ADD
-            coarse: RangedValue::from_int(RangeKind::CoarseTuning, 0),
-            fine: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            coarse: Coarse::from(0),
+            fine: Fine::from(0),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: 60,
             pitch_envelope: PitchEnvelope::new(),
@@ -52,8 +56,8 @@ impl SystemExclusiveData for Oscillator {
     fn from_bytes(data: Vec<u8>) -> Self {
         Oscillator {
             wave: 384,  // TODO: actually parse wave number
-            coarse: RangedValue::from_byte(RangeKind::CoarseTuning, data[2]),
-            fine: RangedValue::from_byte(RangeKind::SignedLevel, data[3]),
+            coarse: Coarse::from(data[2]),
+            fine: Fine::from(data[3]),
             ks_to_pitch: KeyScaling::try_from(data[4]).unwrap(),
             fixed_key: data[5],
             pitch_envelope: PitchEnvelope::from_bytes(data[6..].to_vec()),

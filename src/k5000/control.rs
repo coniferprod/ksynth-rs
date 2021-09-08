@@ -2,10 +2,14 @@
 //!
 
 use std::convert::TryFrom;
+
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
+
 use crate::SystemExclusiveData;
-use crate::k5000::{RangedValue, RangeKind};
+use crate::k5000::{MacroParameterDepth, SignedLevel};
+
+type Pan = SignedLevel;
 
 /// Velocity switch settings.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -132,18 +136,18 @@ impl Default for ControlDestination {
 /// Macro controller.
 pub struct MacroController {
     pub destination1: ControlDestination,
-    pub depth1: RangedValue,
+    pub depth1: MacroParameterDepth,
     pub destination2: ControlDestination,
-    pub depth2: RangedValue,
+    pub depth2: MacroParameterDepth,
 }
 
 impl Default for MacroController {
     fn default() -> Self {
         MacroController {
             destination1: Default::default(),
-            depth1: RangedValue::from_int(RangeKind::MacroDepth, 0),
+            depth1: MacroParameterDepth::from(0),
             destination2: Default::default(),
-            depth2: RangedValue::from_int(RangeKind::MacroDepth, 0),
+            depth2: MacroParameterDepth::from(0),
         }
     }
 }
@@ -151,9 +155,9 @@ impl SystemExclusiveData for MacroController {
     fn from_bytes(data: Vec<u8>) -> Self {
         MacroController {
             destination1: ControlDestination::try_from(data[0]).unwrap(),
-            depth1: RangedValue::from_byte(RangeKind::MacroDepth, data[1]),
+            depth1: MacroParameterDepth::from(data[1]),
             destination2: ControlDestination::try_from(data[2]).unwrap(),
-            depth2: RangedValue::from_byte(RangeKind::MacroDepth, data[3]),
+            depth2: MacroParameterDepth::from(data[3]),
         }
     }
 
@@ -260,14 +264,14 @@ impl Default for PanKind {
 /// Pan settings.
 pub struct PanSettings {
     pub pan_type: PanKind,
-    pub pan_value: RangedValue,
+    pub pan_value: Pan,
 }
 
 impl Default for PanSettings {
     fn default() -> Self {
         PanSettings {
             pan_type: Default::default(),
-            pan_value: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            pan_value: Pan::from(0),
         }
     }
 }
@@ -276,7 +280,7 @@ impl SystemExclusiveData for PanSettings {
     fn from_bytes(data: Vec<u8>) -> Self {
         PanSettings {
             pan_type: PanKind::try_from(data[0]).unwrap(),
-            pan_value: RangedValue::from_byte(RangeKind::SignedLevel, data[1]),
+            pan_value: Pan::from(data[1]),
         }
     }
 
@@ -369,4 +373,22 @@ pub enum AmplitudeModulation {
 
 impl Default for AmplitudeModulation {
     fn default() -> Self { AmplitudeModulation::Off }
+}
+
+/// Velocity curve.
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[repr(u8)]
+pub enum VelocityCurve {
+    Curve1,
+    Curve2,
+    Curve3,
+    Curve4,
+    Curve5,
+    Curve6,
+    Curve7,
+    Curve8,
+    Curve9,
+    Curve10,
+    Curve11,
+    Curve12,
 }

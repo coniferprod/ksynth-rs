@@ -2,27 +2,48 @@
 //!
 
 use crate::SystemExclusiveData;
-use crate::k5000::{RangedValue, RangeKind};
+use crate::k5000::{SignedLevel, UnsignedLevel};
+
+/// Envelope level.
+pub type Level = SignedLevel;
+
+/// Envelope time.
+pub type Time = UnsignedLevel;
+
+/// Velocity sensitivity.
+pub type VelocitySensitivity = SignedLevel;
 
 /// Pitch envelope.
 pub struct Envelope {
-    pub start: RangedValue,
-    pub attack_time: RangedValue,
-    pub attack_level: RangedValue,
-    pub decay_time: RangedValue,
-    pub time_vel_sens: RangedValue,
-    pub level_vel_sens: RangedValue,
+    /// Envelope start level.
+    pub start: Level,
+
+    /// Envelope attack time.
+    pub attack_time: Time,
+
+    /// Envelope attack level.
+    pub attack_level: Level,
+
+    /// Envelope decay time.
+    pub decay_time: Time,
+
+    /// Time velocity sensitivity.
+    pub time_vel_sens: VelocitySensitivity,
+
+    /// Level velocity sensitivity.
+    pub level_vel_sens: VelocitySensitivity,
 }
 
 impl Envelope {
+    /// Creates a new envelope with default values.
     pub fn new() -> Envelope {
         Envelope {
-            start: RangedValue::from_int(RangeKind::SignedLevel, 0),
-            attack_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            attack_level: RangedValue::from_int(RangeKind::SignedLevel, 0),
-            decay_time: RangedValue::from_int(RangeKind::PositiveLevel, 0),
-            time_vel_sens: RangedValue::from_int(RangeKind::SignedLevel, 0),
-            level_vel_sens: RangedValue::from_int(RangeKind::SignedLevel, 0),
+            start: Level::from(0i8),
+            attack_time: Time::from(0),
+            attack_level: Level::from(0i8),
+            decay_time: Time::from(0),
+            time_vel_sens: VelocitySensitivity::from(0i8),
+            level_vel_sens: VelocitySensitivity::from(0i8),
         }
     }
 }
@@ -30,12 +51,12 @@ impl Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         Envelope {
-            start: RangedValue::from_byte(RangeKind::SignedLevel, data[0]),
-            attack_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[1]),
-            attack_level: RangedValue::from_byte(RangeKind::SignedLevel, data[2]),
-            decay_time: RangedValue::from_byte(RangeKind::PositiveLevel, data[3]),
-            time_vel_sens: RangedValue::from_byte(RangeKind::SignedLevel, data[4]),
-            level_vel_sens: RangedValue::from_byte(RangeKind::SignedLevel, data[5]),
+            start: Level::from(data[0]),
+            attack_time: Time::from(data[1]),
+            attack_level: Level::from(data[2]),
+            decay_time: Time::from(data[3]),
+            time_vel_sens: VelocitySensitivity::from(data[4]),
+            level_vel_sens: VelocitySensitivity::from(data[5]),
         }
     }
 
