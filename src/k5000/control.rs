@@ -19,6 +19,7 @@ pub enum VelocitySwitch {
     Off,
     Loud,
     Soft,
+    Unknown,
 }
 
 impl Default for VelocitySwitch {
@@ -73,11 +74,12 @@ impl fmt::Display for VelocitySwitchSettings {
 
 impl SystemExclusiveData for VelocitySwitchSettings {
     fn from_bytes(data: Vec<u8>) -> Self {
-        let vs = data[0].bit_range(5..7);  // bits 5-6
-        let n = data[0].bit_range(0..5); // bits 0-4
+        let vs = data[0].bit_range(5..7) & 0b11;  // bits 5-6
+        let t = data[0].bit_range(0..5); // bits 0-4
+        eprintln!("VelocitySwitchSettings: vs = 0b{:b} ({}), t = 0b{:b} ({})", vs, vs, t, t);
         VelocitySwitchSettings {
             switch_type: VelocitySwitch::try_from(vs).unwrap(),
-            threshold: VelocitySwitchSettings::threshold_from(n as usize),
+            threshold: VelocitySwitchSettings::threshold_from(t as usize),
         }
     }
 
@@ -171,6 +173,8 @@ impl fmt::Display for MacroController {
 
 impl SystemExclusiveData for MacroController {
     fn from_bytes(data: Vec<u8>) -> Self {
+        eprintln!("MacroController from bytes {:?}", data);
+
         MacroController {
             destination1: ControlDestination::try_from(data[0]).unwrap(),
             depth1: MacroParameterDepth::from(data[1]),
@@ -247,8 +251,8 @@ impl SystemExclusiveData for ModulationSettings {
             pressure: MacroController::from_bytes(data[..4].to_vec()),
             wheel: MacroController::from_bytes(data[4..8].to_vec()),
             expression: MacroController::from_bytes(data[8..12].to_vec()),
-            assignable1: AssignableController::from_bytes(data[12..15].to_vec()),
-            assignable2: AssignableController::from_bytes(data[15..18].to_vec()),
+            assignable1: AssignableController::from_bytes(data[12..15].to_vec()),  // NOTE: only three bytes
+            assignable2: AssignableController::from_bytes(data[15..18].to_vec()),  // not four like macros
         }
     }
 
@@ -335,6 +339,7 @@ impl Default for Switch {
 }
 
 /// Switch control settings.
+#[derive(Debug)]
 pub struct SwitchControl {
     pub switch1: Switch,
     pub switch2: Switch,
@@ -432,4 +437,38 @@ pub enum VelocityCurve {
     Curve10,
     Curve11,
     Curve12,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    #[test]
+    fn test_macro_controller_from_bytes() {
+        let data = vec![0x01, 0x4f, 0x03, 0x40];
+        let mac = MacroController::from_bytes(data);
+        assert_eq!(mac.destination1, ControlDestination::CutoffOffset);
+    }
+
+    /*
+    #[test]
+    fn test_modulation_settings_from_bytes() {
+        let data = vec![
+            0x01, 0x4f, 0x03, 0x40,  // press: destination 1, depth, destination 2, depth
+            0x03, 0x59, 0x01, 0x40,  // wheel: destination 1, depth, destination 2, depth
+            0x02, 0x5f, 0x00, 0x40,  // express: destination 1, depth, destination 2, depth
+            0x02, 0x0d, 0x40,  // assignable: control source 1, destination, depth
+            0x02, 0x09, 0x40,  // assignable: control source 2, destination, depth
+        ];
+        let modulation_settings = ModulationSettings::from_bytes(data);
+        assert_eq!(modulation_settings.pressure,
+            MacroController {
+                destination1: ControlDestination::CutoffOffset,
+                depth1: MacroParameterDepth::from(0x4f),
+                destination2: ControlDestination::VibratoDepthOffset,
+                depth2: MacroParameterDepth::from(0x40),
+             }
+        );
+    }
+    */
 }

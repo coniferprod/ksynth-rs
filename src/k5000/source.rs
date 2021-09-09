@@ -12,6 +12,7 @@ use crate::k5000::lfo::*;
 use crate::k5000::{UnsignedLevel, UnsignedCoarse, MediumDepth};
 
 /// Key in a keyboard zone.
+#[derive(Debug, Eq, PartialEq)]
 pub struct Key {
     /// MIDI note number for the key.
     pub note: u8,
@@ -191,6 +192,7 @@ impl fmt::Display for Source {
 
 impl SystemExclusiveData for Source {
     fn from_bytes(data: Vec<u8>) -> Self {
+        eprintln!("Source data ({} bytes): {:?}", data.len(), data);
         Source {
             control: SourceControl::from_bytes(data[..28].to_vec()),
             oscillator: Oscillator::from_bytes(data[28..40].to_vec()),
@@ -210,5 +212,88 @@ impl SystemExclusiveData for Source {
         result.extend(self.lfo.to_bytes());
 
         result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    #[test]
+    fn test_source_control_from_bytes() {
+        let data = vec![
+            0x00, 0x7f,  // zone low and high
+            0x10,  // velocity switch
+            0x00,  // effect path
+            0x78,  // volume
+            0x02, 0x0c,  // bender pitch and cutoff
+            0x01, 0x4f, 0x03, 0x40,  // press: destination 1, depth, destination 2, depth
+            0x03, 0x59, 0x01, 0x40,  // wheel: destination 1, depth, destination 2, depth
+            0x02, 0x5f, 0x00, 0x40,  // express: destination 1, depth, destination 2, depth
+            0x02, 0x0d, 0x40,  // assignable: control source 1, destination, depth
+            0x02, 0x09, 0x40,  // assignable: control source 2, destination, depth
+            0x00,  // key on delay
+            0x00, 0x40,  // pan type and value
+        ];
+
+        let source_control = SourceControl::from_bytes(data);
+        assert_eq!(source_control.zone.low.note, 0x00);
+        assert_eq!(source_control.zone.high.note, 0x7f);
+        assert_eq!(source_control.volume.value(), 0x78);
+    }
+
+    #[test]
+    fn test_source_from_bytes() {
+        let data = vec![
+            0x00, 0x7f,  // zone low and high
+            0x10,  // velocity switch
+            0x00,  // effect path
+            0x78,  // volume
+            0x02, 0x0c,  // bender pitch and cutoff
+            0x01, 0x4f, 0x03, 0x40,  // press: destination 1, depth, destination 2, depth
+            0x03, 0x59, 0x01, 0x40,  // wheel: destination 1, depth, destination 2, depth
+            0x02, 0x5f, 0x00, 0x40,  // express: destination 1, depth, destination 2, depth
+            0x02, 0x0d, 0x40,  // assignable: control source 1, destination, depth
+            0x02, 0x09, 0x40,  // assignable: control source 2, destination, depth
+            0x00,  // key on delay
+            0x00, 0x40,  // pan type and value
+            0x04, 0x00,  // wave kit MSB and LSB
+            0x40,  // coarse
+            0x40,  // fine
+            0x00,  // fixed key
+            0x00,  // ks pitch
+            0x40, 0x04, 0x40, 0x40, 0x40, 0x40,  // pitch envelope
+
+            // DCF
+            0x00,  // 0=active, 1=bypass
+            0x00,  // mode: 0=low pass, 1=high pass
+            0x04,  // velocity curve
+            0x00,  // resonance
+            0x00,  // DCF level
+            0x37,  // cutoff
+            0x60,  // cutoff ks depth
+            0x40,  // cutoff velo depth
+            0x59,  // DCF env depth
+            0x00, 0x78, 0x7f, 0x50, 0x7f, 0x14,  // DCF envelope
+            0x40, 0x40,  // DCF KS to Env
+            0x5e, 0x40, 0x40,  // DCF Vel to Env
+
+            // DCA
+            0x04,  // vel curve
+            0x01, 0x5e, 0x7f, 0x3f, 0x7f, 0x0f,  // DCA env
+            0x40, 0x40, 0x40, 0x40,  // DCA KS to Env
+            0x14, 0x40, 0x40, 0x40,  // DCA Vel Sense
+            0x00,  // LFO waveform
+            0x5d,  // LFO speed
+            0x00,  // LFO delay onset
+            0x00,  //  fade in time
+            0x00,  //  fade in to speed
+            0x00, 0x40,  // pitch (vibrato) depth and KS
+            0x00, 0x40,  // DCF (growl) depth and KS
+            0x00, 0x40,  // DCA (tremolo) depth and KS
+        ];
+
+        let source = Source::from_bytes(data);
+        assert_eq!(source.lfo.speed.value(), 0x5d);
     }
 }

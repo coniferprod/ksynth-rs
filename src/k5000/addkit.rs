@@ -48,7 +48,7 @@ impl SystemExclusiveData for AdditiveKit {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset = 0;
 
-        offset = 164;  // FF bands should start here
+        offset = 165;  // FF bands should start here
         let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
         for i in 0..BAND_COUNT {
             bands[i] = data[offset];
@@ -62,10 +62,10 @@ impl SystemExclusiveData for AdditiveKit {
         }
 
         AdditiveKit {
-            common: HarmonicCommon::from_bytes(data[1..6].to_vec()),
-            morf: MorfHarmonic::from_bytes(data[6..19].to_vec()),
-            formant_filter: FormantFilter::from_bytes(data[19..36].to_vec()),
-            levels: Levels::from_bytes(data[36..164].to_vec()),
+            common: HarmonicCommon::from_bytes(data[1..7].to_vec()),
+            morf: MorfHarmonic::from_bytes(data[7..20].to_vec()),
+            formant_filter: FormantFilter::from_bytes(data[20..37].to_vec()),
+            levels: Levels::from_bytes(data[37..165].to_vec()),
             bands: bands,
             envelopes: envelopes,
         }

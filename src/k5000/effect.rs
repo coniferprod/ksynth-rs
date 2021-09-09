@@ -324,6 +324,8 @@ impl SystemExclusiveData for EffectSettings {
 
         result
     }
+
+    fn data_size(&self) -> usize { 31 }
 }
 
 /// Effect destinations.
@@ -345,6 +347,7 @@ impl Default for Destination {
 }
 
 /// Effect control source.
+#[derive(Debug)]
 pub struct ControlSource {
     pub source: control::ControlSource,
     pub destination: Destination,
@@ -376,6 +379,7 @@ impl SystemExclusiveData for ControlSource {
 }
 
 /// Effect control with two sources.
+#[derive(Debug)]
 pub struct EffectControl {
     pub source1: ControlSource,
     pub source2: ControlSource,
@@ -426,5 +430,31 @@ mod tests {
         else {
             assert_eq!(true, false);
         }
+    }
+
+    #[test]
+    fn test_effect_settings_from_bytes() {
+        let data = vec![
+            // Effect data
+            0x00,  // effect algorithm
+            0x00,  // reverb type
+            0x02,  // reverb dry/wet
+            0x02,  // reverb param 1
+            0x0d,  // reverb param 2
+            0x41,  // reverb param 3
+            0x0a,  // reverb param 4
+            0x10,  // effect 1 type
+            0x00,  // effect 1 depth
+            0x58,  // effect 1 param 1
+            0x33,  // effect 1 param 2
+            0x69,  // effect 1 param 3
+            0x22,  // effect 1 param 4
+            0x1d, 0x00, 0x4a, 0x00, 0x00, 0x00,  // effect 2 (as above)
+            0x24, 0x00, 0x04, 0x3a, 0x04, 0x38,  // effect 3 (as above)
+            0x2a, 0x00, 0x0c, 0x0c, 0x63, 0x00,  // effect 4 (as above)
+        ];
+
+        let effect_settings = EffectSettings::from_bytes(data);
+        assert_eq!(effect_settings.effect4.parameter3.value(), 0x63);
     }
 }
