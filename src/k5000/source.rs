@@ -18,14 +18,28 @@ pub struct Key {
     pub note: u8,
 }
 
+static NOTE_NAMES: &'static str = "C C#D D#E F F#G G#A A#B ";
+
 impl Key {
     // TODO: Add constructor from note name
 
     pub fn name(&self) -> String {
+        /*
         let note_names = vec!["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        let octave = self.note / 12 - 1;
+        let octave = (self.note / 12) as i8 - 1;
         let name = note_names[(self.note as usize) % 12];
         format!("{}{}", name, octave)
+        */
+
+        // Adapted from RIMD:
+        let octave = (self.note as f32 / 12 as f32).floor() - 1.0;
+        let name_index = (self.note as usize % 12) * 2;
+        let slice = if NOTE_NAMES.as_bytes()[name_index + 1] == ' ' as u8 {
+            &NOTE_NAMES[name_index..(name_index + 1)]
+        } else {
+            &NOTE_NAMES[name_index..(name_index + 2)]
+        };
+        format!("{}{}", slice, octave)
     }
 }
 
@@ -218,6 +232,12 @@ impl SystemExclusiveData for Source {
 #[cfg(test)]
 mod tests {
     use super::{*};
+
+    #[test]
+    fn test_key_name() {
+        let key = Key { note: 60 };
+        assert_eq!(key.name(), "C4");
+    }
 
     #[test]
     fn test_source_control_from_bytes() {
