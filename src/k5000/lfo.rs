@@ -1,8 +1,11 @@
 //! Data model for the LFO.
 //!
 
+use std::fmt;
 use std::convert::TryFrom;
+
 use num_enum::TryFromPrimitive;
+
 use crate::SystemExclusiveData;
 use crate::k5000::{UnsignedLevel, UnsignedDepth, SignedLevel};
 
@@ -30,6 +33,18 @@ impl Default for Waveform {
     fn default() -> Self { Waveform::Triangle }
 }
 
+impl fmt::Display for Waveform {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            Waveform::Triangle => String::from("TRI"),
+            Waveform::Square => String::from("SQR"),
+            Waveform::Sawtooth => String::from("SAW"),
+            Waveform::Sine => String::from("SIN"),
+            Waveform::Random => String::from("RND"),
+        })
+    }
+}
+
 /// LFO control settings.
 #[derive(Debug)]
 pub struct Control {
@@ -43,6 +58,12 @@ impl Default for Control {
             depth: Depth::from(0),
             key_scaling: KeyScaling::from(0i8),
         }
+    }
+}
+
+impl fmt::Display for Control {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Depth: {}  KS: {}", self.depth, self.key_scaling)
     }
 }
 
@@ -84,6 +105,15 @@ impl Default for Lfo {
             growl: Default::default(),
             tremolo: Default::default(),
         }
+    }
+}
+
+impl fmt::Display for Lfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Waveform: {}  Speed: {}  Fade in time: {}  Fade in to speed: {}\nDelay onset: {}  Vibrato: {}  Growl: {}  Tremolo: {}",
+            self.waveform, self.speed, self.fade_in_time, self.fade_in_to_speed,
+            self.delay_onset, self.vibrato, self.growl, self.tremolo
+        )
     }
 }
 

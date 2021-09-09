@@ -2,6 +2,7 @@
 //!
 
 use std::convert::TryFrom;
+use std::fmt;
 
 use crate::SystemExclusiveData;
 use crate::k5000::{UnsignedLevel, SignedLevel, UnsignedDepth};
@@ -41,6 +42,15 @@ impl Envelope {
 impl Default for Envelope {
     fn default() -> Self {
         Envelope::new()
+    }
+}
+
+impl fmt::Display for Envelope {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "A={} D1={}/{} D2={}/{} R={}",
+            self.attack_time, self.decay1_time, self.decay1_level,
+            self.decay2_time, self.decay2_level, self.release_time
+        )
     }
 }
 
@@ -88,6 +98,14 @@ impl Default for KeyScalingControl {
     }
 }
 
+impl fmt::Display for KeyScalingControl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Level: {}   Attack: {}  Decay1: {}  Release: {}",
+            self.level, self.attack_time, self.decay1_time, self.release
+        )
+    }
+}
+
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: Vec<u8>) -> Self {
         KeyScalingControl {
@@ -128,6 +146,14 @@ impl Default for VelocityControl {
     }
 }
 
+impl fmt::Display for VelocityControl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Level: {}   Attack: {}  Decay1: {}  Release: {}",
+            self.level, self.attack_time, self.decay1_time, self.release
+        )
+    }
+}
+
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: Vec<u8>) -> Self {
         VelocityControl {
@@ -164,6 +190,14 @@ impl Default for Modulation {
     }
 }
 
+impl fmt::Display for Modulation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "KS to Env.: {}   Vel.sens.: {}",
+            self.ks_to_env, self.vel_sens
+        )
+    }
+}
+
 impl SystemExclusiveData for Modulation {
     fn from_bytes(data: Vec<u8>) -> Self {
         Modulation {
@@ -197,6 +231,14 @@ impl Default for Amplifier {
             envelope: Default::default(),
             modulation: Default::default(),
         }
+    }
+}
+
+impl fmt::Display for Amplifier {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Vel. curve: {}\nEnvelope: {}\nModulation: {}",
+            self.velocity_curve, self.envelope, self.modulation
+        )
     }
 }
 

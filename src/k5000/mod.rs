@@ -77,6 +77,12 @@ impl From<i32> for SignedLevel {
     }
 }
 
+impl fmt::Display for SignedLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
 impl RandomValue for SignedLevel {
     type T = i8;
 
@@ -195,11 +201,21 @@ impl UnsignedDepth {
     pub fn as_byte(&self) -> u8 {
         self.0
     }
+
+    pub fn value(&self) -> u8 {
+        self.0
+    }
 }
 
 impl From<u8> for UnsignedDepth {
     fn from(value: u8) -> UnsignedDepth {
         UnsignedDepth::new(value)
+    }
+}
+
+impl fmt::Display for UnsignedDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 
@@ -305,11 +321,21 @@ impl SmallDepth {
     pub fn as_byte(&self) -> u8 {
         self.0
     }
+
+    pub fn value(&self) -> u8 {
+        self.0
+    }
 }
 
 impl From<u8> for SmallDepth {
     fn from(value: u8) -> SmallDepth {
         SmallDepth::new(value)
+    }
+}
+
+impl fmt::Display for SmallDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 

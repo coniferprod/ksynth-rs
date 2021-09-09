@@ -439,6 +439,25 @@ pub enum VelocityCurve {
     Curve12,
 }
 
+impl fmt::Display for VelocityCurve {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            VelocityCurve::Curve1 => String::from("Curve 1"),
+            VelocityCurve::Curve2 => String::from("Curve 2"),
+            VelocityCurve::Curve3 => String::from("Curve 3"),
+            VelocityCurve::Curve4 => String::from("Curve 4"),
+            VelocityCurve::Curve5 => String::from("Curve 5"),
+            VelocityCurve::Curve6 => String::from("Curve 6"),
+            VelocityCurve::Curve7 => String::from("Curve 7"),
+            VelocityCurve::Curve8 => String::from("Curve 8"),
+            VelocityCurve::Curve9 => String::from("Curve 9"),
+            VelocityCurve::Curve10 => String::from("Curve 10"),
+            VelocityCurve::Curve11 => String::from("Curve 11"),
+            VelocityCurve::Curve12 => String::from("Curve 12"),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{*};

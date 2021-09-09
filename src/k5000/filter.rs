@@ -2,6 +2,7 @@
 //!
 
 use std::convert::TryFrom;
+use std::fmt;
 
 use num_enum::TryFromPrimitive;
 
@@ -26,6 +27,15 @@ pub type Level = SmallDepth;
 pub enum FilterMode {
     LowPass = 0,
     HighPass = 1,
+}
+
+impl fmt::Display for FilterMode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            FilterMode::LowPass => String::from("Low pass"),
+            FilterMode::HighPass => String::from("High pass"),
+        })
+    }
 }
 
 /// Filter envelope.
@@ -55,6 +65,15 @@ impl Envelope {
 impl Default for Envelope {
     fn default() -> Self {
         Envelope::new()
+    }
+}
+
+impl fmt::Display for Envelope {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "A={} D1={}/{} D2={}/{} R={}",
+            self.attack_time, self.decay1_time, self.decay1_level,
+            self.decay2_time, self.decay2_level, self.release_time
+        )
     }
 }
 
@@ -222,6 +241,17 @@ impl Filter {
 impl Default for Filter {
     fn default() -> Self {
         Filter::new()
+    }
+}
+
+impl fmt::Display for Filter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Active: {}  Cutoff: {}  Resonance: {}\nMode: {}  Vel. curve: {}  Level: {}\nKS to Cutoff: {}  Vel. to Cutoff: {}  Env. Depth: {}\nEnvelope: {}",
+            self.is_active, self.cutoff, self.resonance,
+            self.mode, self.velocity_curve, self.level,
+            self.ks_to_cutoff, self.vel_to_cutoff, self.envelope_depth,
+            self.envelope
+        )
     }
 }
 
