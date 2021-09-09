@@ -1,6 +1,8 @@
 //! Data model for the pitch envelope.
 //!
 
+use std::fmt;
+
 use crate::SystemExclusiveData;
 use crate::k5000::{SignedLevel, UnsignedLevel};
 
@@ -45,6 +47,14 @@ impl Envelope {
             time_vel_sens: VelocitySensitivity::from(0i8),
             level_vel_sens: VelocitySensitivity::from(0i8),
         }
+    }
+}
+
+impl fmt::Display for Envelope {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "                  Pitch Envelope\nStrt L  {:?}       Vel to\nAtak T  {:?}     Level {:?}\nAtak L  {:?}     Time  {:?}\nDecy T  {:?}\n",
+            self.start, self.attack_time, self.level_vel_sens, self.attack_level, self.time_vel_sens, self.decay_time
+        )
     }
 }
 

@@ -31,6 +31,7 @@ impl Default for Waveform {
 }
 
 /// LFO control settings.
+#[derive(Debug)]
 pub struct Control {
     pub depth: Depth,
     pub key_scaling: KeyScaling,
@@ -59,6 +60,7 @@ impl SystemExclusiveData for Control {
 }
 
 /// LFO settings.
+#[derive(Debug)]
 pub struct Lfo {
     pub waveform: Waveform,
     pub speed: Speed,

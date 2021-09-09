@@ -1,16 +1,17 @@
 use std::convert::TryInto;
 use std::convert::TryFrom;
-use bit::BitIndex;
-use crate::{SystemExclusiveData, Checksum, every_nth_byte};
-use num_enum::TryFromPrimitive;
 use std::fmt;
+
+use bit::BitIndex;
+use num_enum::TryFromPrimitive;
+
+use crate::{SystemExclusiveData, Checksum, every_nth_byte};
 use crate::k4::{NAME_LENGTH, get_effect_number};
 use crate::k4::source::Source;
 use crate::k4::lfo::*;
 use crate::k4::amp::Amplifier;
 use crate::k4::filter::Filter;
 use crate::k4::effect::Submix;
-use crate::k4::bank::Bank;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
@@ -357,9 +358,7 @@ impl SystemExclusiveData for SinglePatch {
         // so we flip it to make this value actually mean muted.
         let mut source_mutes = [true, true, true, true];
         for i in 0..crate::k4::SOURCE_COUNT {
-            if crate::get_bit_at(b as u32, i as u8) {
-                source_mutes[i] = false;
-            }
+            source_mutes[i] = !b.bit(i);
         }
 
         let mut vibrato_bytes = Vec::<u8>::new();
@@ -493,6 +492,7 @@ impl Checksum for SinglePatch {
 #[cfg(test)]
 mod tests {
     use super::{*};
+    use crate::k4::bank::Bank;
 
     #[test]
     fn test_single_patch_from_bytes() {

@@ -72,7 +72,7 @@ impl crate::SystemExclusiveData for Source {
 
         // Assuming that the low six bits are the coarse value,
         // and b6 is the key tracking bit (b7 is zero).
-        let is_key_track = if crate::get_bit_at(b as u32, 6) { true } else { false };
+        let is_key_track = b.bit(6);
 
         let coarse = ((b & 0x3f) as i8) - 24;  // 00 ~ 48 to ±24
 
@@ -92,8 +92,8 @@ impl crate::SystemExclusiveData for Source {
         let fine = ((b & 0x7f) as i8) - 50;
 
         b = data[offset];
-        let press_freq = if crate::get_bit_at(b as u32, 0) { true } else { false };
-        let vibrato = if crate::get_bit_at(b as u32, 1) { true } else { false };
+        let press_freq = b.bit(0);
+        let vibrato = b.bit(1);
         let velocity_curve = ((b >> 2) & 0x07) + 1;  // 0...7 to 1...8
 
         Source {

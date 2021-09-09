@@ -1,6 +1,8 @@
 use std::convert::TryInto;
 use std::fmt;
+
 use bit::BitIndex;
+
 use crate::SystemExclusiveData;
 use crate::k4::amp::{LevelModulation, TimeModulation};
 
@@ -118,7 +120,7 @@ impl SystemExclusiveData for Filter {
         b = data[offset];
         offset += 1;
         let resonance = (b & 0x07) + 1;  // from 0...7 to 1...8
-        let lfo_modulates_cutoff = if crate::get_bit_at(b as u32, 3) { true } else { false };
+        let lfo_modulates_cutoff = b.bit(3);
 
         start = offset;
         end = start + 3;

@@ -1,6 +1,6 @@
 [package]
 name = "ksynth"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Jere Käpyaho <2261936+jerekapyaho@users.noreply.github.com>"]
 edition = "2018"
 license = "MIT"

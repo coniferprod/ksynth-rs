@@ -5,7 +5,9 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
 use std::collections::BTreeMap;
+
 use bit::BitIndex;
+
 use crate::{SystemExclusiveData, Checksum};
 use crate::k5000::control::{
     Polyphony, AmplitudeModulation, MacroController, SwitchControl,
@@ -20,6 +22,22 @@ use crate::k5000::{UnsignedLevel, MacroParameterDepth};
 pub enum Portamento {
     Off,
     On(UnsignedLevel)
+}
+
+impl fmt::Display for Portamento {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Portamento::Off => write!(f, "{}", "OFF"),
+            Portamento::On(speed) => write!(f, "{}", speed),
+        }
+
+        /*
+        write!(f, "{}", match self {
+            Portamento::Off => "OFF",
+            Portamento::On(speed) => format!("ON, Porta Speed: {}", speed).as_str(),
+        })
+        */
+    }
 }
 
 /// Single patch common data.
@@ -59,22 +77,18 @@ impl Default for Common {
 
 impl fmt::Display for Common {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f,
+            "{}\nVolume: {:3}  Sources: {}  Poly: {}  AM: {}  Portamento: {}\nMacro Controller:\nUser 1: {}\nUser 2: {}\nUser 3: {}\nUser 4: {}\nSwitch 1: {:?}   FootSw1: {:?}\nSwitch 2: {:?}   FootSw2: {:?}\n",
+            self.name, self.volume, self.source_count, self.polyphony, self.amplitude_modulation,
+            self.portamento, self.macros[0], self.macros[1], self.macros[2], self.macros[3],
+            self.switches.switch1, self.switches.footswitch1, self.switches.switch2, self.switches.footswitch2
+        )
     }
 }
 
 fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
     v.try_into()
         .unwrap_or_else(|v: Vec<i8>| panic!("Expected a Vec of length {} but it was {}", 4, v.len()))
-}
-
-/// gets the bit at position `n`. Bits are numbered from 0 (least significant) to 31 (most significant).
-fn get_bit_at(input: u32, n: u8) -> bool {
-    if n < 32 {
-        input & (1 << n) != 0
-    } else {
-        false
-    }
 }
 
 impl SystemExclusiveData for Common {
@@ -91,7 +105,7 @@ impl SystemExclusiveData for Common {
         let mutes_byte = data[50];
         let mut mutes: [bool; 6] = [false; 6];
         for i in 0..6 {
-            mutes[i] = get_bit_at(mutes_byte as u32, i as u8);
+            mutes[i] = mutes_byte.bit(i);
         }
 
         let mut offset = 60;
@@ -338,7 +352,7 @@ impl SystemExclusiveData for SinglePatch {
         let mut additive_kits = BTreeMap::<String, AdditiveKit>::new();
 
         // How many additive kits should we expect then?
-        let kit_count = sources.iter().filter(|s| s.oscillator.wave == 512).count();
+        let kit_count = sources.iter().filter(|s| s.oscillator.wave.is_additive()).count();
         let mut kit_index = 0;
         while kit_index < kit_count {
             let kit = AdditiveKit::from_bytes(data[offset..offset + 806].to_vec());
@@ -392,6 +406,11 @@ impl SystemExclusiveData for SinglePatch {
 
 impl fmt::Display for SinglePatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.common)
+        let mut sources_str = String::new();
+        for source in self.sources.iter() {
+            sources_str.push_str(format!("{}\n", source).as_str());
+        }
+
+        write!(f, "{}\nSOURCES:\n{}", self.common, sources_str)
     }
 }

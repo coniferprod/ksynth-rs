@@ -2,6 +2,7 @@
 //!
 
 use std::convert::TryFrom;
+use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
@@ -59,6 +60,14 @@ impl VelocitySwitchSettings {
         ];
 
         table.to_vec().iter().position(|x| *x == threshold).unwrap_or_default()
+    }
+}
+
+impl fmt::Display for VelocitySwitchSettings {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Vel. sw type: {:?}, threshold: {}",
+            self.switch_type, self.threshold
+        )
     }
 }
 
@@ -151,6 +160,15 @@ impl Default for MacroController {
         }
     }
 }
+
+impl fmt::Display for MacroController {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Dest1 = {:?}, Depth = {}\nDest2 = {:?}, Depth = {}",
+            self.destination1, self.depth1, self.destination2, self.depth2
+        )
+    }
+}
+
 impl SystemExclusiveData for MacroController {
     fn from_bytes(data: Vec<u8>) -> Self {
         MacroController {
@@ -359,6 +377,16 @@ pub enum Polyphony {
     Solo2,
 }
 
+impl fmt::Display for Polyphony {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            Polyphony::Poly => "POLY",
+            Polyphony::Solo1 => "SOLO1",
+            Polyphony::Solo2 => "SOLO2",
+        })
+    }
+}
+
 /// Amplitude modulation kind.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
@@ -373,6 +401,19 @@ pub enum AmplitudeModulation {
 
 impl Default for AmplitudeModulation {
     fn default() -> Self { AmplitudeModulation::Off }
+}
+
+impl fmt::Display for AmplitudeModulation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            AmplitudeModulation::Off => "OFF",
+            AmplitudeModulation::Source2 => "1->2",
+            AmplitudeModulation::Source3 => "2->3",
+            AmplitudeModulation::Source4 => "3->4",
+            AmplitudeModulation::Source5 => "4->5",
+            AmplitudeModulation::Source6 => "5->6",
+        })
+    }
 }
 
 /// Velocity curve.

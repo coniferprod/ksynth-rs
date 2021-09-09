@@ -188,6 +188,7 @@ impl SystemExclusiveData for Modulation {
 
 
 /// Filter settings.
+#[derive(Debug)]
 pub struct Filter {
     pub is_active: bool,
     pub cutoff: Cutoff,

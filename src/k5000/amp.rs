@@ -69,6 +69,7 @@ impl SystemExclusiveData for Envelope {
 }
 
 /// Amplifier key scaling control.
+#[derive(Debug)]
 pub struct KeyScalingControl {
     pub level: KeyScalingLevel,
     pub attack_time: ControlTime,
@@ -108,6 +109,7 @@ impl SystemExclusiveData for KeyScalingControl {
 }
 
 /// Amplifier velocity control.
+#[derive(Debug)]
 pub struct VelocityControl {
     pub level: VelocityControlLevel,
     pub attack_time: ControlTime,
@@ -147,6 +149,7 @@ impl SystemExclusiveData for VelocityControl {
 }
 
 /// Modulation settings for the amplifier section.
+#[derive(Debug)]
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_sens: VelocityControl,
@@ -180,6 +183,7 @@ impl SystemExclusiveData for Modulation {
 }
 
 /// Amplifier.
+#[derive(Debug)]
 pub struct Amplifier {
     pub velocity_curve: VelocityCurve,  // 1...12 (stored as 0~11)
     pub envelope: Envelope,

@@ -16,6 +16,7 @@ pub mod morf;
 pub mod harmonic;
 pub mod formant;
 pub mod addkit;
+pub mod wave;
 pub mod sysex;
 
 // Simple wrapper for an inclusive range of Ord types.
@@ -100,6 +101,10 @@ impl UnsignedLevel {
         UnsignedLevel(num::clamp(value, range.start, range.end))
     }
 
+    pub fn value(&self) -> u8 {
+        self.0
+    }
+
     pub fn as_byte(&self) -> u8 {
         self.0
     }
@@ -108,6 +113,12 @@ impl UnsignedLevel {
 impl From<u8> for UnsignedLevel {
     fn from(value: u8) -> UnsignedLevel {
         UnsignedLevel::new(value)
+    }
+}
+
+impl fmt::Display for UnsignedLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 
@@ -234,11 +245,21 @@ impl MacroParameterDepth {
     pub fn as_byte(&self) -> u8 {
         (self.0 + 64) as u8
     }
+
+    pub fn value(&self) -> i8 {
+        self.0
+    }
 }
 
 impl From<u8> for MacroParameterDepth {
     fn from(value: u8) -> MacroParameterDepth {
         MacroParameterDepth::new(value as i8)
+    }
+}
+
+impl fmt::Display for MacroParameterDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 

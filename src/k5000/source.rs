@@ -1,6 +1,8 @@
 //! Data model for the source in a single patch.
 //!
 
+use std::fmt;
+
 use crate::k5000::control::{VelocitySwitchSettings, ModulationSettings, PanSettings};
 use crate::SystemExclusiveData;
 use crate::k5000::osc::*;
@@ -26,6 +28,12 @@ impl Key {
     }
 }
 
+impl fmt::Display for Key {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
 /// Keyboard zone.
 pub struct Zone {
     /// Low key of the zone.
@@ -33,6 +41,12 @@ pub struct Zone {
 
     /// High key of the zone.
     pub high: Key,
+}
+
+impl fmt::Display for Zone {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} - {}", self.low, self.high)
+    }
 }
 
 impl SystemExclusiveData for Zone {
@@ -76,6 +90,14 @@ impl Default for SourceControl {
             key_on_delay: UnsignedLevel::from(0),
             pan: Default::default(),
         }
+    }
+}
+
+impl fmt::Display for SourceControl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Zone: {}\n{}\nEffect path: {}\nVolume: {} \nBender pitch: {:?}  Bender cutoff: {:?}\nKey ON Delay: {}\nPan type: {:?}  Pan value: {:?}",
+            self.zone, self.vel_sw, self.effect_path, self.volume, self.bender_pitch, self.bender_cutoff, self.key_on_delay, self.pan.pan_type, self.pan.pan_value
+        )
     }
 }
 
@@ -128,7 +150,7 @@ impl Source {
 
     /// Returns `true` if this source is ADD, false if PCM.
     pub fn is_additive(&self) -> bool {
-        self.oscillator.wave == 512
+        self.oscillator.wave.is_additive()
     }
 
     /// Returns `true` if this source is PCM, false if ADD.
@@ -157,6 +179,13 @@ impl Default for Source {
             lfo: Default::default(),
             control: Default::default(),
         }
+    }
+}
+
+impl fmt::Display for Source {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}\n\nDCO:\n{}\n\nDCF:\n{:?}\n\nDCA:\n{:?}\n\nLFO:\n{:?}\n",
+            self.control, self.oscillator, self.filter, self.amplifier, self.lfo)
     }
 }
 
