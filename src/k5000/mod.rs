@@ -296,11 +296,21 @@ impl MediumDepth {
     pub fn as_byte(&self) -> u8 {
         self.0
     }
+
+    pub fn value(&self) -> u8 {
+        self.0
+    }
 }
 
 impl From<u8> for MediumDepth {
     fn from(value: u8) -> MediumDepth {
         MediumDepth::new(value)
+    }
+}
+
+impl fmt::Display for MediumDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 
@@ -356,6 +366,10 @@ impl Coarse {
     pub fn as_byte(&self) -> u8 {
         (self.0 + 64) as u8
     }
+
+    pub fn value(&self) -> i8 {
+        self.0
+    }
 }
 
 impl From<i8> for Coarse {
@@ -376,6 +390,12 @@ impl From<i32> for Coarse {
     }
 }
 
+impl fmt::Display for Coarse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
 /// Unsigned coarse for bender pitch (0...24)
 #[derive(Debug, Clone, Copy)]
 pub struct UnsignedCoarse(u8);
@@ -393,11 +413,21 @@ impl UnsignedCoarse {
     pub fn as_byte(&self) -> u8 {
         self.0
     }
+
+    pub fn value(&self) -> u8 {
+        self.0
+    }
 }
 
 impl From<u8> for UnsignedCoarse {
     fn from(value: u8) -> UnsignedCoarse {
         UnsignedCoarse::new(value)
+    }
+}
+
+impl fmt::Display for UnsignedCoarse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 

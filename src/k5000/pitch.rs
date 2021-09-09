@@ -52,7 +52,7 @@ impl Envelope {
 
 impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "                  Pitch Envelope\nStrt L  {:?}       Vel to\nAtak T  {:?}     Level {:?}\nAtak L  {:?}     Time  {:?}\nDecy T  {:?}\n",
+        write!(f, "                  Pitch Envelope\nStrt L  {}       Vel to\nAtak T  {}     Level {}\nAtak L  {}     Time  {}\nDecy T  {}\n",
             self.start, self.attack_time, self.level_vel_sens, self.attack_level, self.time_vel_sens, self.decay_time
         )
     }

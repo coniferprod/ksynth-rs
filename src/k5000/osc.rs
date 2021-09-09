@@ -27,22 +27,6 @@ impl fmt::Display for FixedKey {
             FixedKey::On(key) => key.name(),
         };
         write!(f, "{}", &s)
-
-        // Works, but duplicates the write! macro:
-        /*
-        match self {
-            FixedKey::Off => write!(f, "{}", "OFF"),
-            FixedKey::On(key) => write!(f, "{}", key.name()),
-        }
-        */
-
-        // Borrow checker trouble:
-        /*
-        write!(f, "{}", match self {
-            FixedKey::Off => "OFF",
-            FixedKey::On(key) => key.name().as_str(),
-        })
-        */
     }
 }
 
@@ -108,7 +92,7 @@ impl Default for Oscillator {
 
 impl fmt::Display for Oscillator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Wave type: {}\nKS Pitch: {:?}\nFixed key: {}\nCoarse: {:?}  Fine: {:?}\nEnvelope:\n{}\n",
+        write!(f, "Wave type: {}\nKS Pitch: {}\nFixed key: {}\nCoarse: {}  Fine: {}\nEnvelope:\n{}\n",
             self.wave, self.ks_to_pitch, self.fixed_key, self.coarse, self.fine, self.pitch_envelope)
     }
 }
@@ -147,4 +131,15 @@ pub enum KeyScaling {
     TwentyFiveCent = 1,
     ThirtyTreeCent = 2,
     FiftyCent = 3,
+}
+
+impl fmt::Display for KeyScaling {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            KeyScaling::ZeroCent => String::from("0ct"),
+            KeyScaling::TwentyFiveCent => String::from("25ct"),
+            KeyScaling::ThirtyTreeCent => String::from("33ct"),
+            KeyScaling::FiftyCent => String::from("50ct")
+        })
+    }
 }

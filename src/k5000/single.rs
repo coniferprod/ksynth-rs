@@ -30,13 +30,6 @@ impl fmt::Display for Portamento {
             Portamento::Off => write!(f, "{}", "OFF"),
             Portamento::On(speed) => write!(f, "{}", speed),
         }
-
-        /*
-        write!(f, "{}", match self {
-            Portamento::Off => "OFF",
-            Portamento::On(speed) => format!("ON, Porta Speed: {}", speed).as_str(),
-        })
-        */
     }
 }
 
@@ -78,7 +71,7 @@ impl Default for Common {
 impl fmt::Display for Common {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-            "{}\nVolume: {:3}  Sources: {}  Poly: {}  AM: {}  Portamento: {}\nMacro Controller:\nUser 1: {}\nUser 2: {}\nUser 3: {}\nUser 4: {}\nSwitch 1: {:?}   FootSw1: {:?}\nSwitch 2: {:?}   FootSw2: {:?}\n",
+            "{}\nVolume: {:3}  Sources: {}  Poly: {}  AM: {}  Portamento: {}\nMacro Controller:\nUser 1: {}\nUser 2: {}\nUser 3: {}\nUser 4: {}\nSwitch 1: {}   FootSw1: {}\nSwitch 2: {}   FootSw2: {}\n",
             self.name, self.volume, self.source_count, self.polyphony, self.amplitude_modulation,
             self.portamento, self.macros[0], self.macros[1], self.macros[2], self.macros[3],
             self.switches.switch1, self.switches.footswitch1, self.switches.switch2, self.switches.footswitch2

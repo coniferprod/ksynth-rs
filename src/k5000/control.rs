@@ -26,6 +26,17 @@ impl Default for VelocitySwitch {
     fn default() -> Self { VelocitySwitch::Off }
 }
 
+impl fmt::Display for VelocitySwitch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            VelocitySwitch::Off => String::from("Off"),
+            VelocitySwitch::Loud => String::from("Loud"),
+            VelocitySwitch::Soft => String::from("Soft"),
+            VelocitySwitch::Unknown => String::from("Unknown"),
+        })
+    }
+}
+
 /// Velocity switch settings.
 pub struct VelocitySwitchSettings {
     pub switch_type: VelocitySwitch,
@@ -66,7 +77,7 @@ impl VelocitySwitchSettings {
 
 impl fmt::Display for VelocitySwitchSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Vel. sw type: {:?}, threshold: {}",
+        write!(f, "Vel. sw type: {}, threshold: {}",
             self.switch_type, self.threshold
         )
     }
@@ -144,6 +155,33 @@ impl Default for ControlDestination {
     fn default() -> Self { ControlDestination::PitchOffset }
 }
 
+impl fmt::Display for ControlDestination {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            ControlDestination::PitchOffset => String::from("Pitch offset"),
+            ControlDestination::CutoffOffset => String::from("Cutoff offset"),
+            ControlDestination::Level => String::from("Level"),
+            ControlDestination::VibratoDepthOffset => String::from("Vibrato depth offset"),
+            ControlDestination::GrowlDepthOffset => String::from("Growl depth offset"),
+            ControlDestination::TremoloDepthOffset => String::from("Tremolo depth offset"),
+            ControlDestination::LfoSpeedOffset => String::from("LFO speed offset"),
+            ControlDestination::AttackTimeOffset => String::from("Attack time offset"),
+            ControlDestination::Decay1TimeOffset => String::from("Decay 1 time offset"),
+            ControlDestination::ReleaseTimeOffset => String::from("Release time offset"),
+            ControlDestination::VelocityOffset => String::from("Velocity offset"),
+            ControlDestination::ResonanceOffset => String::from("Resonance offset"),
+            ControlDestination::PanPotOffset => String::from("Pan pot offset"),
+            ControlDestination::FormantFilterBiasOffset => String::from("Formant filter bias offset"),
+            ControlDestination::FormantFilterEnvelopeLfoDepthOffset => String::from("Formant filter envelope LFO depth offset"),
+            ControlDestination::FormantFilterEnvelopeLfoSpeedOffset => String::from("Formant filter envelope LFO speed offset"),
+            ControlDestination::HarmonicLowOffset => String::from("Harmonic low offset"),
+            ControlDestination::HarmonicHighOffset => String::from("Harmonic high offset"),
+            ControlDestination::HarmonicEvenOffset => String::from("Harmonic even offset"),
+            ControlDestination::HarmonicOddOffset => String::from("Harmonic odd offset"),
+        })
+    }
+}
+
 /// Macro controller.
 pub struct MacroController {
     pub destination1: ControlDestination,
@@ -165,7 +203,7 @@ impl Default for MacroController {
 
 impl fmt::Display for MacroController {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Dest1 = {:?}, Depth = {}\nDest2 = {:?}, Depth = {}",
+        write!(f, "Dest1 = {}, Depth = {}\nDest2 = {}, Depth = {}",
             self.destination1, self.depth1, self.destination2, self.depth2
         )
     }
@@ -283,6 +321,17 @@ impl Default for PanKind {
     fn default() -> Self { PanKind::Normal }
 }
 
+impl fmt::Display for PanKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            PanKind::Normal => String::from("Normal"),
+            PanKind::Random => String::from("Random"),
+            PanKind::KeyScale => String::from("Key scale"),
+            PanKind::NegativeKeyScale => String::from("Negative key scale"),
+        })
+    }
+}
+
 /// Pan settings.
 pub struct PanSettings {
     pub pan_type: PanKind,
@@ -336,6 +385,30 @@ pub enum Switch {
 
 impl Default for Switch {
     fn default() -> Self { Switch::Off }
+}
+
+impl fmt::Display for Switch {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            Switch::Off => String::from("Off"),
+            Switch::HarmMax => String::from("Max harmonics"),
+            Switch::HarmBright => String::from("Bright harmonics"),
+            Switch::HarmDark => String::from("Dark harmonics"),
+            Switch::HarmSaw => String::from("Saw harmonics"),
+            Switch::SelectLoud => String::from("Select loud"),
+            Switch::AddLoud => String::from("Add loud"),
+            Switch::AddFifth => String::from("Add fifth"),
+            Switch::AddOdd => String::from("Add odd"),
+            Switch::AddEven => String::from("Add even"),
+            Switch::He1 => String::from("Harmonic Env 1"),
+            Switch::He2 => String::from("Harmonic Env 2"),
+            Switch::HarmonicEnvelopeLoop => String::from("Harmonic envelope loop"),
+            Switch::FfMax => String::from("Formant filter max"),
+            Switch::FfComb => String::from("Formant filter comb"),
+            Switch::FfHiCut => String::from("Formant filter high cut"),
+            Switch::FfComb2 => String::from("Formant filter comb 2"),
+        })
+    }
 }
 
 /// Switch control settings.

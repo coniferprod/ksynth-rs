@@ -24,13 +24,6 @@ impl Key {
     // TODO: Add constructor from note name
 
     pub fn name(&self) -> String {
-        /*
-        let note_names = vec!["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        let octave = (self.note / 12) as i8 - 1;
-        let name = note_names[(self.note as usize) % 12];
-        format!("{}{}", name, octave)
-        */
-
         // Adapted from RIMD:
         let octave = (self.note as f32 / 12 as f32).floor() - 1.0;
         let name_index = (self.note as usize % 12) * 2;
@@ -110,7 +103,7 @@ impl Default for SourceControl {
 
 impl fmt::Display for SourceControl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Zone: {}\n{}\nEffect path: {}\nVolume: {} \nBender pitch: {:?}  Bender cutoff: {:?}\nKey ON Delay: {}\nPan type: {:?}  Pan value: {:?}",
+        write!(f, "Zone: {}\n{}\nEffect path: {}\nVolume: {} \nBender pitch: {}  Bender cutoff: {}\nKey ON Delay: {}\nPan type: {}  Pan value: {}",
             self.zone, self.vel_sw, self.effect_path, self.volume, self.bender_pitch, self.bender_cutoff, self.key_on_delay, self.pan.pan_type, self.pan.pan_value
         )
     }
@@ -199,7 +192,7 @@ impl Default for Source {
 
 impl fmt::Display for Source {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}\n\nDCO:\n{}\n\nDCF:\n{:?}\n\nDCA:\n{:?}\n\nLFO:\n{:?}\n",
+        write!(f, "{}\n\nDCO:\n{}\n\nDCF:\n{}\n\nDCA:\n{}\n\nLFO:\n{}\n",
             self.control, self.oscillator, self.filter, self.amplifier, self.lfo)
     }
 }
