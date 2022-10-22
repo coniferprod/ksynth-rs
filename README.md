@@ -1,5 +1,8 @@
 # ksynth-rs
 
+Patch manipulation helpers for Kawai digital synths:
+K5, K1, K4, and K5000.
+
 ## Dissection of a patch
 
 WizooIni is a Kawai K5000 single patch found in the book "Introduction to Additive Synthesis:
