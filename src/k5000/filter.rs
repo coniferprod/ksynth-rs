@@ -52,12 +52,12 @@ pub struct Envelope {
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack_time: EnvelopeTime::from(0),
-            decay1_time: EnvelopeTime::from(0),
-            decay1_level: EnvelopeLevel::from(0),
-            decay2_time: EnvelopeTime::from(0),
-            decay2_level: EnvelopeLevel::from(0),
-            release_time: EnvelopeTime::from(0),
+            attack_time: EnvelopeTime::new(0),
+            decay1_time: EnvelopeTime::new(0),
+            decay1_level: EnvelopeLevel::new(0),
+            decay2_time: EnvelopeTime::new(0),
+            decay2_level: EnvelopeLevel::new(0),
+            release_time: EnvelopeTime::new(0),
         }
     }
 }
@@ -115,8 +115,8 @@ pub struct KeyScalingControl {
 impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
-            attack_time: ControlTime::from(0),
-            decay1_time: ControlTime::from(0),
+            attack_time: ControlTime::new(0),
+            decay1_time: ControlTime::new(0),
         }
     }
 }
@@ -147,9 +147,9 @@ pub struct VelocityControl {
 impl Default for VelocityControl {
     fn default() -> Self {
         VelocityControl {
-            depth: EnvelopeDepth::from(0),
-            attack_time: ControlTime::from(0),
-            decay1_time: ControlTime::from(0),
+            depth: EnvelopeDepth::new(0),
+            attack_time: ControlTime::new(0),
+            decay1_time: ControlTime::new(0),
         }
     }
 }
@@ -225,14 +225,14 @@ impl Filter {
     pub fn new() -> Filter {
         Filter {
             is_active: true,
-            cutoff: Cutoff::from(0),
-            resonance: Resonance::from(0),
+            cutoff: Cutoff::new(0),
+            resonance: Resonance::new(0),
             mode: FilterMode::LowPass,
             velocity_curve: VelocityCurve::Curve1,
-            level: Level::from(0),
-            ks_to_cutoff: EnvelopeDepth::from(0),
-            vel_to_cutoff: EnvelopeDepth::from(0),
-            envelope_depth: EnvelopeDepth::from(0),
+            level: Level::new(0),
+            ks_to_cutoff: EnvelopeDepth::new(0),
+            vel_to_cutoff: EnvelopeDepth::new(0),
+            envelope_depth: EnvelopeDepth::new(0),
             envelope: Envelope::new(),
         }
     }

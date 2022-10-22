@@ -40,9 +40,9 @@ impl Default for HarmonicCommon {
             morf_enabled: false,
             total_gain: 0,
             group: Default::default(),
-            ks_to_gain: SignedLevel::from(0),
+            ks_to_gain: SignedLevel::new(0),
             velocity_curve: VelocityCurve::Curve1,
-            velocity_depth: VelocityDepth::from(0),
+            velocity_depth: VelocityDepth::new(0),
         }
     }
 }
@@ -124,10 +124,10 @@ pub struct MorfHarmonicEnvelope {
 impl Default for MorfHarmonicEnvelope {
     fn default() -> Self {
         MorfHarmonicEnvelope {
-            time1: EnvelopeTime::from(0),
-            time2: EnvelopeTime::from(0),
-            time3: EnvelopeTime::from(0),
-            time4: EnvelopeTime::from(0),
+            time1: EnvelopeTime::new(0),
+            time2: EnvelopeTime::new(0),
+            time3: EnvelopeTime::new(0),
+            time4: EnvelopeTime::new(0),
             loop_type: Default::default(),
         }
     }

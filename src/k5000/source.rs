@@ -91,11 +91,11 @@ impl Default for SourceControl {
             zone: Zone { low: Key { note: 0 }, high: Key { note: 127 } },
             vel_sw: Default::default(),
             effect_path: 0,
-            volume: UnsignedLevel::from(100),
-            bender_pitch: UnsignedCoarse::from(0),
-            bender_cutoff: MediumDepth::from(0),
+            volume: UnsignedLevel::new(100),
+            bender_pitch: UnsignedCoarse::new(0),
+            bender_cutoff: MediumDepth::new(0),
             modulation: Default::default(),
-            key_on_delay: UnsignedLevel::from(0),
+            key_on_delay: UnsignedLevel::new(0),
             pan: Default::default(),
         }
     }

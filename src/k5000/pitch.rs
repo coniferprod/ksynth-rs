@@ -40,12 +40,12 @@ impl Envelope {
     /// Creates a new envelope with default values.
     pub fn new() -> Envelope {
         Envelope {
-            start: Level::from(0),
-            attack_time: Time::from(0),
-            attack_level: Level::from(0),
-            decay_time: Time::from(0),
-            time_vel_sens: VelocitySensitivity::from(0),
-            level_vel_sens: VelocitySensitivity::from(0),
+            start: Level::new(0),
+            attack_time: Time::new(0),
+            attack_level: Level::new(0),
+            decay_time: Time::new(0),
+            time_vel_sens: VelocitySensitivity::new(0),
+            level_vel_sens: VelocitySensitivity::new(0),
         }
     }
 }
