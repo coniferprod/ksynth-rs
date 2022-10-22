@@ -56,7 +56,7 @@ impl Default for Control {
     fn default() -> Self {
         Control {
             depth: Depth::from(0),
-            key_scaling: KeyScaling::from(0i8),
+            key_scaling: KeyScaling::from(0),
         }
     }
 }

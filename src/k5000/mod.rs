@@ -1,7 +1,7 @@
-use std::ops::RangeInclusive;
 use std::fmt;
 use rand::Rng;
 use num;
+use std::ops::RangeInclusive;
 
 pub mod filter;
 pub mod amp;
@@ -19,13 +19,6 @@ pub mod addkit;
 pub mod wave;
 pub mod sysex;
 
-// Simple wrapper for an inclusive range of Ord types.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-struct Wrapper<T> where T: Ord {
-    start: T,
-    end: T,
-}
-
 /// Generates random value that falls in the range of the type.
 pub trait RandomValue {
     type T;
@@ -38,42 +31,45 @@ pub trait RandomValue {
 
 /// Signed level (-63...+63)
 #[derive(Debug, Clone, Copy)]
-pub struct SignedLevel(i8);
+pub struct SignedLevel(i32);
 
 impl SignedLevel {
-    fn range() -> Wrapper<i8> {
-        Wrapper { start: -63, end: 63 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(-63, 63)
     }
 
-    pub fn new(value: i8) -> SignedLevel {
+    pub fn is_clamped() -> bool {
+        return true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = SignedLevel::range();
-        SignedLevel(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            SignedLevel(value)
+        }
+        else {
+            if Self::is_clamped() {
+                SignedLevel(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
     }
 
     pub fn as_byte(&self) -> u8 {
         (self.0 + 64) as u8
     }
 
-    pub fn value(&self) -> i8 {
+    pub fn value(&self) -> i32 {
         self.0
     }
 }
 
-impl From<i8> for SignedLevel {
-    fn from(value: i8) -> SignedLevel {
-        SignedLevel::new(value)
-    }
-}
-
+// Makes new SignedLevel from a byte as found in the SysEx data.
 impl From<u8> for SignedLevel {
     fn from(value: u8) -> SignedLevel {
-        SignedLevel::new(value as i8 - 64)
-    }
-}
-
-impl From<i32> for SignedLevel {
-    fn from(value: i32) -> SignedLevel {
-        SignedLevel::new(value as i8)
+        SignedLevel::new(value as i32 - 64)
     }
 }
 
@@ -84,41 +80,55 @@ impl fmt::Display for SignedLevel {
 }
 
 impl RandomValue for SignedLevel {
-    type T = i8;
+    type T = i32;
 
     fn random_value(&self) -> Self::T {
         let mut rng = rand::thread_rng();
         let range = SignedLevel::range();
-        rng.gen_range(range.start..=range.end)
+        rng.gen_range(*range.start() ..= *range.end())
     }
 }
 
 /// Unsigned level (0...127).
 #[derive(Debug, Clone, Copy)]
-pub struct UnsignedLevel(u8);
+pub struct UnsignedLevel(i32);
 
 impl UnsignedLevel {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 0, end: 127 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(0, 127)
     }
 
-    pub fn new(value: u8) -> UnsignedLevel {
+    pub fn is_clamped() -> bool {
+        return true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = UnsignedLevel::range();
-        UnsignedLevel(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            UnsignedLevel(value)
+        }
+        else {
+            if Self::is_clamped() {
+                UnsignedLevel(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
     }
 
-    pub fn value(&self) -> u8 {
+    pub fn value(&self) -> i32 {
         self.0
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 }
 
 impl From<u8> for UnsignedLevel {
     fn from(value: u8) -> UnsignedLevel {
-        UnsignedLevel::new(value)
+        UnsignedLevel::new(value.into())
     }
 }
 
@@ -128,43 +138,89 @@ impl fmt::Display for UnsignedLevel {
     }
 }
 
+impl RandomValue for UnsignedLevel {
+    type T = i32;
+
+    fn random_value(&self) -> Self::T {
+        let mut rng = rand::thread_rng();
+        let range = UnsignedLevel::range();
+        rng.gen_range(*range.start() ..= *range.end())
+    }
+}
+
 /// Positive level (1...127).
 #[derive(Debug, Clone, Copy)]
-pub struct PositiveLevel(u8);
+pub struct PositiveLevel(i32);
 
 impl PositiveLevel {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 1, end: 127 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(1, 127)
     }
 
-    pub fn new(value: u8) -> PositiveLevel {
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = PositiveLevel::range();
-        PositiveLevel(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            PositiveLevel(value)
+        }
+        else {
+            if Self::is_clamped() {
+                PositiveLevel(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 }
 
 impl From<u8> for PositiveLevel {
     fn from(value: u8) -> PositiveLevel {
-        PositiveLevel::new(value)
+        PositiveLevel::new(value.into())
     }
 }
 
 /// Signed depth (-31...+31) (in SysEx 33...95)
 #[derive(Debug, Clone, Copy)]
-pub struct SignedDepth(i8);
+pub struct SignedDepth(i32);
 
 impl SignedDepth {
-    fn range() -> Wrapper<i8> {
-        Wrapper { start: -31, end: 31 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(-31, 31)
     }
 
-    pub fn new(value: i8) -> SignedDepth {
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = SignedDepth::range();
-        SignedDepth(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            SignedDepth(value)
+        }
+        else {
+            if Self::is_clamped() {
+                SignedDepth(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
@@ -172,44 +228,58 @@ impl SignedDepth {
     }
 }
 
-impl From<i8> for SignedDepth {
-    fn from(value: i8) -> SignedDepth {
-        SignedDepth::new(value)
+impl From<u8> for SignedDepth {
+    fn from(value: u8) -> SignedDepth {
+        SignedDepth::new(value as i32 - 64)
     }
 }
 
-impl From<u8> for SignedDepth {
-    fn from(value: u8) -> SignedDepth {
-        SignedDepth::new(value as i8 - 64)
+impl fmt::Display for SignedDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
     }
 }
 
 /// Unsigned depth (0~63).
 #[derive(Debug, Clone, Copy)]
-pub struct UnsignedDepth(u8);
+pub struct UnsignedDepth(i32);
 
 impl UnsignedDepth {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 0, end: 63 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(0, 63)
     }
 
-    pub fn new(value: u8) -> UnsignedDepth {
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = UnsignedDepth::range();
-        UnsignedDepth(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            UnsignedDepth(value)
+        }
+        else {
+            if Self::is_clamped() {
+                UnsignedDepth(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
-    }
-
-    pub fn value(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 }
 
 impl From<u8> for UnsignedDepth {
     fn from(value: u8) -> UnsignedDepth {
-        UnsignedDepth::new(value)
+        UnsignedDepth::new(value as i32)
     }
 }
 
@@ -221,90 +291,83 @@ impl fmt::Display for UnsignedDepth {
 
 /// Depth (0~100).
 #[derive(Debug, Clone, Copy)]
-pub struct Depth(u8);
+pub struct Depth(i32);
 
 impl Depth {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 0, end: 100 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(0, 100)
     }
 
-    pub fn new(value: u8) -> Depth {
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = Depth::range();
-        Depth(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            Depth(value)
+        }
+        else {
+            if Self::is_clamped() {
+                Depth(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 }
 
 impl From<u8> for Depth {
     fn from(value: u8) -> Depth {
-        Depth::new(value)
-    }
-}
-
-/// Macro depth (-31 ... +31).
-#[derive(Debug, Clone, Copy)]
-pub struct MacroParameterDepth(i8);
-
-impl MacroParameterDepth {
-    fn range() -> Wrapper<i8> {
-        Wrapper { start: -31, end: 31 }
-    }
-
-    pub fn new(value: i8) -> MacroParameterDepth {
-        let range = MacroParameterDepth::range();
-        MacroParameterDepth(num::clamp(value, range.start, range.end))
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        (self.0 + 64) as u8
-    }
-
-    pub fn value(&self) -> i8 {
-        self.0
-    }
-}
-
-impl From<u8> for MacroParameterDepth {
-    fn from(value: u8) -> MacroParameterDepth {
-        MacroParameterDepth::new(value as i8)
-    }
-}
-
-impl fmt::Display for MacroParameterDepth {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value())
+        Depth::new(value as i32)
     }
 }
 
 /// Medium depth (0~31).
 #[derive(Debug, Clone, Copy)]
-pub struct MediumDepth(u8);
+pub struct MediumDepth(i32);
 
 impl MediumDepth {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 0, end: 7 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(0, 31)
     }
 
-    pub fn new(value: u8) -> MediumDepth {
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
         let range = MediumDepth::range();
-        MediumDepth(num::clamp(value, range.start, range.end))
+        if range.contains(&value) {
+            MediumDepth(value)
+        }
+        else {
+            if Self::is_clamped() {
+                MediumDepth(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
-    }
-
-    pub fn value(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 }
 
 impl From<u8> for MediumDepth {
     fn from(value: u8) -> MediumDepth {
-        MediumDepth::new(value)
+        MediumDepth::new(value as i32)
     }
 }
 
@@ -316,30 +379,45 @@ impl fmt::Display for MediumDepth {
 
 /// Small depth (0~7).
 #[derive(Debug, Clone, Copy)]
-pub struct SmallDepth(u8);
+pub struct SmallDepth(i32);
 
 impl SmallDepth {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 0, end: 7 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(0, 31)
     }
 
-    pub fn new(value: u8) -> SmallDepth {
-        let range = SmallDepth::range();
-        SmallDepth(num::clamp(value, range.start, range.end))
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
+        let range = Self::range();
+        if range.contains(&value) {
+            SmallDepth(value)
+        }
+        else {
+            if Self::is_clamped() {
+                SmallDepth(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 
-    pub fn value(&self) -> u8 {
-        self.0
-    }
 }
 
 impl From<u8> for SmallDepth {
     fn from(value: u8) -> SmallDepth {
-        SmallDepth::new(value)
+        SmallDepth::new(value.into())
     }
 }
 
@@ -351,42 +429,44 @@ impl fmt::Display for SmallDepth {
 
 /// Coarse tuning (-24...+24) (in SysEx 40...88)
 #[derive(Debug, Clone, Copy)]
-pub struct Coarse(i8);
+pub struct Coarse(i32);
 
 impl Coarse {
-    fn range() -> Wrapper<i8> {
-        Wrapper { start: -24, end: 24 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(-24, 24)
     }
 
-    pub fn new(value: i8) -> Coarse {
-        let range = Coarse::range();
-        Coarse(num::clamp(value, range.start, range.end))
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
+        let range = Self::range();
+        if range.contains(&value) {
+            Coarse(value)
+        }
+        else {
+            if Self::is_clamped() {
+                Coarse(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
         (self.0 + 64) as u8
     }
-
-    pub fn value(&self) -> i8 {
-        self.0
-    }
-}
-
-impl From<i8> for Coarse {
-    fn from(value: i8) -> Coarse {
-        Coarse::new(value)
-    }
 }
 
 impl From<u8> for Coarse {
     fn from(value: u8) -> Coarse {
-        Coarse::new(value as i8 - 64)
-    }
-}
-
-impl From<i32> for Coarse {
-    fn from(value: i32) -> Coarse {
-        Coarse::new(value as i8)
+        Coarse::new(value as i32 - 64)
     }
 }
 
@@ -398,30 +478,45 @@ impl fmt::Display for Coarse {
 
 /// Unsigned coarse for bender pitch (0...24)
 #[derive(Debug, Clone, Copy)]
-pub struct UnsignedCoarse(u8);
+pub struct UnsignedCoarse(i32);
 
 impl UnsignedCoarse {
-    fn range() -> Wrapper<u8> {
-        Wrapper { start: 0, end: 24 }
+    pub fn range() -> RangeInclusive<i32> {
+        RangeInclusive::new(0, 24)
     }
 
-    pub fn new(value: u8) -> UnsignedCoarse {
-        let range = UnsignedCoarse::range();
-        UnsignedCoarse(num::clamp(value, range.start, range.end))
+    pub fn is_clamped() -> bool {
+        true
+    }
+
+    pub fn new(value: i32) -> Self {
+        let range = Self::range();
+        if range.contains(&value) {
+            UnsignedCoarse(value)
+        }
+        else {
+            if Self::is_clamped() {
+                UnsignedCoarse(num::clamp(value, *range.start(), *range.end()))
+            }
+            else {
+                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
+            }
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
     }
 
     pub fn as_byte(&self) -> u8 {
-        self.0
+        self.0 as u8
     }
 
-    pub fn value(&self) -> u8 {
-        self.0
-    }
 }
 
 impl From<u8> for UnsignedCoarse {
     fn from(value: u8) -> UnsignedCoarse {
-        UnsignedCoarse::new(value)
+        UnsignedCoarse::new(value as i32)
     }
 }
 
@@ -430,6 +525,9 @@ impl fmt::Display for UnsignedCoarse {
         write!(f, "{}", self.value())
     }
 }
+
+// Define additional type aliases
+type MacroParameterDepth = SignedDepth;
 
 #[cfg(test)]
 mod tests {
@@ -462,25 +560,24 @@ mod tests {
     #[test]
     fn test_signed_level() {
         let ks = SignedLevel::from(1u8);
-        assert_eq!(ks.value(), -63i8);
+        assert_eq!(ks.value(), -63);
     }
 
     #[test]
     fn test_signed_level_as_byte() {
-        let ks = SignedLevel::from(-63i8);
+        let ks = SignedLevel::new(-63);
         assert_eq!(ks.as_byte(), 1u8);
     }
 
     #[test]
     fn test_signed_level_clamped() {
-        let ks = SignedLevel::from(96i8);  // too big for range
-        assert_eq!(ks.value(), 63i8); // should be clamped
-        assert_eq!(ks.as_byte(), 127u8);
+        let ks = SignedLevel::new(96);  // too big for range
+        assert_eq!(ks.value(), 63); // should be clamped
     }
 
     #[test]
     fn test_signed_level_clamped_as_byte() {
-        let ks = SignedLevel::from(63i8);
+        let ks = SignedLevel::new(63);
         assert_eq!(ks.as_byte(), 127u8);
     }
 }
