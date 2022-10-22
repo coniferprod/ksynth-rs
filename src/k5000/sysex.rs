@@ -1,6 +1,7 @@
 //! System Exclusive data definitions.
 //!
 
+use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 
@@ -35,7 +36,7 @@ impl SystemExclusiveData for SystemExclusiveMessage {
     fn from_bytes(data: Vec<u8>) -> Self {
         SystemExclusiveMessage {
             channel: data[2],
-            function: SystemExclusiveFunction::OneBlockDump, // TODO: fix this
+            function: SystemExclusiveFunction::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this
             subdata: Vec::<u8>::new(),  // TODO: fix this
             payload: data[3..].to_vec(),
