@@ -46,9 +46,8 @@ impl AdditiveKit {
 
 impl SystemExclusiveData for AdditiveKit {
     fn from_bytes(data: Vec<u8>) -> Self {
-        let mut offset = 0;
+        let mut offset = 165; // FF bands should start here
 
-        offset = 165;  // FF bands should start here
         let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
         for i in 0..BAND_COUNT {
             bands[i] = data[offset];

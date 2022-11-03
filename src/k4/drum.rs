@@ -4,7 +4,7 @@
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
-use log::{info, warn, error, debug};
+use log::debug;
 use bit::BitIndex;
 use crate::{SystemExclusiveData, Checksum};
 use crate::k4::DRUM_NOTE_COUNT;

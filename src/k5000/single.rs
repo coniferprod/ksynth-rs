@@ -323,7 +323,7 @@ impl SinglePatch {
         let common = Common::from_bytes(data[1..82].to_vec());
         offset += 81;
         let mut sources = Vec::<Source>::new();
-        for i in 0..common.source_count {
+        for _i in 0..common.source_count {
             let source = Source::from_bytes(data[offset..offset + 86].to_vec());
             sources.push(source);
             offset += 86;
@@ -340,24 +340,19 @@ impl Checksum for SinglePatch {
     fn checksum(&self) -> u8 {
         // Bank A,D,E,F: check sum = {(common sum) + (source1 sum) [+ (source2~6 sum)] + 0xa5} & 0x7f
 
-        let mut total = 0;
-        let mut count = 0;
-
         let common_data = self.common.to_bytes();
         let mut common_sum: u32 = 0;
         for d in common_data.iter() {
             common_sum += (d & 0xff) as u32;
-            count += 1;
         }
 
-        total += common_sum & 0xff;
+        let mut total = common_sum & 0xff;
 
         for source in self.sources.iter() {
             let mut source_sum = 0;
             let source_data = source.to_bytes();
             for d in source_data.iter() {
                 source_sum = d & 0xff;
-                count += 1;
             }
 
             total += (source_sum & 0xff) as u32;
@@ -383,8 +378,8 @@ impl SystemExclusiveData for SinglePatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
         let mut start: usize = 0;
-        let mut end: usize = 0;
-        let mut size: usize = 0;
+        let mut end: usize;
+        let mut size: usize;
 
         /*
         let original_checksum = data[offset];

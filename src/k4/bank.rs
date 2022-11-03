@@ -1,5 +1,6 @@
 use std::fmt;
-use log::{info, warn, error, debug};
+use log::debug;
+
 use crate::{SystemExclusiveData};
 use crate::k4::single::SinglePatch;
 use crate::k4::multi::MultiPatch;

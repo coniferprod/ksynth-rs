@@ -205,11 +205,10 @@ impl fmt::Display for Amplifier {
 impl SystemExclusiveData for Amplifier {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
-        let mut start: usize = 0;
-        let mut end: usize = 0;
+        let mut start: usize;
+        let mut end: usize;
 
-        let mut b: u8;
-        b = data[offset];
+        let b = data[offset];
         offset += 1;
         let level = b & 0x7f;
 

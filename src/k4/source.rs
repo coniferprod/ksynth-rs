@@ -50,8 +50,6 @@ impl fmt::Display for Source {
 impl crate::SystemExclusiveData for Source {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
-        let mut start: usize = 0;
-        let mut end: usize = 0;
 
         let mut b: u8;
         b = data[offset];

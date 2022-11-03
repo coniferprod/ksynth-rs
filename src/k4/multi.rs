@@ -6,7 +6,6 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k4;
-use crate::k4::bank::Bank;
 
 const SECTION_COUNT: usize = 8;  // number of sections in a multi
 
@@ -57,11 +56,10 @@ impl fmt::Display for MultiPatch {
 impl SystemExclusiveData for MultiPatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
-        let mut start: usize = 0;
-        let mut end: usize = 0;
+        let start: usize = 0;
 
         // name = M0 ... M9
-        end = start + crate::k4::NAME_LENGTH;
+        let end = start + crate::k4::NAME_LENGTH;
 
         let name = String::from_utf8(data[start..end].to_vec()).expect("Found invalid UTF-8");
         let name = str::replace(&name, char::from(0), " ").to_string();
@@ -69,7 +67,7 @@ impl SystemExclusiveData for MultiPatch {
         offset += crate::k4::NAME_LENGTH + 2;  // skip over name, volume and effect to sections
 
         let mut sections = Vec::<Section>::new();
-        for i in 0..SECTION_COUNT {
+        for _i in 0..SECTION_COUNT {
             sections.push(Section::from_bytes(data[offset .. offset + 8].to_vec()));
             offset += 8;
         }
@@ -232,6 +230,7 @@ impl fmt::Display for PlayMode {
 #[cfg(test)]
 mod tests {
     use super::{*};
+    use crate::k4::bank::Bank;
 
     #[test]
     fn test_multi_patch_from_bytes() {

@@ -193,12 +193,6 @@ impl SinglePatch {
         }
     }
 
-    // Ensure that the name is exactly 10 characters, contains only allowed characters,
-    // and is padded from the right with spaces.
-    pub fn set_name(&self, new_name: &str) {
-
-    }
-
     fn collect_data(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
@@ -315,11 +309,9 @@ impl SystemExclusiveData for SinglePatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
         let mut start: usize = 0;
-        let mut end: usize = 0;
 
         // name = s00 ... s09
-        start = 0;
-        end = start + NAME_LENGTH;
+        let mut end = start + NAME_LENGTH;
 
         let name = String::from_utf8(data[start..end].to_vec()).expect("Found invalid UTF-8");
         let name = str::replace(&name, char::from(0), " ").to_string();
@@ -439,11 +431,11 @@ impl SystemExclusiveData for SinglePatch {
         let f1 = Filter::from_bytes(every_nth_byte(&all_filter_data, 2, 0));
         let f2 = Filter::from_bytes(every_nth_byte(&all_filter_data, 2, 1));
 
-        offset += total_filter_data_size;
+        //offset += total_filter_data_size;
 
-        b = data[offset];
+        //b = data[offset];
         // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
-        let original_checksum = b; // store the checksum as we got it from SysEx
+        //let original_checksum = b; // store the checksum as we got it from SysEx
 
         SinglePatch {
             name: name,
