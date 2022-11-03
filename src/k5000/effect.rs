@@ -234,11 +234,11 @@ impl Default for EffectDefinition {
     fn default() -> Self {
         EffectDefinition {
             effect: Default::default(),
-            depth: Depth::from(0),
-            parameter1: EffectParameter::from(0),
-            parameter2: EffectParameter::from(0),
-            parameter3: EffectParameter::from(0),
-            parameter4: EffectParameter::from(0),
+            depth: Depth::new(0),
+            parameter1: EffectParameter::new(0),
+            parameter2: EffectParameter::new(0),
+            parameter3: EffectParameter::new(0),
+            parameter4: EffectParameter::new(0),
         }
     }
 }
@@ -417,11 +417,11 @@ mod tests {
     fn test_effect_parameter_names() {
         let effect = EffectDefinition {
             effect: Effect::Hall1,
-            depth: Depth::from(100),
-            parameter1: EffectParameter::from(7),
-            parameter2: EffectParameter::from(5),
-            parameter3: EffectParameter::from(31),
-            parameter4: EffectParameter::from(0),
+            depth: Depth::new(100),
+            parameter1: EffectParameter::new(7),
+            parameter2: EffectParameter::new(5),
+            parameter3: EffectParameter::new(31),
+            parameter4: EffectParameter::new(0),
         };
 
         if let Some(param_names) = EFFECT_PARAMETER_NAMES.get(&effect.effect) {

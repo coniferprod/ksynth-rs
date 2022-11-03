@@ -29,12 +29,12 @@ pub struct Envelope {
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack_time: EnvelopeTime::from(0),
-            decay1_time: EnvelopeTime::from(0),
-            decay1_level: EnvelopeLevel::from(0),
-            decay2_time: EnvelopeTime::from(0),
-            decay2_level: EnvelopeLevel::from(0),
-            release_time: EnvelopeTime::from(0),
+            attack_time: EnvelopeTime::new(0),
+            decay1_time: EnvelopeTime::new(0),
+            decay1_level: EnvelopeLevel::new(0),
+            decay2_time: EnvelopeTime::new(0),
+            decay2_level: EnvelopeLevel::new(0),
+            release_time: EnvelopeTime::new(0),
         }
     }
 }
@@ -90,10 +90,10 @@ pub struct KeyScalingControl {
 impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
-            level: KeyScalingLevel::from(0),
-            attack_time: ControlTime::from(0),
-            decay1_time: ControlTime::from(0),
-            release: ControlTime::from(0),
+            level: KeyScalingLevel::new(0),
+            attack_time: ControlTime::new(0),
+            decay1_time: ControlTime::new(0),
+            release: ControlTime::new(0),
         }
     }
 }
@@ -138,10 +138,10 @@ pub struct VelocityControl {
 impl Default for VelocityControl {
     fn default() -> Self {
         VelocityControl {
-            level: VelocityControlLevel::from(0),
-            attack_time: ControlTime::from(0),
-            decay1_time: ControlTime::from(0),
-            release: ControlTime::from(0),
+            level: VelocityControlLevel::new(0),
+            attack_time: ControlTime::new(0),
+            decay1_time: ControlTime::new(0),
+            release: ControlTime::new(0),
         }
     }
 }

@@ -55,8 +55,8 @@ pub struct Control {
 impl Default for Control {
     fn default() -> Self {
         Control {
-            depth: Depth::from(0),
-            key_scaling: KeyScaling::from(0),
+            depth: Depth::new(0),
+            key_scaling: KeyScaling::new(0),
         }
     }
 }
@@ -97,10 +97,10 @@ impl Default for Lfo {
     fn default() -> Self {
         Lfo {
             waveform: Default::default(),
-            speed: Speed::from(0),
-            fade_in_time: Speed::from(0),
-            fade_in_to_speed: Depth::from(0),
-            delay_onset: Speed::from(0),
+            speed: Speed::new(0),
+            fade_in_time: Speed::new(0),
+            fade_in_to_speed: Depth::new(0),
+            delay_onset: Speed::new(0),
             vibrato: Default::default(),
             growl: Default::default(),
             tremolo: Default::default(),

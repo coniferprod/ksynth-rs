@@ -36,8 +36,8 @@ pub struct EnvelopeSegment {
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: EnvelopeRate::from(0),
-            level: EnvelopeLevel::from(0),
+            rate: EnvelopeRate::new(0),
+            level: EnvelopeLevel::new(0),
         }
     }
 }
@@ -74,8 +74,8 @@ impl Default for Envelope {
             decay2: Default::default(),
             release: Default::default(),
             decay_loop: Default::default(),
-            velocity_depth: EnvelopeDepth::from(0),
-            ks_depth: EnvelopeDepth::from(0),
+            velocity_depth: EnvelopeDepth::new(0),
+            ks_depth: EnvelopeDepth::new(0),
         }
     }
 }
@@ -135,9 +135,9 @@ pub struct Lfo {
 impl Default for Lfo {
     fn default() -> Self {
         Lfo {
-            speed: LfoSpeed::from(0),
+            speed: LfoSpeed::new(0),
             shape: Default::default(),
-            depth: LfoDepth::from(0),
+            depth: LfoDepth::new(0),
         }
     }
 }
@@ -168,9 +168,9 @@ pub struct FormantFilter {
 impl Default for FormantFilter {
     fn default() -> Self {
         FormantFilter {
-            bias: Bias::from(0),
+            bias: Bias::new(0),
             mode: Default::default(),
-            envelope_depth: EnvelopeDepth::from(0),
+            envelope_depth: EnvelopeDepth::new(0),
             envelope: Default::default(),
             lfo: Default::default(),
         }

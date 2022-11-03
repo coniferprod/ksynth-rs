@@ -63,8 +63,8 @@ impl Oscillator {
     pub fn new() -> Oscillator {
         Oscillator {
             wave: Wave { number: 384 },
-            coarse: Coarse::from(0),
-            fine: Fine::from(0),
+            coarse: Coarse::new(0),
+            fine: Fine::new(0),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: FixedKey::Off,
             pitch_envelope: PitchEnvelope::new(),
@@ -75,8 +75,8 @@ impl Oscillator {
     pub fn additive() -> Oscillator {
         Oscillator {
             wave: Wave { number: 512 }, // ADD
-            coarse: Coarse::from(0),
-            fine: Fine::from(0),
+            coarse: Coarse::new(0),
+            fine: Fine::new(0),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: FixedKey::Off,
             pitch_envelope: PitchEnvelope::new(),

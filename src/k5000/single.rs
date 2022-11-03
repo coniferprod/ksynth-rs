@@ -53,7 +53,7 @@ impl Default for Common {
     fn default() -> Self {
         Common {
             name: "NewSound".to_string(),
-            volume: UnsignedLevel::from(99),
+            volume: UnsignedLevel::new(99),
             polyphony: Polyphony::Poly,
             source_count: 2,
             source_mutes: [false, false, true, true, true, true],

@@ -66,8 +66,8 @@ pub struct EnvelopeSegment {
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: EnvelopeRate::from(0),
-            level: EnvelopeLevel::from(0),
+            rate: EnvelopeRate::new(0),
+            level: EnvelopeLevel::new(0),
         }
     }
 }
@@ -111,8 +111,8 @@ impl Envelope {
     /// Creates a harmonic envelope with default values.
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
-            rate: EnvelopeRate::from(0),
-            level: EnvelopeLevel::from(0),
+            rate: EnvelopeRate::new(0),
+            level: EnvelopeLevel::new(0),
         };
 
         Envelope {
