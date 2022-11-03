@@ -157,9 +157,3 @@ impl SystemExclusiveData for Lfo {
         result
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{*};
-
-}
