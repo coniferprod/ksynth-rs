@@ -53,7 +53,7 @@ pub struct Zone {
 
 impl fmt::Display for Zone {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} - {}", self.low, self.high)
+        write!(f, "{} to {}", self.low, self.high)
     }
 }
 
@@ -103,7 +103,7 @@ impl Default for SourceControl {
 
 impl fmt::Display for SourceControl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Zone: {}\n{}\nEffect path: {}\nVolume: {} \nBender pitch: {}  Bender cutoff: {}\nKey ON Delay: {}\nPan type: {}  Pan value: {}",
+        write!(f, "Zone={}\nVel. switch: {}\nEffect Path={}\nVolume={}\nBender: Pitch={} Cutoff={}\nKey On Delay={}\nPan: Type={} Value={}\n",
             self.zone, self.vel_sw, self.effect_path, self.volume, self.bender_pitch, self.bender_cutoff, self.key_on_delay, self.pan.pan_type, self.pan.pan_value
         )
     }

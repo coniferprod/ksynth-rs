@@ -1,6 +1,6 @@
 [package]
 name = "ksynth"
-version = "0.13.0"
+version = "0.13.1"
 authors = ["Jere Käpyaho <2261936+jerekapyaho@users.noreply.github.com>"]
 edition = "2018"
 license = "MIT"
@@ -16,3 +16,4 @@ lazy_static = "1.4.0"
 log = "0.4.17"
 num = "0.4.0"
 rand = "0.8.5"
+syxpack = "0.8.0"

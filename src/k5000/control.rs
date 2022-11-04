@@ -77,7 +77,7 @@ impl VelocitySwitchSettings {
 
 impl fmt::Display for VelocitySwitchSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Vel. sw type: {}, threshold: {}",
+        write!(f, "Type={} Threshold={}",
             self.switch_type, self.threshold
         )
     }
@@ -203,7 +203,7 @@ impl Default for MacroController {
 
 impl fmt::Display for MacroController {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Dest1 = {}, Depth = {}\nDest2 = {}, Depth = {}",
+        write!(f, "Dest1={} Depth={}\nDest2={} Depth={}",
             self.destination1, self.depth1, self.destination2, self.depth2
         )
     }

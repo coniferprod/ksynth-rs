@@ -246,7 +246,7 @@ impl Default for Filter {
 
 impl fmt::Display for Filter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Active: {}  Cutoff: {}  Resonance: {}\nMode: {}  Vel. curve: {}  Level: {}\nKS to Cutoff: {}  Vel. to Cutoff: {}  Env. Depth: {}\nEnvelope: {}",
+        write!(f, "Active={} Cutoff={} Resonance={} Mode={}\nVel Curve={} Level=0{}\nKS to Cutoff={} Vel. to Cutoff={} Env Depth={}\nEnvelope: {}",
             self.is_active, self.cutoff, self.resonance,
             self.mode, self.velocity_curve, self.level,
             self.ks_to_cutoff, self.vel_to_cutoff, self.envelope_depth,

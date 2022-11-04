@@ -29,7 +29,7 @@ pub struct SystemExclusiveMessage {
     pub function: SystemExclusiveFunction,
     pub function_data: Vec<u8>,
     pub subdata: Vec<u8>,
-    pub payload: Vec<u8>,
+    pub patch_data: Vec<u8>,
 }
 
 impl SystemExclusiveData for SystemExclusiveMessage {
@@ -39,23 +39,21 @@ impl SystemExclusiveData for SystemExclusiveMessage {
             function: SystemExclusiveFunction::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this
             subdata: Vec::<u8>::new(),  // TODO: fix this
-            payload: data[3..].to_vec(),
+            patch_data: data[3..].to_vec(),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.push(0xf0);
         result.push(0x40); // Kawai manufacturer ID
         result.push(self.channel - 1);  // 1...16 to 0...15
 
         result.push(self.function as u8);
         result.extend(&self.function_data);
         result.extend(&self.subdata);
-        result.extend(&self.payload);
+        result.extend(&self.patch_data);
 
-        result.push(0xf7);
         result
     }
 }

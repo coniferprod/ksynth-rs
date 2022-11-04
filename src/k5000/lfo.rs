@@ -63,7 +63,7 @@ impl Default for Control {
 
 impl fmt::Display for Control {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Depth: {}  KS: {}", self.depth, self.key_scaling)
+        write!(f, "Depth={} KS={}", self.depth, self.key_scaling)
     }
 }
 
@@ -110,7 +110,7 @@ impl Default for Lfo {
 
 impl fmt::Display for Lfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Waveform: {}  Speed: {}  Fade in time: {}  Fade in to speed: {}\nDelay onset: {}  Vibrato: {}  Growl: {}  Tremolo: {}",
+        write!(f, "Waveform={} Speed={} Fade in Time={} Fade in to Speed={}\nDelay Onset={}\nVibrato: {}\nGrowl: {}\nTremolo: {}\n",
             self.waveform, self.speed, self.fade_in_time, self.fade_in_to_speed,
             self.delay_onset, self.vibrato, self.growl, self.tremolo
         )

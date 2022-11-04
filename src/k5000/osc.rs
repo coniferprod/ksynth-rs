@@ -92,7 +92,7 @@ impl Default for Oscillator {
 
 impl fmt::Display for Oscillator {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Wave type: {}\nKS Pitch: {}\nFixed key: {}\nCoarse: {}  Fine: {}\nEnvelope:\n{}\n",
+        write!(f, "Wave={}\nKS Pitch={}\nFixed Key={}\nCoarse={} Fine={}\nPitch Envelope: {}",
             self.wave, self.ks_to_pitch, self.fixed_key, self.coarse, self.fine, self.pitch_envelope)
     }
 }

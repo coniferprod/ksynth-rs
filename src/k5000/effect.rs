@@ -280,7 +280,7 @@ pub struct EffectSettings {
 
 impl fmt::Display for EffectSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "alg = {}\nreverb = {}\neffect1 = {}\neffect2 = {}\neffect3 = {}\neffect4 = {}",
+        write!(f, "Algorithm: {}\nReverb: {}\nEffect1: {}\nEffect2: {}\nEffect3: {}\nEffect 4: {}\n",
             self.algorithm, self.reverb, self.effect1, self.effect2, self.effect3, self.effect4)
     }
 }

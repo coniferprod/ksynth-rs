@@ -100,7 +100,7 @@ impl Default for KeyScalingControl {
 
 impl fmt::Display for KeyScalingControl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Level: {}   Attack: {}  Decay1: {}  Release: {}",
+        write!(f, "Level={}  Attack={} Decay1={} Release={}",
             self.level, self.attack_time, self.decay1_time, self.release
         )
     }
@@ -148,7 +148,7 @@ impl Default for VelocityControl {
 
 impl fmt::Display for VelocityControl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Level: {}   Attack: {}  Decay1: {}  Release: {}",
+        write!(f, "Level={} Attack={} Decay1={} Release={}",
             self.level, self.attack_time, self.decay1_time, self.release
         )
     }
@@ -192,7 +192,7 @@ impl Default for Modulation {
 
 impl fmt::Display for Modulation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "KS to Env.: {}   Vel.sens.: {}",
+        write!(f, "KS to Env.: {}\nVel.sens.: {}",
             self.ks_to_env, self.vel_sens
         )
     }

@@ -71,10 +71,11 @@ impl Default for Common {
 impl fmt::Display for Common {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-            "{}\nVolume: {:3}  Sources: {}  Poly: {}  AM: {}  Portamento: {}\nMacro Controller:\nUser 1: {}\nUser 2: {}\nUser 3: {}\nUser 4: {}\nSwitch 1: {}   FootSw1: {}\nSwitch 2: {}   FootSw2: {}\n",
+            "{}\nVolume: {:3}  Sources: {}  Poly: {}  AM: {}  Portamento: {}\n\nMacro Controllers:\nUser 1: {}\nUser 2: {}\nUser 3: {}\nUser 4: {}\n\nSwitches:\nSwitch 1: {}   FootSw1: {}\nSwitch 2: {}   FootSw2: {}\n\nEffect settings:\n{}\n",
             self.name, self.volume, self.source_count, self.polyphony, self.amplitude_modulation,
             self.portamento, self.macros[0], self.macros[1], self.macros[2], self.macros[3],
-            self.switches.switch1, self.switches.footswitch1, self.switches.switch2, self.switches.footswitch2
+            self.switches.switch1, self.switches.footswitch1, self.switches.switch2, self.switches.footswitch2,
+            self.effects
         )
     }
 }
@@ -377,17 +378,16 @@ impl Default for SinglePatch {
 impl SystemExclusiveData for SinglePatch {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
-        let mut start: usize = 0;
+        let mut start: usize;
         let mut end: usize;
         let mut size: usize;
 
-        /*
         let original_checksum = data[offset];
         eprintln!("original checksum = {:#02x}", original_checksum);
         offset += 1;
-        */
 
         size = 81;
+        start = offset;
         end = start + size;
         let common_data = data[start..end].to_vec();
         eprintln!("Starting to parse source common...");
@@ -470,11 +470,12 @@ impl SystemExclusiveData for SinglePatch {
 impl fmt::Display for SinglePatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut sources_str = String::new();
+        let mut source_num = 1;
         for source in self.sources.iter() {
-            sources_str.push_str(format!("{}\n", source).as_str());
+            sources_str.push_str(format!("Source {}:\n{}\n\n", source_num, source).as_str());
+            source_num += 1;
         }
-
-        write!(f, "{}\nSOURCES:\n{}", self.common, sources_str)
+        write!(f, "{}\nSources:\n{}", self.common, sources_str)
     }
 }
 
