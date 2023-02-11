@@ -543,6 +543,8 @@ impl SystemExclusiveData for Wave {
         let bit_str = format!("{:03b}{:07b}", data[0], data[1]);
         let n = u16::from_str_radix(&bit_str, 2).unwrap();
 
+        eprintln!("Wave = {}", n);
+
         if n == 512 {
             Wave { number: 512 }
         }

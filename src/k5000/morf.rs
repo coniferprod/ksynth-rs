@@ -6,11 +6,8 @@ use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 
 use crate::SystemExclusiveData;
-use crate::k5000::{UnsignedLevel, SignedLevel};
+use crate::k5000::{VelocityDepth, EnvelopeTime, KeyScalingToGain};
 use crate::k5000::control::VelocityCurve;
-
-pub type VelocityDepth = UnsignedLevel;
-pub type EnvelopeTime = UnsignedLevel;
 
 /// Harmonic group.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -29,7 +26,7 @@ pub struct HarmonicCommon {
     pub morf_enabled: bool,
     pub total_gain: u8,
     pub group: HarmonicGroup,
-    pub ks_to_gain: SignedLevel,
+    pub ks_to_gain: KeyScalingToGain,
     pub velocity_curve: VelocityCurve,
     pub velocity_depth: VelocityDepth,
 }
@@ -40,7 +37,7 @@ impl Default for HarmonicCommon {
             morf_enabled: false,
             total_gain: 0,
             group: Default::default(),
-            ks_to_gain: SignedLevel::new(0),
+            ks_to_gain: KeyScalingToGain::new(0),
             velocity_curve: VelocityCurve::Curve1,
             velocity_depth: VelocityDepth::new(0),
         }
@@ -53,7 +50,7 @@ impl SystemExclusiveData for HarmonicCommon {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
             group: HarmonicGroup::try_from(data[2]).unwrap(),
-            ks_to_gain: SignedLevel::from(data[3]),
+            ks_to_gain: KeyScalingToGain::from(data[3]),
             velocity_curve: VelocityCurve::try_from(data[4]).unwrap(), // 0~11 maps to enum
             velocity_depth: VelocityDepth::from(data[5]),
         }
@@ -64,9 +61,9 @@ impl SystemExclusiveData for HarmonicCommon {
             if self.morf_enabled { 1 } else { 0 },
             self.total_gain,
             self.group as u8,
-            self.ks_to_gain.as_byte(),
+            self.ks_to_gain.into(),
             self.velocity_curve as u8,
-            self.velocity_depth.as_byte(),
+            self.velocity_depth.into(),
         ]
     }
 }
@@ -146,10 +143,10 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.time1.as_byte(),
-            self.time2.as_byte(),
-            self.time3.as_byte(),
-            self.time4.as_byte(),
+            self.time1.into(),
+            self.time2.into(),
+            self.time3.into(),
+            self.time4.into(),
             self.loop_type as u8,
         ]
     }

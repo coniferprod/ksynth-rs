@@ -7,16 +7,7 @@ use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 
 use crate::SystemExclusiveData;
-use crate::k5000::{UnsignedLevel, UnsignedDepth, SignedLevel};
-
-/// LFO depth.
-pub type Depth = UnsignedDepth;
-
-/// LFO speed.
-pub type Speed = UnsignedLevel;
-
-/// Key scaling (-63...+63).
-pub type KeyScaling = SignedLevel;
+use crate::k5000::{LFOSpeed, Depth, KeyScaling};
 
 /// LFO waveform type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -76,7 +67,7 @@ impl SystemExclusiveData for Control {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.depth.as_byte(), self.key_scaling.as_byte()]
+        vec![self.depth.into(), self.key_scaling.into()]
     }
 }
 
@@ -84,10 +75,10 @@ impl SystemExclusiveData for Control {
 #[derive(Debug)]
 pub struct Lfo {
     pub waveform: Waveform,
-    pub speed: Speed,
-    pub fade_in_time: Speed,
+    pub speed: LFOSpeed,
+    pub fade_in_time: LFOSpeed,
     pub fade_in_to_speed: Depth,
-    pub delay_onset: Speed,
+    pub delay_onset: LFOSpeed,
     pub vibrato: Control,
     pub growl: Control,
     pub tremolo: Control,
@@ -97,10 +88,10 @@ impl Default for Lfo {
     fn default() -> Self {
         Lfo {
             waveform: Default::default(),
-            speed: Speed::new(0),
-            fade_in_time: Speed::new(0),
+            speed: LFOSpeed::new(0),
+            fade_in_time: LFOSpeed::new(0),
             fade_in_to_speed: Depth::new(0),
-            delay_onset: Speed::new(0),
+            delay_onset: LFOSpeed::new(0),
             vibrato: Default::default(),
             growl: Default::default(),
             tremolo: Default::default(),
@@ -121,10 +112,10 @@ impl SystemExclusiveData for Lfo {
     fn from_bytes(data: Vec<u8>) -> Self {
         Lfo {
             waveform: Waveform::try_from(data[0]).unwrap(),
-            speed: Speed::from(data[1]),
-            fade_in_time: Speed::from(data[2]),
+            speed: LFOSpeed::from(data[1]),
+            fade_in_time: LFOSpeed::from(data[2]),
             fade_in_to_speed: Depth::from(data[3]),
-            delay_onset: Speed::from(data[4]),
+            delay_onset: LFOSpeed::from(data[4]),
             vibrato: Control {
                 depth: Depth::from(data[5]),
                 key_scaling: KeyScaling::from(data[6]),
@@ -145,10 +136,10 @@ impl SystemExclusiveData for Lfo {
 
         result.extend(vec![
             self.waveform as u8,
-            self.speed.as_byte(),
-            self.delay_onset.as_byte(),
-            self.fade_in_time.as_byte(),
-            self.fade_in_to_speed.as_byte()
+            self.speed.into(),
+            self.delay_onset.into(),
+            self.fade_in_time.into(),
+            self.fade_in_to_speed.into()
         ]);
         result.extend(self.vibrato.to_bytes());
         result.extend(self.growl.to_bytes());

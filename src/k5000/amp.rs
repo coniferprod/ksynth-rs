@@ -5,15 +5,8 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::SystemExclusiveData;
-use crate::k5000::{UnsignedLevel, SignedLevel, UnsignedDepth};
+use crate::k5000::{EnvelopeTime, EnvelopeLevel, ControlTime, KeyScaling, VelocityControlLevel};
 use crate::k5000::control::VelocityCurve;
-
-// Semantic types
-pub type EnvelopeTime = UnsignedLevel;
-pub type EnvelopeLevel = UnsignedLevel;
-pub type KeyScalingLevel = SignedLevel;
-pub type ControlTime = SignedLevel;
-pub type VelocityControlLevel = UnsignedDepth;
 
 /// Amplifier envelope.
 #[derive(Debug)]
@@ -68,12 +61,12 @@ impl SystemExclusiveData for Envelope {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.as_byte(),
-            self.decay1_time.as_byte(),
-            self.decay1_level.as_byte(),
-            self.decay2_time.as_byte(),
-            self.decay2_level.as_byte(),
-            self.release_time.as_byte()
+            self.attack_time.into(),
+            self.decay1_time.into(),
+            self.decay1_level.into(),
+            self.decay2_time.into(),
+            self.decay2_level.into(),
+            self.release_time.into()
         ]
     }
 }
@@ -81,7 +74,7 @@ impl SystemExclusiveData for Envelope {
 /// Amplifier key scaling control.
 #[derive(Debug)]
 pub struct KeyScalingControl {
-    pub level: KeyScalingLevel,
+    pub level: KeyScaling,
     pub attack_time: ControlTime,
     pub decay1_time: ControlTime,
     pub release: ControlTime,
@@ -90,7 +83,7 @@ pub struct KeyScalingControl {
 impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
-            level: KeyScalingLevel::new(0),
+            level: KeyScaling::new(0),
             attack_time: ControlTime::new(0),
             decay1_time: ControlTime::new(0),
             release: ControlTime::new(0),
@@ -109,7 +102,7 @@ impl fmt::Display for KeyScalingControl {
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: Vec<u8>) -> Self {
         KeyScalingControl {
-            level: KeyScalingLevel::from(data[0]),
+            level: KeyScaling::from(data[0]),
             attack_time: ControlTime::from(data[1]),
             decay1_time: ControlTime::from(data[2]),
             release: ControlTime::from(data[3]),
@@ -118,10 +111,10 @@ impl SystemExclusiveData for KeyScalingControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.level.as_byte(),
-            self.attack_time.as_byte(),
-            self.decay1_time.as_byte(),
-            self.release.as_byte()
+            self.level.into(),
+            self.attack_time.into(),
+            self.decay1_time.into(),
+            self.release.into()
         ]
     }
 }
@@ -166,10 +159,10 @@ impl SystemExclusiveData for VelocityControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.level.as_byte(),
-            self.attack_time.as_byte(),
-            self.decay1_time.as_byte(),
-            self.release.as_byte()
+            self.level.into(),
+            self.attack_time.into(),
+            self.decay1_time.into(),
+            self.release.into()
         ]
     }
 }

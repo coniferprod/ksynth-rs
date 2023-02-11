@@ -5,15 +5,7 @@ use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::k5000::morf::Loop;
-use crate::k5000::{UnsignedLevel, SignedLevel, UnsignedDepth};
-
-// Semantic types
-pub type EnvelopeRate = UnsignedLevel;
-pub type EnvelopeLevel = SignedLevel;
-pub type EnvelopeDepth = SignedLevel;
-pub type LfoSpeed = UnsignedLevel;
-pub type LfoDepth = UnsignedDepth;
-pub type Bias = SignedLevel;
+use crate::k5000::{EnvelopeRate, EnvelopeLevel, EnvelopeDepth, Bias, LFODepth, LFOSpeed};
 
 /// Formant filter envelope mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -51,7 +43,7 @@ impl SystemExclusiveData for EnvelopeSegment {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.rate.as_byte(), self.level.as_byte()]
+        vec![self.rate.into(), self.level.into()]
     }
 }
 
@@ -103,8 +95,8 @@ impl SystemExclusiveData for Envelope {
         result.extend(
             vec![
                 self.decay_loop as u8,
-                self.velocity_depth.as_byte(),
-                self.ks_depth.as_byte()
+                self.velocity_depth.into(),
+                self.ks_depth.into()
             ]
         );
 
@@ -115,29 +107,29 @@ impl SystemExclusiveData for Envelope {
 /// Formant filter LFO shape.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-pub enum LfoShape {
+pub enum LFOShape {
     Triangle,
     Sawtooth,
     Random,
 }
 
-impl Default for LfoShape {
-    fn default() -> Self { LfoShape::Triangle }
+impl Default for LFOShape {
+    fn default() -> Self { LFOShape::Triangle }
 }
 
 /// Formant filter LFO.
 pub struct Lfo {
-    pub speed: LfoSpeed,
-    pub shape: LfoShape,
-    pub depth: LfoDepth,
+    pub speed: LFOSpeed,
+    pub shape: LFOShape,
+    pub depth: LFODepth,
 }
 
 impl Default for Lfo {
     fn default() -> Self {
         Lfo {
-            speed: LfoSpeed::new(0),
+            speed: LFOSpeed::new(0),
             shape: Default::default(),
-            depth: LfoDepth::new(0),
+            depth: LFODepth::new(0),
         }
     }
 }
@@ -145,14 +137,14 @@ impl Default for Lfo {
 impl SystemExclusiveData for Lfo {
     fn from_bytes(data: Vec<u8>) -> Self {
         Lfo {
-            speed: LfoSpeed::from(data[0]),
-            shape: LfoShape::try_from(data[1]).unwrap(),
-            depth: LfoDepth::from(data[2]),
+            speed: LFOSpeed::from(data[0]),
+            shape: LFOShape::try_from(data[1]).unwrap(),
+            depth: LFODepth::from(data[2]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.speed.as_byte(), self.shape as u8, self.depth.as_byte()]
+        vec![self.speed.into(), self.shape as u8, self.depth.into()]
     }
 }
 
@@ -193,9 +185,9 @@ impl SystemExclusiveData for FormantFilter {
 
         result.extend(
             vec![
-                self.bias.as_byte(),
+                self.bias.into(),
                 self.mode as u8,
-                self.envelope_depth.as_byte()
+                self.envelope_depth.into()
             ]
         );
         result.extend(self.envelope.to_bytes());

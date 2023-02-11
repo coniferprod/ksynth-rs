@@ -5,14 +5,13 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use pretty_hex::*;
 
 use crate::SystemExclusiveData;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
-use crate::k5000::{Coarse, SignedLevel};
+use crate::k5000::{Coarse, Fine};
 use crate::k5000::wave::Wave;
 use crate::k5000::source::Key;
-
-pub type Fine = SignedLevel;
 
 /// Fixed key for oscillator.
 pub enum FixedKey {
@@ -99,6 +98,7 @@ impl fmt::Display for Oscillator {
 
 impl SystemExclusiveData for Oscillator {
     fn from_bytes(data: Vec<u8>) -> Self {
+        eprintln!("OSC data = {}", simple_hex(&data));
         Oscillator {
             wave: Wave::from_bytes(vec![data[0], data[1]]),
             coarse: Coarse::from(data[2]),
@@ -113,8 +113,8 @@ impl SystemExclusiveData for Oscillator {
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.wave.to_bytes());
-        result.push(self.coarse.as_byte());
-        result.push(self.fine.as_byte());
+        result.push(self.coarse.into());
+        result.push(self.fine.into());
         result.extend(self.fixed_key.to_bytes());
         result.push(self.ks_to_pitch as u8);
         result.extend(self.pitch_envelope.to_bytes());

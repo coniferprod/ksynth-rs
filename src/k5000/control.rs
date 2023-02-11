@@ -8,9 +8,7 @@ use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 
 use crate::SystemExclusiveData;
-use crate::k5000::{MacroParameterDepth, SignedLevel};
-
-type Pan = SignedLevel;
+use crate::k5000::{MacroParameterDepth, Pan, ControlDepth};
 
 /// Velocity switch settings.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -224,9 +222,9 @@ impl SystemExclusiveData for MacroController {
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             self.destination1 as u8,
-            self.depth1.as_byte(),
+            self.depth1.into(),
             self.destination2 as u8,
-            self.depth2.as_byte()
+            self.depth2.into()
         ]
     }
 }
@@ -235,7 +233,7 @@ impl SystemExclusiveData for MacroController {
 pub struct AssignableController {
     pub source: ControlSource,
     pub destination: ControlDestination,
-    pub depth: u8,
+    pub depth: ControlDepth,
 }
 
 impl Default for AssignableController {
@@ -243,7 +241,7 @@ impl Default for AssignableController {
         AssignableController {
             source: Default::default(),
             destination: Default::default(),
-            depth: 0,
+            depth: Default::default(),
         }
     }
 }
@@ -253,12 +251,12 @@ impl SystemExclusiveData for AssignableController {
         AssignableController {
             source: ControlSource::try_from(data[0]).unwrap(),
             destination: ControlDestination::try_from(data[1]).unwrap(),
-            depth: data[2],
+            depth: ControlDepth::from(data[2]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.source as u8, self.destination as u8, self.depth]
+        vec![self.source as u8, self.destination as u8, self.depth.into()]
     }
 }
 
@@ -356,7 +354,7 @@ impl SystemExclusiveData for PanSettings {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.pan_type as u8, self.pan_value.as_byte()]
+        vec![self.pan_type as u8, self.pan_value.into()]
     }
 }
 

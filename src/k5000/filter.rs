@@ -7,19 +7,8 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 
 use crate::SystemExclusiveData;
-use crate::k5000::{UnsignedLevel, SignedLevel, UnsignedDepth, SmallDepth};
+use crate::k5000::{EnvelopeTime, EnvelopeLevel, ControlTime, EnvelopeDepth, Cutoff, Resonance, Level};
 use crate::k5000::control::VelocityCurve;
-
-// Semantic types
-pub type EnvelopeTime = UnsignedLevel;
-pub type EnvelopeLevel = SignedLevel;
-pub type KeyScalingLevel = SignedLevel;
-pub type ControlTime = SignedLevel;
-pub type VelocityControlLevel = UnsignedDepth;
-pub type EnvelopeDepth = SignedLevel;
-pub type Cutoff = UnsignedLevel;
-pub type Resonance = SmallDepth;
-pub type Level = SmallDepth;
 
 /// Filter mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -90,19 +79,14 @@ impl SystemExclusiveData for Envelope {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let mut result: Vec<u8> = Vec::new();
-
-        let bs = vec![
-            self.attack_time.as_byte(),
-            self.decay1_time.as_byte(),
-            self.decay1_level.as_byte(),
-            self.decay2_time.as_byte(),
-            self.decay2_level.as_byte(),
-            self.release_time.as_byte(),
-        ];
-        result.extend(bs);
-
-        result
+        vec![
+            self.attack_time.into(),
+            self.decay1_time.into(),
+            self.decay1_level.into(),
+            self.decay2_time.into(),
+            self.decay2_level.into(),
+            self.release_time.into(),
+        ]
     }
 }
 
@@ -131,8 +115,8 @@ impl SystemExclusiveData for KeyScalingControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.as_byte(),
-            self.decay1_time.as_byte(),
+            self.attack_time.into(),
+            self.decay1_time.into(),
         ]
     }
 }
@@ -165,9 +149,9 @@ impl SystemExclusiveData for VelocityControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.depth.as_byte(),
-            self.attack_time.as_byte(),
-            self.decay1_time.as_byte(),
+            self.depth.into(),
+            self.attack_time.into(),
+            self.decay1_time.into(),
         ]
     }
 }
@@ -278,12 +262,12 @@ impl SystemExclusiveData for Filter {
             if self.is_active { 0 } else { 1 },  // is this the right way around?
             self.mode as u8,
             self.velocity_curve as u8,  // raw enum values map to 0~11
-            self.resonance.as_byte(),
-            self.level.as_byte(),
-            self.cutoff.as_byte(),
-            self.ks_to_cutoff.as_byte(),
-            self.vel_to_cutoff.as_byte(),
-            self.envelope_depth.as_byte(),
+            self.resonance.into(),
+            self.level.into(),
+            self.cutoff.into(),
+            self.ks_to_cutoff.into(),
+            self.vel_to_cutoff.into(),
+            self.envelope_depth.into(),
         ];
         result.extend(bs);
         result.extend(self.envelope.to_bytes());

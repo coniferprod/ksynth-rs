@@ -16,12 +16,12 @@ use crate::k5000::control::{
 use crate::k5000::effect::{EffectSettings, EffectControl};
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
-use crate::k5000::{UnsignedLevel, MacroParameterDepth};
+use crate::k5000::{Volume, MacroParameterDepth, PortamentoLevel};
 
 /// Portamento setting.
 pub enum Portamento {
     Off,
-    On(UnsignedLevel)
+    On(PortamentoLevel)
 }
 
 impl fmt::Display for Portamento {
@@ -35,35 +35,35 @@ impl fmt::Display for Portamento {
 
 /// Single patch common data.
 pub struct Common {
+    pub effects: EffectSettings,
     pub name: String,
-    pub volume: UnsignedLevel,
+    pub volume: Volume,
     pub polyphony: Polyphony,
     pub source_count: u8,
     pub source_mutes: [bool; 6],
-    pub portamento: Portamento,
     pub amplitude_modulation: AmplitudeModulation,
+    pub effect_control: EffectControl,
+    pub portamento: Portamento,
     pub macros: [MacroController; 4],
     pub switches: SwitchControl,
-    pub effects: EffectSettings,
     pub geq: [i8; 7],
-    pub effect_control: EffectControl,
 }
 
 impl Default for Common {
     fn default() -> Self {
         Common {
+            effects: Default::default(),
             name: "NewSound".to_string(),
-            volume: UnsignedLevel::new(99),
+            volume: Volume::new(99),
             polyphony: Polyphony::Poly,
             source_count: 2,
             source_mutes: [false, false, true, true, true, true],
-            portamento: Portamento::Off,
             amplitude_modulation: Default::default(),
+            effect_control: Default::default(),
+            portamento: Portamento::Off,
             macros: [Default::default(), Default::default(), Default::default(), Default::default()],
             switches: Default::default(),
-            effects: Default::default(),
             geq: [0, 0, 0, 0, 0, 0, 0],
-            effect_control: Default::default(),
         }
     }
 }
@@ -97,6 +97,7 @@ impl SystemExclusiveData for Common {
         let effects = EffectSettings::from_bytes(effects_data);
         offset += size;
 
+        eprintln!("GEQ data at offset {}", offset + 1);
         size = 7;
         end = start + size;
         let geq_data = data[start..end].to_vec();
@@ -104,6 +105,7 @@ impl SystemExclusiveData for Common {
         let geq_values = geq_data.iter().map(|n| *n as i8 - 64).collect();  // 58(-6) ~ 70(+6), so 64 is zero
         offset += size;
 
+        eprintln!("Drum mark at offset {}", offset + 1);
         offset += 1;  // skip the drum mark
         eprintln!("Skipped 'drum mark'");
 
@@ -112,10 +114,11 @@ impl SystemExclusiveData for Common {
         end = offset + size;
         let name_data = data[start..end].to_vec();
         let name = String::from_utf8(name_data).unwrap();
+        eprintln!("Name at offset {}", offset + 1);
         eprintln!("Name = {}", name);
         offset += size;
 
-        let volume = UnsignedLevel::from(data[offset]);
+        let volume = Volume::from(data[offset]);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
@@ -150,7 +153,7 @@ impl SystemExclusiveData for Common {
         offset += size;
 
         let portamento = if data[offset] == 1 {
-            Portamento::On(UnsignedLevel::from(data[offset + 1]))
+            Portamento::On(PortamentoLevel::from(data[offset + 1]))
         } else {
             Portamento::Off
         };
@@ -231,7 +234,7 @@ impl SystemExclusiveData for Common {
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.push(0);  // drum_mark
         result.extend(self.name.clone().into_bytes());  // note clone()
-        result.push(self.volume.as_byte());
+        result.push(self.volume.into());  // converts value to u8 on the fly
         result.push(self.polyphony as u8);
         result.push(0);  // "no use"
         result.push(self.source_count);
@@ -254,7 +257,7 @@ impl SystemExclusiveData for Common {
             },
             Portamento::On(speed) => {
                 result.push(1);
-                result.push(speed.as_byte());
+                result.push(speed.into());
             }
         }
 
@@ -265,8 +268,8 @@ impl SystemExclusiveData for Common {
         }
 
         for m in &self.macros {
-            result.push(m.depth1.as_byte()); // -31(33)~+31(95)
-            result.push(m.depth2.as_byte());
+            result.push(m.depth1.into()); // -31(33)~+31(95)
+            result.push(m.depth2.into());
         }
 
         result.extend(self.switches.to_bytes());
@@ -382,9 +385,11 @@ impl SystemExclusiveData for SinglePatch {
         let mut end: usize;
         let mut size: usize;
 
+        /*
         let original_checksum = data[offset];
         eprintln!("original checksum = {:#02x}", original_checksum);
         offset += 1;
+        */
 
         size = 81;
         start = offset;

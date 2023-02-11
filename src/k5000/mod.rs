@@ -1,6 +1,5 @@
 use std::fmt;
 use rand::Rng;
-use num;
 use std::ops::RangeInclusive;
 
 pub mod filter;
@@ -19,307 +18,1705 @@ pub mod addkit;
 pub mod wave;
 pub mod sysex;
 
-/// Generates random value that falls in the range of the type.
-pub trait RandomValue {
-    type T;
-    fn random_value(&self) -> Self::T;
+/// A simple struct for wrapping an `i32` with const generic parameters to limit
+/// the range of allowed values.
+#[derive(Debug, Copy, Clone)]
+pub struct RangedInteger<const MIN: i32, const MAX: i32> {
+    value: i32,
 }
 
-// Experiment a little with the newtype pattern.
-// A newtype is a special case of a tuple struct,
-// with just one field.
-
-/// Signed level (-63...+63)
-#[derive(Debug, Clone, Copy)]
-pub struct SignedLevel(i32);
-
-impl SignedLevel {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(-63, 63)
-    }
-
-    pub fn is_clamped() -> bool {
-        return true
-    }
-
+impl <const MIN: i32, const MAX: i32> RangedInteger<MIN, MAX> {
+    /// Makes a new ranged integer if the value is in the allowed range, otherwise panics.
     pub fn new(value: i32) -> Self {
-        let range = SignedLevel::range();
+        let range = Self::range();
         if range.contains(&value) {
-            SignedLevel(value)
+            Self { value }
         }
         else {
-            if Self::is_clamped() {
-                SignedLevel(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
+            panic!("new() expected value in range {}...{}, got {}", range.start(), range.end(), value);
         }
     }
 
-    pub fn as_byte(&self) -> u8 {
-        (self.0 + 64) as u8
+    /// Gets the range of allowed values as an inclusive range,
+    /// constructed from the generic parameters.
+    pub fn range() -> RangeInclusive<i32> {
+        MIN ..= MAX
     }
 
-    pub fn value(&self) -> i32 {
-        self.0
-    }
-}
-
-// Makes new SignedLevel from a byte as found in the SysEx data.
-impl From<u8> for SignedLevel {
-    fn from(value: u8) -> SignedLevel {
-        SignedLevel::new(value as i32 - 64)
-    }
-}
-
-impl fmt::Display for SignedLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value())
-    }
-}
-
-impl RandomValue for SignedLevel {
-    type T = i32;
-
-    fn random_value(&self) -> Self::T {
+    /// Gets a random value that is in the range of allowed values.
+    pub fn random_value() -> i32 {
         let mut rng = rand::thread_rng();
-        let range = SignedLevel::range();
+        let range = Self::range();
         rng.gen_range(*range.start() ..= *range.end())
     }
 }
 
-/// Unsigned level (0...127).
-#[derive(Debug, Clone, Copy)]
-pub struct UnsignedLevel(i32);
+/// Trait for a synth parameter.
+trait Parameter {
+    fn name(&self) -> String;
+    fn minimum_value() -> i32;
+    fn maximum_value() -> i32;
+    fn default_value() -> i32;
+    fn random_value() -> i32;
+}
 
-impl UnsignedLevel {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(0, 127)
-    }
+// The following types are all based on RangedInteger.
+// It would be nice if they could be generated with a macro.
+// The macro should generate the type to hold the value, with
+// the minimum and maximum value. It should also generate the
+// implementation for the Parameter trait.
 
-    pub fn is_clamped() -> bool {
-        return true
-    }
+/// Private generic type for the value stored in a `Volume`.
+type VolumeValue = RangedInteger::<0, 127>;
 
+/// Wrapper for volume parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Volume {
+    value: VolumeValue,  // private field to prevent accidental range violations
+}
+
+impl Volume {
+    /// Makes a new Volume initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = UnsignedLevel::range();
-        if range.contains(&value) {
-            UnsignedLevel(value)
-        }
-        else {
-            if Self::is_clamped() {
-                UnsignedLevel(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: VolumeValue::new(value) }
     }
 
+    /// Gets the value wrapped by the private RangedInteger field.
     pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
+        self.value.value
     }
 }
 
-impl From<u8> for UnsignedLevel {
-    fn from(value: u8) -> UnsignedLevel {
-        UnsignedLevel::new(value.into())
+impl Parameter for Volume {
+    fn name(&self) -> String {
+        "volume".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *VolumeValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *VolumeValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        VolumeValue::random_value()
     }
 }
 
-impl fmt::Display for UnsignedLevel {
+impl Default for Volume {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Volume {
+    fn from(value: u8) -> Volume {
+        Volume::new(value as i32)
+    }
+}
+
+impl Into<u8> for Volume {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for Volume {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-impl RandomValue for UnsignedLevel {
-    type T = i32;
+type BenderPitchValue = RangedInteger::<0, 24>;
 
-    fn random_value(&self) -> Self::T {
-        let mut rng = rand::thread_rng();
-        let range = UnsignedLevel::range();
-        rng.gen_range(*range.start() ..= *range.end())
-    }
+/// Wrapper for bender pitch parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct BenderPitch {
+    value: BenderPitchValue,  // private field to prevent accidental range violations
 }
 
-/// Positive level (1...127).
-#[derive(Debug, Clone, Copy)]
-pub struct PositiveLevel(i32);
-
-impl PositiveLevel {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(1, 127)
-    }
-
-    pub fn is_clamped() -> bool {
-        true
-    }
-
+impl BenderPitch {
+    /// Makes a new BenderPitch initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = PositiveLevel::range();
-        if range.contains(&value) {
-            PositiveLevel(value)
-        }
-        else {
-            if Self::is_clamped() {
-                PositiveLevel(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: BenderPitchValue::new(value) }
     }
 
+    /// Gets the value wrapped by the private RangedInteger field.
     pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
+        self.value.value
     }
 }
 
-impl From<u8> for PositiveLevel {
-    fn from(value: u8) -> PositiveLevel {
-        PositiveLevel::new(value.into())
+impl Parameter for BenderPitch {
+    fn name(&self) -> String {
+        "benderpitch".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *BenderPitchValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *BenderPitchValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        BenderPitchValue::random_value()
     }
 }
 
-/// Signed depth (-31...+31) (in SysEx 33...95)
-#[derive(Debug, Clone, Copy)]
-pub struct SignedDepth(i32);
+impl Default for BenderPitch {
+    fn default() -> Self { Self::new(0) }
+}
 
-impl SignedDepth {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(-31, 31)
-    }
-
-    pub fn is_clamped() -> bool {
-        true
-    }
-
-    pub fn new(value: i32) -> Self {
-        let range = SignedDepth::range();
-        if range.contains(&value) {
-            SignedDepth(value)
-        }
-        else {
-            if Self::is_clamped() {
-                SignedDepth(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
-    }
-
-    pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        (self.0 + 64) as u8
+impl From<u8> for BenderPitch {
+    fn from(value: u8) -> BenderPitch {
+        BenderPitch::new(value as i32)
     }
 }
 
-impl From<u8> for SignedDepth {
-    fn from(value: u8) -> SignedDepth {
-        SignedDepth::new(value as i32 - 64)
+impl Into<u8> for BenderPitch {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
     }
 }
 
-impl fmt::Display for SignedDepth {
+impl fmt::Display for BenderPitch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-/// Unsigned depth (0~63).
-#[derive(Debug, Clone, Copy)]
-pub struct UnsignedDepth(i32);
+type BenderCutoffValue = RangedInteger::<0, 31>;
 
-impl UnsignedDepth {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(0, 63)
-    }
+/// Wrapper for bender pitch parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct BenderCutoff {
+    value: BenderCutoffValue,  // private field to prevent accidental range violations
+}
 
-    pub fn is_clamped() -> bool {
-        true
-    }
-
+impl BenderCutoff {
+    /// Makes a new BenderCutoff initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = UnsignedDepth::range();
-        if range.contains(&value) {
-            UnsignedDepth(value)
-        }
-        else {
-            if Self::is_clamped() {
-                UnsignedDepth(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: BenderCutoffValue::new(value) }
     }
 
+    /// Gets the value wrapped by the private RangedInteger field.
     pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
+        self.value.value
     }
 }
 
-impl From<u8> for UnsignedDepth {
-    fn from(value: u8) -> UnsignedDepth {
-        UnsignedDepth::new(value as i32)
+impl Parameter for BenderCutoff {
+    fn name(&self) -> String {
+        "bendercutoff".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *BenderCutoffValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *BenderCutoffValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        BenderCutoffValue::random_value()
     }
 }
 
-impl fmt::Display for UnsignedDepth {
+impl Default for BenderCutoff {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for BenderCutoff {
+    fn from(value: u8) -> BenderCutoff {
+        BenderCutoff::new(value as i32)
+    }
+}
+
+impl Into<u8> for BenderCutoff {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for BenderCutoff {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-/// Depth (0~100).
-#[derive(Debug, Clone, Copy)]
-pub struct Depth(i32);
+type EnvelopeTimeValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct EnvelopeTime {
+    value: EnvelopeTimeValue,  // private field to prevent accidental range violations
+}
+
+impl EnvelopeTime {
+    /// Makes a new EnvelopeTime initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: EnvelopeTimeValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for EnvelopeTime {
+    fn name(&self) -> String {
+        "EnvelopeTime".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *EnvelopeTimeValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *EnvelopeTimeValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        EnvelopeTimeValue::random_value()
+    }
+}
+
+impl Default for EnvelopeTime {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for EnvelopeTime {
+    fn from(value: u8) -> EnvelopeTime {
+        EnvelopeTime::new(value as i32)
+    }
+}
+
+impl Into<u8> for EnvelopeTime {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for EnvelopeTime {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type EnvelopeLevelValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct EnvelopeLevel {
+    value: EnvelopeLevelValue,  // private field to prevent accidental range violations
+}
+
+impl EnvelopeLevel {
+    /// Makes a new EnvelopeLevel initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: EnvelopeLevelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for EnvelopeLevel {
+    fn name(&self) -> String {
+        "EnvelopeLevel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *EnvelopeLevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *EnvelopeLevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        EnvelopeLevelValue::random_value()
+    }
+}
+
+impl Default for EnvelopeLevel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for EnvelopeLevel {
+    fn from(value: u8) -> EnvelopeLevel {
+        EnvelopeLevel::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for EnvelopeLevel {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for EnvelopeLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type EnvelopeRateValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct EnvelopeRate {
+    value: EnvelopeRateValue,  // private field to prevent accidental range violations
+}
+
+impl EnvelopeRate {
+    /// Makes a new EnvelopeRate initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: EnvelopeRateValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for EnvelopeRate {
+    fn name(&self) -> String {
+        "EnvelopeRate".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *EnvelopeRateValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *EnvelopeRateValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        EnvelopeRateValue::random_value()
+    }
+}
+
+impl Default for EnvelopeRate {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for EnvelopeRate {
+    fn from(value: u8) -> EnvelopeRate {
+        EnvelopeRate::new(value as i32)
+    }
+}
+
+impl Into<u8> for EnvelopeRate {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for EnvelopeRate {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type HarmonicEnvelopeLevelValue = RangedInteger::<0, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct HarmonicEnvelopeLevel {
+    value: HarmonicEnvelopeLevelValue,  // private field to prevent accidental range violations
+}
+
+impl HarmonicEnvelopeLevel {
+    /// Makes a new HarmonicEnvelopeLevel initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: HarmonicEnvelopeLevelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for HarmonicEnvelopeLevel {
+    fn name(&self) -> String {
+        "HarmonicEnvelopeLevel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *HarmonicEnvelopeLevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *HarmonicEnvelopeLevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        HarmonicEnvelopeLevelValue::random_value()
+    }
+}
+
+impl Default for HarmonicEnvelopeLevel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for HarmonicEnvelopeLevel {
+    fn from(value: u8) -> HarmonicEnvelopeLevel {
+        HarmonicEnvelopeLevel::new(value as i32)
+    }
+}
+
+impl Into<u8> for HarmonicEnvelopeLevel {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for HarmonicEnvelopeLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type BiasValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Bias {
+    value: BiasValue,  // private field to prevent accidental range violations
+}
+
+impl Bias {
+    /// Makes a new Bias initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: BiasValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for Bias {
+    fn name(&self) -> String {
+        "Bias".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *BiasValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *BiasValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        BiasValue::random_value()
+    }
+}
+
+impl Default for Bias {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Bias {
+    fn from(value: u8) -> Bias {
+        Bias::new(value as i32)
+    }
+}
+
+impl Into<u8> for Bias {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for Bias {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type ControlTimeValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct ControlTime {
+    value: ControlTimeValue,  // private field to prevent accidental range violations
+}
+
+impl ControlTime {
+    /// Makes a new ControlTime initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: ControlTimeValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for ControlTime {
+    fn name(&self) -> String {
+        "ControlTime".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *ControlTimeValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *ControlTimeValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        ControlTimeValue::random_value()
+    }
+}
+
+impl Default for ControlTime {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for ControlTime {
+    fn from(value: u8) -> ControlTime {
+        ControlTime::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for ControlTime {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for ControlTime {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type EnvelopeDepthValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct EnvelopeDepth {
+    value: EnvelopeDepthValue,  // private field to prevent accidental range violations
+}
+
+impl EnvelopeDepth {
+    /// Makes a new EnvelopeDepth initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: EnvelopeDepthValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for EnvelopeDepth {
+    fn name(&self) -> String {
+        "EnvelopeDepth".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *EnvelopeDepthValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *EnvelopeDepthValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        EnvelopeDepthValue::random_value()
+    }
+}
+
+impl Default for EnvelopeDepth {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for EnvelopeDepth {
+    fn from(value: u8) -> EnvelopeDepth {
+        EnvelopeDepth::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for EnvelopeDepth {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for EnvelopeDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type LFOSpeedValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct LFOSpeed {
+    value: LFOSpeedValue,  // private field to prevent accidental range violations
+}
+
+impl LFOSpeed {
+    /// Makes a new LFOSpeed initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: LFOSpeedValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for LFOSpeed {
+    fn name(&self) -> String {
+        "LFOSpeed".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *LFOSpeedValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *LFOSpeedValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        LFOSpeedValue::random_value()
+    }
+}
+
+impl Default for LFOSpeed {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for LFOSpeed {
+    fn from(value: u8) -> LFOSpeed {
+        LFOSpeed::new(value as i32)
+    }
+}
+
+impl Into<u8> for LFOSpeed {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for LFOSpeed {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type LFODepthValue = RangedInteger::<0, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct LFODepth {
+    value: LFODepthValue,  // private field to prevent accidental range violations
+}
+
+impl LFODepth {
+    /// Makes a new LFODepth initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: LFODepthValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for LFODepth {
+    fn name(&self) -> String {
+        "LFODepth".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *LFODepthValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *LFODepthValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        LFODepthValue::random_value()
+    }
+}
+
+impl Default for LFODepth {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for LFODepth {
+    fn from(value: u8) -> LFODepth {
+        LFODepth::new(value as i32)
+    }
+}
+
+impl Into<u8> for LFODepth {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for LFODepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type KeyScalingValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct KeyScaling {
+    value: KeyScalingValue,  // private field to prevent accidental range violations
+}
+
+impl KeyScaling {
+    /// Makes a new KeyScaling initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: KeyScalingValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for KeyScaling {
+    fn name(&self) -> String {
+        "KeyScaling".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *KeyScalingValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *KeyScalingValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        KeyScalingValue::random_value()
+    }
+}
+
+impl Default for KeyScaling {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for KeyScaling {
+    fn from(value: u8) -> KeyScaling {
+        KeyScaling::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for KeyScaling {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for KeyScaling {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type EffectParameterValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct EffectParameter {
+    value: EffectParameterValue,  // private field to prevent accidental range violations
+}
+
+impl EffectParameter {
+    /// Makes a new EffectParameter initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: EffectParameterValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for EffectParameter {
+    fn name(&self) -> String {
+        "EffectParameter".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *EffectParameterValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *EffectParameterValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        EffectParameterValue::random_value()
+    }
+}
+
+impl Default for EffectParameter {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for EffectParameter {
+    fn from(value: u8) -> EffectParameter {
+        EffectParameter::new(value as i32)
+    }
+}
+
+impl Into<u8> for EffectParameter {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for EffectParameter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type CutoffValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Cutoff {
+    value: CutoffValue,  // private field to prevent accidental range violations
+}
+
+impl Cutoff {
+    /// Makes a new Cutoff initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: CutoffValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for Cutoff {
+    fn name(&self) -> String {
+        "Cutoff".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *CutoffValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *CutoffValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        CutoffValue::random_value()
+    }
+}
+
+impl Default for Cutoff {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Cutoff {
+    fn from(value: u8) -> Cutoff {
+        Cutoff::new(value as i32)
+    }
+}
+
+impl Into<u8> for Cutoff {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for Cutoff {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type ResonanceValue = RangedInteger::<0, 31>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Resonance {
+    value: ResonanceValue,  // private field to prevent accidental range violations
+}
+
+impl Resonance {
+    /// Makes a new Resonance initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: ResonanceValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for Resonance {
+    fn name(&self) -> String {
+        "Resonance".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *ResonanceValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *ResonanceValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        ResonanceValue::random_value()
+    }
+}
+
+impl Default for Resonance {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Resonance {
+    fn from(value: u8) -> Resonance {
+        Resonance::new(value as i32)
+    }
+}
+
+impl Into<u8> for Resonance {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for Resonance {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type LevelValue = RangedInteger::<0, 31>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Level {
+    value: LevelValue,  // private field to prevent accidental range violations
+}
+
+impl Level {
+    /// Makes a new Level initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: LevelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for Level {
+    fn name(&self) -> String {
+        "Level".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *LevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *LevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        LevelValue::random_value()
+    }
+}
+
+impl Default for Level {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Level {
+    fn from(value: u8) -> Level {
+        Level::new(value as i32)
+    }
+}
+
+impl Into<u8> for Level {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for Level {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type PitchEnvelopeLevelValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct PitchEnvelopeLevel {
+    value: PitchEnvelopeLevelValue,  // private field to prevent accidental range violations
+}
+
+impl PitchEnvelopeLevel {
+    /// Makes a new PitchEnvelopeLevel initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: PitchEnvelopeLevelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for PitchEnvelopeLevel {
+    fn name(&self) -> String {
+        "PitchEnvelopeLevel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *PitchEnvelopeLevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *PitchEnvelopeLevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        PitchEnvelopeLevelValue::random_value()
+    }
+}
+
+impl Default for PitchEnvelopeLevel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for PitchEnvelopeLevel {
+    fn from(value: u8) -> PitchEnvelopeLevel {
+        PitchEnvelopeLevel::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for PitchEnvelopeLevel {
+    fn into(self) -> u8 {
+        (self.value() as u8) + 64
+    }
+}
+
+impl fmt::Display for PitchEnvelopeLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type PitchEnvelopeTimeValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct PitchEnvelopeTime {
+    value: PitchEnvelopeTimeValue,  // private field to prevent accidental range violations
+}
+
+impl PitchEnvelopeTime {
+    /// Makes a new PitchEnvelopeTime initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: PitchEnvelopeTimeValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for PitchEnvelopeTime {
+    fn name(&self) -> String {
+        "PitchEnvelopeTime".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *PitchEnvelopeTimeValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *PitchEnvelopeTimeValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        PitchEnvelopeTimeValue::random_value()
+    }
+}
+
+impl Default for PitchEnvelopeTime {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for PitchEnvelopeTime {
+    fn from(value: u8) -> PitchEnvelopeTime {
+        PitchEnvelopeTime::new(value as i32)
+    }
+}
+
+impl Into<u8> for PitchEnvelopeTime {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for PitchEnvelopeTime {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type VelocityDepthValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct VelocityDepth {
+    value: VelocityDepthValue,  // private field to prevent accidental range violations
+}
+
+impl VelocityDepth {
+    /// Makes a new VelocityDepth initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: VelocityDepthValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for VelocityDepth {
+    fn name(&self) -> String {
+        "VelocityDepth".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *VelocityDepthValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *VelocityDepthValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        VelocityDepthValue::random_value()
+    }
+}
+
+impl Default for VelocityDepth {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for VelocityDepth {
+    fn from(value: u8) -> VelocityDepth {
+        VelocityDepth::new(value as i32)
+    }
+}
+
+impl Into<u8> for VelocityDepth {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for VelocityDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type VelocityControlLevelValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct VelocityControlLevel {
+    value: VelocityControlLevelValue,  // private field to prevent accidental range violations
+}
+
+impl VelocityControlLevel {
+    /// Makes a new VelocityControlLevel initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: VelocityControlLevelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for VelocityControlLevel {
+    fn name(&self) -> String {
+        "VelocityControlLevel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *VelocityControlLevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *VelocityControlLevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        VelocityControlLevelValue::random_value()
+    }
+}
+
+impl Default for VelocityControlLevel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for VelocityControlLevel {
+    fn from(value: u8) -> VelocityControlLevel {
+        VelocityControlLevel::new(value as i32)
+    }
+}
+
+impl Into<u8> for VelocityControlLevel {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for VelocityControlLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type PortamentoLevelValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct PortamentoLevel {
+    value: PortamentoLevelValue,  // private field to prevent accidental range violations
+}
+
+impl PortamentoLevel {
+    /// Makes a new PortamentoLevel initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: PortamentoLevelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for PortamentoLevel {
+    fn name(&self) -> String {
+        "PortamentoLevel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *PortamentoLevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *PortamentoLevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        PortamentoLevelValue::random_value()
+    }
+}
+
+impl Default for PortamentoLevel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for PortamentoLevel {
+    fn from(value: u8) -> PortamentoLevel {
+        PortamentoLevel::new(value as i32)
+    }
+}
+
+impl Into<u8> for PortamentoLevel {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for PortamentoLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type KeyOnDelayValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct KeyOnDelay {
+    value: KeyOnDelayValue,  // private field to prevent accidental range violations
+}
+
+impl KeyOnDelay {
+    /// Makes a new KeyOnDelay initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: KeyOnDelayValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for KeyOnDelay {
+    fn name(&self) -> String {
+        "KeyOnDelay".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *KeyOnDelayValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *KeyOnDelayValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        KeyOnDelayValue::random_value()
+    }
+}
+
+impl Default for KeyOnDelay {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for KeyOnDelay {
+    fn from(value: u8) -> KeyOnDelay {
+        KeyOnDelay::new(value as i32)
+    }
+}
+
+impl Into<u8> for KeyOnDelay {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
+    }
+}
+
+impl fmt::Display for KeyOnDelay {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+
+pub type VelocitySensitivityValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct VelocitySensitivity {
+    value: VelocitySensitivityValue,  // private field to prevent accidental range violations
+}
+
+impl VelocitySensitivity {
+    /// Makes a new VelocitySensitivity initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: VelocitySensitivityValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for VelocitySensitivity {
+    fn name(&self) -> String {
+        "VelocitySensitivity".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *VelocitySensitivityValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *VelocitySensitivityValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        VelocitySensitivityValue::random_value()
+    }
+}
+
+impl Default for VelocitySensitivity {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for VelocitySensitivity {
+    fn from(value: u8) -> VelocitySensitivity {
+        VelocitySensitivity::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for VelocitySensitivity {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for VelocitySensitivity {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type ControlDepthValue  = RangedInteger::<-63, 63>;
+
+#[derive(Debug, Copy, Clone)]
+pub struct ControlDepth {
+    value: ControlDepthValue,  // private field to prevent accidental range violations
+}
+
+impl ControlDepth {
+    /// Makes a new ControlDepth initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: ControlDepthValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for ControlDepth {
+    fn name(&self) -> String {
+        "ControlDepth".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *ControlDepthValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *ControlDepthValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        ControlDepthValue::random_value()
+    }
+}
+
+impl Default for ControlDepth {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for ControlDepth {
+    fn from(value: u8) -> ControlDepth {
+        ControlDepth::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for ControlDepth {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for ControlDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type DepthValue = RangedInteger::<0, 100>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Depth {
+    value: DepthValue,  // private field to prevent accidental range violations
+}
 
 impl Depth {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(0, 100)
-    }
-
-    pub fn is_clamped() -> bool {
-        true
-    }
-
+    /// Makes a new Depth initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = Depth::range();
-        if range.contains(&value) {
-            Depth(value)
-        }
-        else {
-            if Self::is_clamped() {
-                Depth(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: DepthValue::new(value) }
     }
 
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
     }
+}
+
+impl Parameter for Depth {
+    fn name(&self) -> String {
+        "Depth".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *DepthValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *DepthValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        DepthValue::random_value()
+    }
+}
+
+impl Default for Depth {
+    fn default() -> Self { Self::new(0) }
 }
 
 impl From<u8> for Depth {
@@ -328,145 +1725,201 @@ impl From<u8> for Depth {
     }
 }
 
-/// Medium depth (0~31).
-#[derive(Debug, Clone, Copy)]
-pub struct MediumDepth(i32);
-
-impl MediumDepth {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(0, 31)
-    }
-
-    pub fn is_clamped() -> bool {
-        true
-    }
-
-    pub fn new(value: i32) -> Self {
-        let range = MediumDepth::range();
-        if range.contains(&value) {
-            MediumDepth(value)
-        }
-        else {
-            if Self::is_clamped() {
-                MediumDepth(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
-    }
-
-    pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
+impl Into<u8> for Depth {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        self.value() as u8
     }
 }
 
-impl From<u8> for MediumDepth {
-    fn from(value: u8) -> MediumDepth {
-        MediumDepth::new(value as i32)
-    }
-}
-
-impl fmt::Display for MediumDepth {
+impl fmt::Display for Depth {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-/// Small depth (0~7).
-#[derive(Debug, Clone, Copy)]
-pub struct SmallDepth(i32);
+pub type PanValue = RangedInteger::<-63, 63>;
 
-impl SmallDepth {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(0, 31)
-    }
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Pan {
+    value: PanValue,  // private field to prevent accidental range violations
+}
 
-    pub fn is_clamped() -> bool {
-        true
-    }
-
+impl Pan {
+    /// Makes a new Pan initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = Self::range();
-        if range.contains(&value) {
-            SmallDepth(value)
-        }
-        else {
-            if Self::is_clamped() {
-                SmallDepth(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: PanValue::new(value) }
     }
 
+    /// Gets the value wrapped by the private RangedInteger field.
     pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
-    }
-
-}
-
-impl From<u8> for SmallDepth {
-    fn from(value: u8) -> SmallDepth {
-        SmallDepth::new(value.into())
+        self.value.value
     }
 }
 
-impl fmt::Display for SmallDepth {
+impl Parameter for Pan {
+    fn name(&self) -> String {
+        "Pan".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *PanValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *PanValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        PanValue::random_value()
+    }
+}
+
+impl Default for Pan {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Pan {
+    fn from(value: u8) -> Pan {
+        Pan::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Pan {
+    fn into(self) -> u8 {   // value can be used as such in SysEx
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for Pan {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-/// Coarse tuning (-24...+24) (in SysEx 40...88)
-#[derive(Debug, Clone, Copy)]
-pub struct Coarse(i32);
+pub type KeyScalingToGainValue = RangedInteger::<-63, 63>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct KeyScalingToGain {
+    value: KeyScalingToGainValue,  // private field to prevent accidental range violations
+}
+
+impl KeyScalingToGain {
+    /// Makes a new KeyScalingToGain initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: KeyScalingToGainValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for KeyScalingToGain {
+    fn name(&self) -> String {
+        "KeyScalingToGain".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *KeyScalingToGainValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *KeyScalingToGainValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        KeyScalingToGainValue::random_value()
+    }
+}
+
+impl Default for KeyScalingToGain {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for KeyScalingToGain {
+    fn from(value: u8) -> KeyScalingToGain {
+        KeyScalingToGain::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for KeyScalingToGain {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+impl fmt::Display for KeyScalingToGain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+pub type CoarseValue = RangedInteger::<-24, 24>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Coarse {
+    value: CoarseValue,  // private field to prevent accidental range violations
+}
 
 impl Coarse {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(-24, 24)
-    }
-
-    pub fn is_clamped() -> bool {
-        true
-    }
-
+    /// Makes a new Coarse initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = Self::range();
-        if range.contains(&value) {
-            Coarse(value)
-        }
-        else {
-            if Self::is_clamped() {
-                Coarse(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: CoarseValue::new(value) }
     }
 
+    /// Gets the value wrapped by the private RangedInteger field.
     pub fn value(&self) -> i32 {
-        self.0
+        self.value.value
+    }
+}
+
+impl Parameter for Coarse {
+    fn name(&self) -> String {
+        "Coarse".to_string()
     }
 
-    pub fn as_byte(&self) -> u8 {
-        (self.0 + 64) as u8
+    fn minimum_value() -> i32 {
+        *CoarseValue::range().start()
     }
+
+    fn maximum_value() -> i32 {
+        *CoarseValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        CoarseValue::random_value()
+    }
+}
+
+impl Default for Coarse {
+    fn default() -> Self { Self::new(0) }
 }
 
 impl From<u8> for Coarse {
     fn from(value: u8) -> Coarse {
-        Coarse::new(value as i32 - 64)
+        Coarse::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Coarse {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
     }
 }
 
@@ -476,108 +1929,143 @@ impl fmt::Display for Coarse {
     }
 }
 
-/// Unsigned coarse for bender pitch (0...24)
-#[derive(Debug, Clone, Copy)]
-pub struct UnsignedCoarse(i32);
 
-impl UnsignedCoarse {
-    pub fn range() -> RangeInclusive<i32> {
-        RangeInclusive::new(0, 24)
-    }
+pub type FineValue = RangedInteger::<-63, 63>;
 
-    pub fn is_clamped() -> bool {
-        true
-    }
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct Fine {
+    value: FineValue,  // private field to prevent accidental range violations
+}
 
+impl Fine {
+    /// Makes a new Fine initialized with the specified value.
     pub fn new(value: i32) -> Self {
-        let range = Self::range();
-        if range.contains(&value) {
-            UnsignedCoarse(value)
-        }
-        else {
-            if Self::is_clamped() {
-                UnsignedCoarse(num::clamp(value, *range.start(), *range.end()))
-            }
-            else {
-                panic!("expected value in range {}...{}, got {}", *range.start(), *range.end(), value);
-            }
-        }
+        Self { value: FineValue::new(value) }
     }
 
+    /// Gets the value wrapped by the private RangedInteger field.
     pub fn value(&self) -> i32 {
-        self.0
-    }
-
-    pub fn as_byte(&self) -> u8 {
-        self.0 as u8
-    }
-
-}
-
-impl From<u8> for UnsignedCoarse {
-    fn from(value: u8) -> UnsignedCoarse {
-        UnsignedCoarse::new(value as i32)
+        self.value.value
     }
 }
 
-impl fmt::Display for UnsignedCoarse {
+impl Parameter for Fine {
+    fn name(&self) -> String {
+        "Fine".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *FineValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *FineValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        FineValue::random_value()
+    }
+}
+
+impl Default for Fine {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for Fine {
+    fn from(value: u8) -> Fine {
+        Fine::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Fine {
+    fn into(self) -> u8 {
+        (self.value() as u8) + 64
+    }
+}
+
+impl fmt::Display for Fine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value())
     }
 }
 
-// Define additional type aliases
-type MacroParameterDepth = SignedDepth;
+pub type MacroParameterDepthValue = RangedInteger::<-31, 31>;
+
+/// Wrapper for envelope time parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct MacroParameterDepth {
+    value: MacroParameterDepthValue,  // private field to prevent accidental range violations
+}
+
+impl MacroParameterDepth {
+    /// Makes a new MacroParameterDepth initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: MacroParameterDepthValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for MacroParameterDepth {
+    fn name(&self) -> String {
+        "MacroParameterDepth".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *MacroParameterDepthValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *MacroParameterDepthValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        MacroParameterDepthValue::random_value()
+    }
+}
+
+impl Default for MacroParameterDepth {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for MacroParameterDepth {
+    fn from(value: u8) -> MacroParameterDepth {
+        MacroParameterDepth::new((value as i32) - 64)  // (-31)33~(+31)95 (K5000W=64)
+    }
+}
+
+impl Into<u8> for MacroParameterDepth {
+    fn into(self) -> u8 {
+        (self.value() as u8) + 64
+    }
+}
+
+impl fmt::Display for MacroParameterDepth {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
+/// Generates random value that falls in the range of the type.
+pub trait RandomValue {
+    type T;
+    fn random_value(&self) -> Self::T;
+}
 
 #[cfg(test)]
 mod tests {
     use super::{*};
 
-    #[test]
-    fn test_unsigned_level() {
-        let level = UnsignedLevel::from(42);
-        assert_eq!(level.as_byte(), 42u8);
-    }
-
-    #[test]
-    fn test_unsigned_level_clamped() {
-        let level = UnsignedLevel::from(192);  // too big for range
-        assert_eq!(level.as_byte(), 127u8);  // should be clamped
-    }
-
-    #[test]
-    fn test_unsigned_depth() {
-        let depth = UnsignedDepth::from(42);
-        assert_eq!(depth.as_byte(), 42u8);
-    }
-
-    #[test]
-    fn test_unsigned_depth_clamped() {
-        let depth = UnsignedDepth::from(128);  // too big for range
-        assert_eq!(depth.as_byte(), 63u8);  // should be clamped
-    }
-
-    #[test]
-    fn test_signed_level() {
-        let ks = SignedLevel::from(1u8);
-        assert_eq!(ks.value(), -63);
-    }
-
-    #[test]
-    fn test_signed_level_as_byte() {
-        let ks = SignedLevel::new(-63);
-        assert_eq!(ks.as_byte(), 1u8);
-    }
-
-    #[test]
-    fn test_signed_level_clamped() {
-        let ks = SignedLevel::new(96);  // too big for range
-        assert_eq!(ks.value(), 63); // should be clamped
-    }
-
-    #[test]
-    fn test_signed_level_clamped_as_byte() {
-        let ks = SignedLevel::new(63);
-        assert_eq!(ks.as_byte(), 127u8);
-    }
 }

@@ -10,9 +10,7 @@ use lazy_static::lazy_static;
 
 use crate::SystemExclusiveData;
 use crate::k5000::control;
-use crate::k5000::{Depth, UnsignedLevel};
-
-type EffectParameter = UnsignedLevel;
+use crate::k5000::{EffectParameter, Depth};
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -207,9 +205,9 @@ impl fmt::Display for EffectAlgorithm {
 
 /// Effect definition.
 pub struct EffectDefinition {
-    pub effect: Effect,
-    pub depth: Depth,
-    pub parameter1: EffectParameter,
+    pub effect: Effect,  // reverb = 0~10, others = 11~47
+    pub depth: Depth,  // 0~100
+    pub parameter1: EffectParameter,  // 0~127
     pub parameter2: EffectParameter,
     pub parameter3: EffectParameter,
     pub parameter4: EffectParameter,
@@ -221,11 +219,11 @@ impl fmt::Display for EffectDefinition {
             f,
             "{}, depth = {}, {} = {}, {} = {}, {} = {}, {} = {}",
             EFFECT_NAMES[self.effect as usize].to_string(),
-            self.depth.as_byte(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1.as_byte(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2.as_byte(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.parameter3.as_byte(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[3], self.parameter4.as_byte()
+            self.depth.value(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1.value(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2.value(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.parameter3.value(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[3], self.parameter4.value()
         )
     }
 }
@@ -247,7 +245,7 @@ impl SystemExclusiveData for EffectDefinition {
     fn from_bytes(data: Vec<u8>) -> Self {
         eprintln!("EffectDefinition, data = {:02X?}", data);
         EffectDefinition {
-            effect: Effect::try_from(data[0]).unwrap(),
+            effect: Effect::try_from(data[0]).unwrap(),  // 11~47
             depth: Depth::from(data[1]),
             parameter1: EffectParameter::from(data[2]),
             parameter2: EffectParameter::from(data[3]),
@@ -259,18 +257,18 @@ impl SystemExclusiveData for EffectDefinition {
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             self.effect as u8,
-            self.depth.as_byte(),
-            self.parameter1.as_byte(),
-            self.parameter2.as_byte(),
-            self.parameter3.as_byte(),
-            self.parameter4.as_byte()
+            self.depth.into(),
+            self.parameter1.into(),
+            self.parameter2.into(),
+            self.parameter3.into(),
+            self.parameter4.into()
         ]
     }
 }
 
 /// Effect settings.
 pub struct EffectSettings {
-    pub algorithm: EffectAlgorithm,
+    pub algorithm: EffectAlgorithm,  // 0~3
     pub reverb: EffectDefinition,
     pub effect1: EffectDefinition,
     pub effect2: EffectDefinition,
@@ -331,7 +329,7 @@ impl SystemExclusiveData for EffectSettings {
 /// Effect destinations.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-pub enum Destination {
+pub enum EffectDestination {
     Effect1DryWet,
     Effect1Parameter,
     Effect2DryWet,
@@ -342,16 +340,16 @@ pub enum Destination {
     Effect4Parameter,
 }
 
-impl Default for Destination {
-    fn default() -> Self { Destination::Effect1DryWet }
+impl Default for EffectDestination {
+    fn default() -> Self { EffectDestination::Effect1DryWet }
 }
 
 /// Effect control source.
 #[derive(Debug)]
 pub struct ControlSource {
-    pub source: control::ControlSource,
-    pub destination: Destination,
-    pub depth: i8,
+    pub source: control::ControlSource,  // 0~13
+    pub destination: EffectDestination,  // 0~9
+    pub depth: Depth, // (-31)33~(+31)95
 }
 
 impl Default for ControlSource {
@@ -359,7 +357,7 @@ impl Default for ControlSource {
         ControlSource {
             source: Default::default(),
             destination: Default::default(),
-            depth: 0,
+            depth: Default::default(),
         }
     }
 }
@@ -368,13 +366,13 @@ impl SystemExclusiveData for ControlSource {
     fn from_bytes(data: Vec<u8>) -> Self {
         ControlSource {
             source: control::ControlSource::try_from(data[0]).unwrap(),
-            destination: Destination::try_from(data[1]).unwrap(),
-            depth: data[2] as i8,
+            destination: EffectDestination::try_from(data[1]).unwrap(),
+            depth: Depth::from(data[2]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.source as u8, self.destination as u8, (self.depth + 64) as u8]
+        vec![self.source as u8, self.destination as u8, self.depth.into()]
     }
 }
 

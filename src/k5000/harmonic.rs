@@ -5,11 +5,9 @@ use bit::BitIndex;
 use crate::SystemExclusiveData;
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
-use crate::k5000::{UnsignedDepth, UnsignedLevel};
+use crate::k5000::{EnvelopeRate, HarmonicEnvelopeLevel};
 
 pub type Level = u8;
-pub type EnvelopeRate = UnsignedLevel;
-pub type EnvelopeLevel = UnsignedDepth;
 
 /// Harmonic levels (soft and loud).
 pub struct Levels {
@@ -60,14 +58,14 @@ impl SystemExclusiveData for Levels {
 #[derive(Debug, Copy, Clone)]
 pub struct EnvelopeSegment {
     pub rate: EnvelopeRate,
-    pub level: EnvelopeLevel,
+    pub level: HarmonicEnvelopeLevel,
 }
 
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
             rate: EnvelopeRate::new(0),
-            level: EnvelopeLevel::new(0),
+            level: HarmonicEnvelopeLevel::new(0),
         }
     }
 }
@@ -76,12 +74,12 @@ impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: Vec<u8>) -> Self {
         EnvelopeSegment {
             rate: EnvelopeRate::from(data[0]),
-            level: EnvelopeLevel::from(data[1]),
+            level: HarmonicEnvelopeLevel::from(data[1]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.rate.as_byte(), self.level.as_byte()]
+        vec![self.rate.into(), self.level.into()]
     }
 }
 
@@ -112,7 +110,7 @@ impl Envelope {
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
             rate: EnvelopeRate::new(0),
-            level: EnvelopeLevel::new(0),
+            level: HarmonicEnvelopeLevel::new(0),
         };
 
         Envelope {
@@ -128,17 +126,17 @@ impl Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         let segment0_rate = EnvelopeRate::from(data[0]);
-        let segment0_level = EnvelopeLevel::from(data[1]);
+        let segment0_level = HarmonicEnvelopeLevel::from(data[1]);
         let segment1_rate = EnvelopeRate::from(data[2]);
-        let segment1_level = EnvelopeLevel::from(data[3]);
+        let segment1_level = HarmonicEnvelopeLevel::from(data[3] & 0b00111111);
         let segment1_level_bit6 = data[3].bit(6);
         let segment2_rate = EnvelopeRate::from(data[4]);
         let mut segment2_level_byte = data[5];
         let segment2_level_bit6 = data[5].bit(6);
         segment2_level_byte.set_bit(6, false);
-        let segment2_level = EnvelopeLevel::from(segment2_level_byte);
+        let segment2_level = HarmonicEnvelopeLevel::from(segment2_level_byte & 0b00111111);
         let segment3_rate = EnvelopeRate::from(data[6]);
-        let segment3_level = EnvelopeLevel::from(data[7]);
+        let segment3_level = HarmonicEnvelopeLevel::from(data[7]);
 
         Envelope {
             attack: EnvelopeSegment {
@@ -176,8 +174,8 @@ impl SystemExclusiveData for Envelope {
         // When emitting decay1 and decay2 data,
         // we need to bake the loop type into the levels.
 
-        let mut decay1_level_byte = self.decay1.level.as_byte();
-        let mut decay2_level_byte = self.decay2.level.as_byte();
+        let mut decay1_level_byte: u8 = self.decay1.level.into();
+        let mut decay2_level_byte: u8 = self.decay2.level.into();
 
         match self.loop_type {
             Loop::Loop1 => {

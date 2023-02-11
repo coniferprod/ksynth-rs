@@ -9,7 +9,9 @@ use crate::k5000::osc::*;
 use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
-use crate::k5000::{UnsignedLevel, UnsignedCoarse, MediumDepth};
+use crate::k5000::{Volume, BenderPitch, BenderCutoff, KeyOnDelay};
+
+use pretty_hex::*;
 
 /// Key in a keyboard zone.
 #[derive(Debug, Eq, PartialEq)]
@@ -77,11 +79,11 @@ pub struct SourceControl {
     pub zone: Zone,
     pub vel_sw: VelocitySwitchSettings,
     pub effect_path: u8,
-    pub volume: UnsignedLevel,
-    pub bender_pitch: UnsignedCoarse,
-    pub bender_cutoff: MediumDepth,
+    pub volume: Volume,
+    pub bender_pitch: BenderPitch,
+    pub bender_cutoff: BenderCutoff,
     pub modulation: ModulationSettings,
-    pub key_on_delay: UnsignedLevel,
+    pub key_on_delay: KeyOnDelay,
     pub pan: PanSettings,
 }
 
@@ -91,11 +93,11 @@ impl Default for SourceControl {
             zone: Zone { low: Key { note: 0 }, high: Key { note: 127 } },
             vel_sw: Default::default(),
             effect_path: 0,
-            volume: UnsignedLevel::new(100),
-            bender_pitch: UnsignedCoarse::new(0),
-            bender_cutoff: MediumDepth::new(0),
+            volume: Volume::new(100),
+            bender_pitch: BenderPitch::new(0),
+            bender_cutoff: BenderCutoff::new(0),
             modulation: Default::default(),
-            key_on_delay: UnsignedLevel::new(0),
+            key_on_delay: KeyOnDelay::new(0),
             pan: Default::default(),
         }
     }
@@ -111,15 +113,17 @@ impl fmt::Display for SourceControl {
 
 impl SystemExclusiveData for SourceControl {
     fn from_bytes(data: Vec<u8>) -> Self {
+        eprintln!("Source control data = {}", simple_hex(&data));
+
         SourceControl {
             zone: Zone { low: Key { note: data[0] }, high: Key { note: data[1] } },
             vel_sw: VelocitySwitchSettings::from_bytes(vec![data[2]]),
             effect_path: data[3],
-            volume: UnsignedLevel::from(data[4]),
-            bender_pitch: UnsignedCoarse::from(data[5]),
-            bender_cutoff: MediumDepth::from(data[6]),
+            volume: Volume::from(data[4]),
+            bender_pitch: BenderPitch::from(data[5]),
+            bender_cutoff: BenderCutoff::from(data[6]),
             modulation: ModulationSettings::from_bytes(data[7..25].to_vec()),
-            key_on_delay: UnsignedLevel::from(data[25]),
+            key_on_delay: KeyOnDelay::from(data[25]),
             pan: PanSettings::from_bytes(data[26..28].to_vec()),
         }
     }
@@ -130,11 +134,11 @@ impl SystemExclusiveData for SourceControl {
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_sw.to_bytes());
         result.push(self.effect_path);
-        result.push(self.volume.as_byte());
-        result.push(self.bender_pitch.as_byte());
-        result.push(self.bender_cutoff.as_byte());
+        result.push(self.volume.into());
+        result.push(self.bender_pitch.into());
+        result.push(self.bender_cutoff.into());
         result.extend(self.modulation.to_bytes());
-        result.push(self.key_on_delay.as_byte());
+        result.push(self.key_on_delay.into());
         result.extend(self.pan.to_bytes());
 
         result

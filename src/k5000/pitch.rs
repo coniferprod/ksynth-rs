@@ -4,30 +4,21 @@
 use std::fmt;
 
 use crate::SystemExclusiveData;
-use crate::k5000::{SignedLevel, UnsignedLevel};
-
-/// Envelope level.
-pub type Level = SignedLevel;
-
-/// Envelope time.
-pub type Time = UnsignedLevel;
-
-/// Velocity sensitivity.
-pub type VelocitySensitivity = SignedLevel;
+use crate::k5000::{PitchEnvelopeLevel, PitchEnvelopeTime, VelocitySensitivity};
 
 /// Pitch envelope.
 pub struct Envelope {
     /// Envelope start level.
-    pub start: Level,
+    pub start: PitchEnvelopeLevel,
 
     /// Envelope attack time.
-    pub attack_time: Time,
+    pub attack_time: PitchEnvelopeTime,
 
     /// Envelope attack level.
-    pub attack_level: Level,
+    pub attack_level: PitchEnvelopeLevel,
 
     /// Envelope decay time.
-    pub decay_time: Time,
+    pub decay_time: PitchEnvelopeTime,
 
     /// Time velocity sensitivity.
     pub time_vel_sens: VelocitySensitivity,
@@ -40,10 +31,10 @@ impl Envelope {
     /// Creates a new envelope with default values.
     pub fn new() -> Envelope {
         Envelope {
-            start: Level::new(0),
-            attack_time: Time::new(0),
-            attack_level: Level::new(0),
-            decay_time: Time::new(0),
+            start: PitchEnvelopeLevel::new(0),
+            attack_time: PitchEnvelopeTime::new(0),
+            attack_level: PitchEnvelopeLevel::new(0),
+            decay_time: PitchEnvelopeTime::new(0),
             time_vel_sens: VelocitySensitivity::new(0),
             level_vel_sens: VelocitySensitivity::new(0),
         }
@@ -61,26 +52,23 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         Envelope {
-            start: Level::from(data[0]),
-            attack_time: Time::from(data[1]),
-            attack_level: Level::from(data[2]),
-            decay_time: Time::from(data[3]),
+            start: PitchEnvelopeLevel::from(data[0]),
+            attack_time: PitchEnvelopeTime::from(data[1]),
+            attack_level: PitchEnvelopeLevel::from(data[2]),
+            decay_time: PitchEnvelopeTime::from(data[3]),
             time_vel_sens: VelocitySensitivity::from(data[4]),
             level_vel_sens: VelocitySensitivity::from(data[5]),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let mut result: Vec<u8> = Vec::new();
-        let bs = vec![
-            self.start.as_byte(),
-            self.attack_time.as_byte(),
-            self.attack_level.as_byte(),
-            self.decay_time.as_byte(),
-            self.time_vel_sens.as_byte(),
-            self.level_vel_sens.as_byte()
-        ];
-        result.extend(bs);
-        result
+        vec![
+            self.start.into(),
+            self.attack_time.into(),
+            self.attack_level.into(),
+            self.decay_time.into(),
+            self.time_vel_sens.into(),
+            self.level_vel_sens.into()
+        ]
     }
 }
