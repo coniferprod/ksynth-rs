@@ -6,13 +6,14 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k4;
+use crate::k4::{Level};
 
 const SECTION_COUNT: usize = 8;  // number of sections in a multi
 
 #[derive(Clone)]
 pub struct MultiPatch {
     pub name: String,
-    pub volume: u8,
+    pub volume: Level,
     pub effect: u8,
     pub sections: Vec<Section>,
 }
@@ -22,7 +23,7 @@ impl MultiPatch {
         let mut buf: Vec<u8> = Vec::new();
 
         buf.extend(self.name.as_bytes());
-        buf.push(self.volume);
+        buf.push(self.volume.into_inner());
         buf.push(self.effect - 1);  // adjust 1~32 to 0~31
 
         for i in 0..8 {
@@ -37,7 +38,7 @@ impl Default for MultiPatch {
     fn default() -> Self {
         MultiPatch {
             name: "NewMulti  ".to_string(),
-            volume: 100,
+            volume: Level::new(100).unwrap(),
             effect: 1,
             sections: vec![Default::default(); SECTION_COUNT],
         }
@@ -47,7 +48,7 @@ impl Default for MultiPatch {
 impl fmt::Display for MultiPatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} volume={} effect={}",
-            self.name, self.volume, self.effect)
+            self.name, self.volume.into_inner(), self.effect)
 
             // TODO: Write the sections too
     }
@@ -74,7 +75,7 @@ impl SystemExclusiveData for MultiPatch {
 
         MultiPatch {
             name: name,
-            volume: data[10],
+            volume: Level::new(data[10]).unwrap(),
             effect: data[11] + 1,  // use 1...32 for effect patch
             sections: sections,
         }
@@ -237,7 +238,7 @@ mod tests {
         let data: [u8; 77] = include!("a401multi1.in");
         let patch = MultiPatch::from_bytes(data.to_vec());
         assert_eq!(patch.name, "Fatt!Anna5");
-        assert_eq!(patch.volume, 0x50);
+        assert_eq!(patch.volume.into_inner(), 0x50);
     }
 
     #[test]

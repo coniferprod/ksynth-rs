@@ -1,22 +1,23 @@
 use std::convert::TryInto;
 use std::fmt;
 use crate::SystemExclusiveData;
+use crate::k4::{EnvelopeTime, EnvelopeLevel, ModulationDepth, Level};
 
 #[derive(Copy, Clone)]
 pub struct Envelope {
-    pub attack: u8,
-    pub decay: u8,
-    pub sustain: u8,
-    pub release: u8,
+    pub attack: EnvelopeTime,
+    pub decay: EnvelopeTime,
+    pub sustain: EnvelopeLevel,
+    pub release: EnvelopeTime,
 }
 
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack: 54,
-            decay: 72,
-            sustain: 90,
-            release: 64,
+            attack: EnvelopeTime::new(54).unwrap(),
+            decay: EnvelopeTime::new(72).unwrap(),
+            sustain: EnvelopeLevel::new(90).unwrap(),
+            release: EnvelopeTime::new(64).unwrap(),
         }
     }
 }
@@ -29,26 +30,30 @@ impl Default for Envelope {
 
 impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "A={} D={} S={} R={}", self.attack, self.decay, self.sustain, self.release)
+        write!(f, "A={} D={} S={} R={}",
+            self.attack.into_inner(),
+            self.decay.into_inner(),
+            self.sustain.into_inner(),
+            self.release.into_inner())
     }
 }
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: Vec<u8>) -> Self {
         Envelope {
-            attack: data[0] & 0x7f,
-            decay: data[1] & 0x7f,
-            sustain: data[2] & 0x7f,
-            release: data[3] & 0x7f,
+            attack: EnvelopeTime::new(data[0] & 0x7f).unwrap(),
+            decay: EnvelopeTime::new(data[1] & 0x7f).unwrap(),
+            sustain: EnvelopeLevel::new(data[2] & 0x7f).unwrap(),
+            release: EnvelopeTime::new(data[3] & 0x7f).unwrap(),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack,
-            self.decay,
-            self.sustain,
-            self.release
+            self.attack.into_inner(),
+            self.decay.into_inner(),
+            self.sustain.into_inner(),
+            self.release.into_inner(),
         ]
     }
 
@@ -59,17 +64,17 @@ impl SystemExclusiveData for Envelope {
 
 #[derive(Copy, Clone)]
 pub struct LevelModulation {
-    pub velocity_depth: i8,
-    pub pressure_depth: i8,
-    pub key_scaling_depth: i8,
+    pub velocity_depth: ModulationDepth,
+    pub pressure_depth: ModulationDepth,
+    pub key_scaling_depth: ModulationDepth,
 }
 
 impl LevelModulation {
     pub fn new() -> LevelModulation {
         LevelModulation {
-            velocity_depth: 15,
-            pressure_depth: 0,
-            key_scaling_depth: -6,
+            velocity_depth: ModulationDepth::new(15).unwrap(),
+            pressure_depth: ModulationDepth::new(0).unwrap(),
+            key_scaling_depth: ModulationDepth::new(-6).unwrap(),
         }
     }
 }
@@ -85,7 +90,9 @@ impl fmt::Display for LevelModulation {
         write!(
             f,
             "Vel.depth={} Prs.depth={} KS depth={}",
-            self.velocity_depth, self.pressure_depth, self.key_scaling_depth
+            self.velocity_depth.into_inner(),
+            self.pressure_depth.into_inner(),
+            self.key_scaling_depth.into_inner()
         )
     }
 }
@@ -93,17 +100,17 @@ impl fmt::Display for LevelModulation {
 impl SystemExclusiveData for LevelModulation {
     fn from_bytes(data: Vec<u8>) -> Self {
         LevelModulation {
-            velocity_depth: (data[0] as i8) - 50,
-            pressure_depth: (data[1] as i8) - 50,
-            key_scaling_depth: (data[2] as i8) - 50,
+            velocity_depth: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
+            pressure_depth: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
+            key_scaling_depth: ModulationDepth::new((data[2] as i8) - 50).unwrap(),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            (self.velocity_depth + 50).try_into().unwrap(),
-            (self.pressure_depth + 50).try_into().unwrap(),
-            (self.key_scaling_depth + 50).try_into().unwrap(),
+            (self.velocity_depth.into_inner() + 50).try_into().unwrap(),
+            (self.pressure_depth.into_inner() + 50).try_into().unwrap(),
+            (self.key_scaling_depth.into_inner() + 50).try_into().unwrap(),
         ]
     }
 
@@ -114,17 +121,17 @@ impl SystemExclusiveData for LevelModulation {
 
 #[derive(Copy, Clone)]
 pub struct TimeModulation {
-    pub attack_velocity: i8,
-    pub release_velocity: i8,
-    pub key_scaling: i8,
+    pub attack_velocity: ModulationDepth,
+    pub release_velocity: ModulationDepth,
+    pub key_scaling: ModulationDepth,
 }
 
 impl TimeModulation {
     pub fn new() -> TimeModulation {
         TimeModulation {
-            attack_velocity: 0,
-            release_velocity: 0,
-            key_scaling: 0,
+            attack_velocity: ModulationDepth::new(0).unwrap(),
+            release_velocity: ModulationDepth::new(0).unwrap(),
+            key_scaling: ModulationDepth::new(0).unwrap(),
         }
     }
 }
@@ -140,7 +147,9 @@ impl fmt::Display for TimeModulation {
         write!(
             f,
             "Atk.vel={} Rel.vel={} KS={}",
-            self.attack_velocity, self.release_velocity, self.key_scaling
+            self.attack_velocity.into_inner(),
+            self.release_velocity.into_inner(),
+            self.key_scaling.into_inner()
         )
     }
 }
@@ -148,17 +157,17 @@ impl fmt::Display for TimeModulation {
 impl SystemExclusiveData for TimeModulation {
     fn from_bytes(data: Vec<u8>) -> Self {
         TimeModulation {
-            attack_velocity: (data[0] as i8) - 50,
-            release_velocity: (data[1] as i8) - 50,
-            key_scaling: (data[2] as i8) - 50,
+            attack_velocity: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
+            release_velocity: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
+            key_scaling: ModulationDepth::new((data[2] as i8) - 50).unwrap(),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            (self.attack_velocity + 50).try_into().unwrap(),
-            (self.release_velocity + 50).try_into().unwrap(),
-            (self.key_scaling + 50).try_into().unwrap(),
+            (self.attack_velocity.into_inner() + 50).try_into().unwrap(),
+            (self.release_velocity.into_inner() + 50).try_into().unwrap(),
+            (self.key_scaling.into_inner() + 50).try_into().unwrap(),
         ]
     }
 
@@ -169,7 +178,7 @@ impl SystemExclusiveData for TimeModulation {
 
 #[derive(Copy, Clone)]
 pub struct Amplifier {
-    pub level: u8,
+    pub level: Level,
     pub envelope: Envelope,
     pub level_modulation: LevelModulation,
     pub time_modulation: TimeModulation,
@@ -178,7 +187,7 @@ pub struct Amplifier {
 impl Amplifier {
     pub fn new() -> Amplifier {
         Amplifier {
-            level: 75,
+            level: Level::new(75).unwrap(),
             envelope: Default::default(),
             level_modulation: Default::default(),
             time_modulation: Default::default(),
@@ -197,7 +206,7 @@ impl fmt::Display for Amplifier {
         write!(
             f,
             "Level={} Envelope={} LevelMod={} TimeMod={}",
-            self.level, self.envelope, self.level_modulation, self.time_modulation
+            self.level.into_inner(), self.envelope, self.level_modulation, self.time_modulation
         )
     }
 }
@@ -210,7 +219,7 @@ impl SystemExclusiveData for Amplifier {
 
         let b = data[offset];
         offset += 1;
-        let level = b & 0x7f;
+        let level = Level::new(b & 0x7f).unwrap();
 
         start = offset;
         end = start + 4;
@@ -240,7 +249,7 @@ impl SystemExclusiveData for Amplifier {
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.level);
+        buf.push(self.level.into_inner());
         buf.extend(self.envelope.to_bytes());
         buf.extend(self.level_modulation.to_bytes());
         buf.extend(self.time_modulation.to_bytes());
@@ -263,12 +272,25 @@ mod tests {
     #[test]
     fn test_amplifier_envelope() {
         let env = Envelope {
-            attack: 10,
-            decay: 5,
-            sustain: 20,
-            release: 10,
+            attack: EnvelopeTime::new(10).unwrap(),
+            decay: EnvelopeTime::new(5).unwrap(),
+            sustain: EnvelopeLevel::new(20).unwrap(),
+            release: EnvelopeTime::new(10).unwrap(),
         };
 
-        assert_eq!(vec![env.attack, env.decay, env.sustain, env.release], vec![10, 5, 20, 10])
+        assert_eq!(
+            vec![
+                env.attack.into_inner(),
+                env.decay.into_inner(),
+                env.sustain.into_inner(),
+                env.release.into_inner()
+            ],
+            vec![
+                10,
+                5,
+                20,
+                10
+            ]
+        )
     }
 }

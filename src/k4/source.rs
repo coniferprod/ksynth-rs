@@ -1,32 +1,33 @@
 use std::fmt;
 use bit::BitIndex;
+use crate::k4::{Level, Curve, Coarse, Fine};
 use crate::k4::wave::Wave;
 
 #[derive(Copy, Clone)]
 pub struct Source {
-    pub delay: u8,
+    pub delay: Level,
     pub wave: Wave,
-    pub ks_curve: u8,
-    pub coarse: i8,
+    pub ks_curve: Curve,
+    pub coarse: Coarse,
     pub key_track: KeyTrack,
-    pub fine: i8,
+    pub fine: Fine,
     pub press_freq: bool,
     pub vibrato: bool,
-    pub velocity_curve: u8,  // 1~8 (in SysEx 0~7)
+    pub velocity_curve: Curve,  // 1~8 (in SysEx 0~7)
 }
 
 impl Source {
     pub fn new() -> Source {
         Source {
-            delay: 0,
+            delay: Level::new(0).unwrap(),
             wave: Default::default(),
-            ks_curve: 1,
-            coarse: 0,
+            ks_curve: Curve::new(1).unwrap(),
+            coarse: Coarse::new(0).unwrap(),
             key_track: KeyTrack::On,
-            fine: 0,
+            fine: Fine::new(0).unwrap(),
             press_freq: true,
             vibrato: true,
-            velocity_curve: 1,
+            velocity_curve: Curve::new(1).unwrap(),
         }
     }
 }
@@ -42,7 +43,15 @@ impl fmt::Display for Source {
         write!(
             f,
             "delay = {}, wave = {}, KS curve = {}, coarse = {}, fine = {}, key track = {}, prs>freq = {}, vib>a.bend = {}, vel.curve = {}",
-            self.delay, self.wave, self.ks_curve, self.coarse, self.fine, self.key_track, self.press_freq, self.vibrato, self.velocity_curve
+            self.delay.into_inner(),
+            self.wave,
+            self.ks_curve.into_inner(),
+            self.coarse.into_inner(),
+            self.fine.into_inner(),
+            self.key_track,
+            self.press_freq,
+            self.vibrato,
+            self.velocity_curve.into_inner()
         )
     }
 }
@@ -95,24 +104,24 @@ impl crate::SystemExclusiveData for Source {
         let velocity_curve = ((b >> 2) & 0x07) + 1;  // 0...7 to 1...8
 
         Source {
-            delay,
+            delay: Level::new(delay).unwrap(),
             wave,
-            ks_curve,
-            coarse,
+            ks_curve: Curve::new(ks_curve).unwrap(),
+            coarse: Coarse::new(coarse).unwrap(),
             key_track,
-            fine,
+            fine: Fine::new(fine).unwrap(),
             press_freq,
             vibrato,
-            velocity_curve,
+            velocity_curve: Curve::new(velocity_curve).unwrap(),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.delay);
+        buf.push(self.delay.into_inner());
 
-        let mut s34 = self.ks_curve << 4;
+        let mut s34 = (self.ks_curve.into_inner() - 1) << 4;
         let wave_bytes = self.wave.to_bytes();
         if wave_bytes[0] == 1 {
             s34.set_bit(0, true);
@@ -120,7 +129,7 @@ impl crate::SystemExclusiveData for Source {
         buf.push(s34);
         buf.push(wave_bytes[1]);
 
-        let mut s42 = (self.coarse + 24) as u8;  // bring into 0~48
+        let mut s42 = (self.coarse.into_inner() + 24) as u8;  // bring into 0~48
         let mut key: u8 = 0;
         match self.key_track {
             KeyTrack::On => {
@@ -133,9 +142,9 @@ impl crate::SystemExclusiveData for Source {
         buf.push(s42);
         buf.push(key);
 
-        buf.push((self.fine + 50) as u8);  // bring into 0~100
+        buf.push((self.fine.into_inner() + 50) as u8);  // bring into 0~100
 
-        let mut s54 = (self.velocity_curve - 1) << 2;
+        let mut s54 = (self.velocity_curve.into_inner() - 1) << 2;
         if self.vibrato {
             s54.set_bit(0, true);
         }

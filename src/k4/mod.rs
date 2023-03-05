@@ -28,3 +28,84 @@ pub fn get_note_name(note_number: u8) -> String {
 
     format!("{}{}", name, octave.to_string())
 }
+
+// Domain types based on nutype.
+// We use the smallest possible inner type for the wrapped value, FWIW.
+
+use nutype::nutype;
+
+// Use for DCA/DCF attack, decay and release
+#[nutype(validate(min = 0, max = 100))]
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct EnvelopeTime(u8);
+
+// Used for DCA/DCF sustain
+type EnvelopeLevel = EnvelopeTime;
+
+// Level from 0 to 100
+#[nutype(validate(min = 0, max = 100))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Level(u8);
+
+// Used for DCA/DCF modulation values
+#[nutype(validate(min = -50, max = 50))]
+#[derive(Copy, Clone)]
+pub struct ModulationDepth(i8);  // note: signed inner type
+
+// MIDI channel
+#[nutype(validate(min = 1, max = 16))]
+#[derive(Copy, Clone)]
+pub struct Channel(u8);
+
+// Used for drum source 1 and 2 decay
+#[nutype(validate(min = 1, max = 100))]
+#[derive(Copy, Clone)]
+pub struct Decay(u8);
+
+#[nutype(validate(min = -7, max = 7))]
+#[derive(Copy, Clone)]
+pub struct SmallEffectParameter(i8);
+
+#[nutype(validate(min = 0, max = 31))]
+#[derive(Copy, Clone)]
+pub struct BigEffectParameter(u8);
+
+// Use for DCF sustain
+#[nutype(validate(min = -50, max = 50))]
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct FilterEnvelopeLevel(i8);
+
+// Filter cutoff from 0 to 100
+#[nutype(validate(min = 0, max = 100))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Cutoff(u8);
+
+// Filter resonance from 0 to 7
+#[nutype(validate(min = 0, max = 100))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Resonance(u8);
+
+// Effect number 1 to 32
+#[nutype(validate(min = 1, max = 32))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct EffectNumber(u8);
+
+// Velocity or Key Scaling curve 1~8
+#[nutype(validate(min = 1, max = 8))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Curve(u8);
+
+// DCO coarse tuning
+#[nutype(validate(min = -24, max = 24))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Coarse(i8);
+
+// DCO fine tuning
+#[nutype(validate(min = -50, max = 50))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Fine(i8);
+
+// Wave number 1 to 256
+#[nutype(validate(min = 1, max = 256))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct WaveNumber(u16);

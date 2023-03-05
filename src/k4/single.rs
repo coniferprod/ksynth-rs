@@ -6,7 +6,7 @@ use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
 use crate::{SystemExclusiveData, Checksum, every_nth_byte};
-use crate::k4::{NAME_LENGTH, get_effect_number};
+use crate::k4::{Level, ModulationDepth, EffectNumber, NAME_LENGTH, get_effect_number};
 use crate::k4::source::Source;
 use crate::k4::lfo::*;
 use crate::k4::amp::Amplifier;
@@ -83,19 +83,19 @@ impl fmt::Display for WheelAssign {
 
 #[derive(Copy, Clone)]
 pub struct AutoBend {
-    pub time: u8,
-    pub depth: i8,
-    pub key_scaling_time: i8,
-    pub velocity_depth: i8,
+    pub time: Level,
+    pub depth: ModulationDepth,
+    pub key_scaling_time: ModulationDepth,
+    pub velocity_depth: ModulationDepth,
 }
 
 impl Default for AutoBend {
     fn default() -> Self {
         AutoBend {
-            time: 0,
-            depth: 0,
-            key_scaling_time: 0,
-            velocity_depth: 0,
+            time: Level::new(0).unwrap(),
+            depth: ModulationDepth::new(0).unwrap(),
+            key_scaling_time: ModulationDepth::new(0).unwrap(),
+            velocity_depth: ModulationDepth::new(0).unwrap(),
         }
     }
 }
@@ -111,7 +111,10 @@ impl fmt::Display for AutoBend {
         write!(
             f,
             "time = {}, depth = {}, ks.time = {}, vel.depth = {}",
-            self.time, self.depth, self.key_scaling_time, self.velocity_depth
+            self.time.into_inner(),
+            self.depth.into_inner(),
+            self.key_scaling_time.into_inner(),
+            self.velocity_depth.into_inner()
         )
     }
 }
@@ -119,10 +122,10 @@ impl fmt::Display for AutoBend {
 impl SystemExclusiveData for AutoBend {
     fn from_bytes(data: Vec<u8>) -> Self {
         AutoBend {
-            time: data[0] & 0x7f,
-            depth: ((data[1] & 0x7f) as i8) - 50, // 0~100 to ±50
-            key_scaling_time: ((data[2] & 0x7f) as i8) - 50, // 0~100 to ±50
-            velocity_depth: ((data[3] & 0x7f) as i8) - 50, // 0~100 to ±50
+            time: Level::new(data[0] & 0x7f).unwrap(),
+            depth: ModulationDepth::new(((data[1] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            key_scaling_time: ModulationDepth::new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            velocity_depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
         }
     }
 
@@ -130,10 +133,10 @@ impl SystemExclusiveData for AutoBend {
         let mut buf: Vec<u8> = Vec::new();
 
         let b = vec![
-            self.time,
-            (self.depth + 50).try_into().unwrap(),
-            (self.key_scaling_time + 50).try_into().unwrap(),
-            (self.velocity_depth + 50).try_into().unwrap(),
+            self.time.into_inner(),
+            (self.depth.into_inner() + 50).try_into().unwrap(),
+            (self.key_scaling_time.into_inner() + 50).try_into().unwrap(),
+            (self.velocity_depth.into_inner() + 50).try_into().unwrap(),
         ];
         buf.extend(b);
 
@@ -146,8 +149,8 @@ impl SystemExclusiveData for AutoBend {
 #[derive(Clone)]
 pub struct SinglePatch {
     pub name: String,
-    pub volume: u8,  // 0~100
-    pub effect: u8,  // 1~32 (in SysEx 0~31)
+    pub volume: Level,  // 0~100
+    pub effect: EffectNumber,  // 1~32 (in SysEx 0~31)
     pub submix: Submix,
     pub source_mode: SourceMode,
     pub polyphony_mode: PolyphonyMode,
@@ -171,8 +174,8 @@ impl SinglePatch {
     pub fn new() -> SinglePatch {
         SinglePatch {
             name: "NewSound  ".to_string(),
-            volume: 100,
-            effect: 1,
+            volume: Level::new(100).unwrap(),
+            effect: EffectNumber::new(1).unwrap(),
             submix: Submix::A,
             source_mode: SourceMode::Normal,
             polyphony_mode: PolyphonyMode::Poly1,
@@ -197,8 +200,8 @@ impl SinglePatch {
         let mut buf: Vec<u8> = Vec::new();
 
         buf.extend(self.name.as_bytes());
-        buf.push(self.volume);
-        buf.push(self.effect - 1);  // 1~32 to 0~31
+        buf.push(self.volume.into_inner());
+        buf.push(self.effect.into_inner() - 1);  // 1~32 to 0~31
         buf.push(self.submix as u8);
 
         let mut s13 = (self.polyphony_mode as u8) << 2;
@@ -300,8 +303,17 @@ impl fmt::Display for SinglePatch {
 
         write!(f,
             "{} volume={} effect={} submix={} source mode={} polyphony mode={} AM1>2={} AM3>4={}\n{}\n{}",
-            self.name, self.volume, self.effect, self.submix, self.source_mode, self.polyphony_mode,
-            if self.am12 { "ON"} else { "OFF" }, if self.am34 { "ON" } else { "OFF" }, source_s, param_s)
+            self.name,
+            self.volume.into_inner(),
+            self.effect.into_inner(),
+            self.submix,
+            self.source_mode,
+            self.polyphony_mode,
+            if self.am12 { "ON"} else { "OFF" },
+            if self.am34 { "ON" } else { "OFF" },
+            source_s,
+            param_s
+        )
     }
 }
 
@@ -439,8 +451,8 @@ impl SystemExclusiveData for SinglePatch {
 
         SinglePatch {
             name: name,
-            volume: volume,
-            effect: effect,
+            volume: Level::new(volume).unwrap(),
+            effect: EffectNumber::new(effect).unwrap(),
             submix: submix,
             source_mode: SourceMode::try_from(source_mode).unwrap(),
             polyphony_mode: PolyphonyMode::try_from(polyphony_mode).unwrap(),
@@ -491,7 +503,7 @@ mod tests {
         let data: [u8; 131] = include!("a401single1.in");
         let single_patch = SinglePatch::from_bytes(data.to_vec());
         assert_eq!(single_patch.name, "Melo Vox 1");
-        assert_eq!(single_patch.volume, 100);
+        assert_eq!(single_patch.volume.into_inner(), 100);
     }
 
     #[test]

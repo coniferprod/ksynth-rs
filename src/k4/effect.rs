@@ -4,7 +4,7 @@ use std::convert::TryInto;
 use std::collections::HashMap;
 use lazy_static::lazy_static;
 use num_enum::TryFromPrimitive;
-use crate::k4::SUBMIX_COUNT;
+use crate::k4::{Level, SUBMIX_COUNT, SmallEffectParameter, BigEffectParameter};
 use crate::{SystemExclusiveData, Checksum};
 
 static EFFECT_NAMES: &[&str] = &[
@@ -58,9 +58,9 @@ impl fmt::Display for Effect {
 #[derive(Clone)]
 pub struct EffectPatch {
     pub effect: Effect,
-    pub param1: u8,
-    pub param2: u8,
-    pub param3: u8,
+    pub param1: SmallEffectParameter,
+    pub param2: SmallEffectParameter,
+    pub param3: BigEffectParameter,
     pub submixes: [SubmixSettings; SUBMIX_COUNT],
 }
 
@@ -91,9 +91,9 @@ impl Default for EffectPatch {
     fn default() -> Self {
         EffectPatch {
             effect: Effect::Reverb1,
-            param1: 0,
-            param2: 0,
-            param3: 0,
+            param1: SmallEffectParameter::new(0).unwrap(),
+            param2: SmallEffectParameter::new(0).unwrap(),
+            param3: BigEffectParameter::new(0).unwrap(),
             submixes: [Default::default(); SUBMIX_COUNT],
         }
     }
@@ -105,9 +105,9 @@ impl fmt::Display for EffectPatch {
             f,
             "{}, {} = {}, {} = {}, {} = {}",
             EFFECT_NAMES[self.effect as usize].to_string(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1,
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2,
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1.into_inner(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2.into_inner(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3.into_inner()
         )
     }
 }
@@ -117,9 +117,9 @@ impl EffectPatch {
         let mut buf: Vec<u8> = Vec::new();
 
         buf.push(self.effect as u8 - 1);
-        buf.push(self.param1);
-        buf.push(self.param2);
-        buf.push(self.param3);
+        buf.push((self.param1.into_inner() + 7) as u8);
+        buf.push((self.param2.into_inner() + 7) as u8);
+        buf.push(self.param3.into_inner());
         buf.extend(vec![0, 0, 0, 0, 0, 0]); // six dummy bytes
 
         for i in 0..SUBMIX_COUNT {
@@ -149,8 +149,8 @@ impl SystemExclusiveData for EffectPatch {
         while i < SUBMIX_COUNT {
             submixes[i] = SubmixSettings {
                 pan: data[offset] as i32 - 7,
-                send1: data[offset + 1] as u32,
-                send2: data[offset + 2] as u32,
+                send1: Level::new(data[offset + 1]).unwrap(),
+                send2: Level::new(data[offset + 2]).unwrap(),
             };
             offset += 3;
             i += 1;
@@ -158,9 +158,9 @@ impl SystemExclusiveData for EffectPatch {
 
         EffectPatch {
             effect: Effect::try_from(data[0] + 1).unwrap(),
-            param1: data[1],
-            param2: data[2],
-            param3: data[3],
+            param1: SmallEffectParameter::new((data[1] as i8) - 7).unwrap(),
+            param2: SmallEffectParameter::new((data[2] as i8) - 7).unwrap(),
+            param3: BigEffectParameter::new(data[3]).unwrap(),
             submixes,
         }
     }
@@ -192,16 +192,16 @@ pub struct SubmixSettings {
     pub pan: i32,
 
     // Effect send 1 and 2 are used on K4 only
-    pub send1: u32,
-    pub send2: u32,
+    pub send1: Level,
+    pub send2: Level,
 }
 
 impl Default for SubmixSettings {
     fn default() -> Self {
         SubmixSettings {
             pan: 0,
-            send1: 0,
-            send2: 0,
+            send1: Level::new(0).unwrap(),
+            send2: Level::new(0).unwrap(),
         }
     }
 }
@@ -210,13 +210,17 @@ impl SystemExclusiveData for SubmixSettings {
     fn from_bytes(data: Vec<u8>) -> Self {
         SubmixSettings {
             pan: data[0] as i32 - 7,
-            send1: data[1] as u32,
-            send2: data[2] as u32,
+            send1: Level::new(data[1]).unwrap(),
+            send2: Level::new(data[2]).unwrap(),
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![(self.pan + 7).try_into().unwrap(), self.send1 as u8, self.send2 as u8]
+        vec![
+            (self.pan + 7).try_into().unwrap(),
+            self.send1.into_inner(),
+            self.send2.into_inner()
+        ]
     }
 
     fn data_size(&self) -> usize { 3 }
@@ -279,9 +283,9 @@ mod tests {
     fn test_effect_parameter_names() {
         let effect = EffectPatch {
             effect: Effect::Reverb1,
-            param1: 7,
-            param2: 5,
-            param3: 31,
+            param1: SmallEffectParameter::new(7).unwrap(),
+            param2: SmallEffectParameter::new(5).unwrap(),
+            param3: BigEffectParameter::new(31).unwrap(),
             submixes: [Default::default(); SUBMIX_COUNT],
         };
 
@@ -297,9 +301,9 @@ mod tests {
     fn test_effect_get_parameter_names() {
         let effect = EffectPatch {
             effect: Effect::Reverb1,
-            param1: 7,
-            param2: 5,
-            param3: 31,
+            param1: SmallEffectParameter::new(7).unwrap(),
+            param2: SmallEffectParameter::new(5).unwrap(),
+            param3: BigEffectParameter::new(31).unwrap(),
             submixes: [Default::default(); SUBMIX_COUNT],
         };
 
