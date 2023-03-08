@@ -2064,8 +2064,32 @@ pub trait RandomValue {
     fn random_value(&self) -> Self::T;
 }
 
+use nutype::nutype;
+
+/// Patch name
+#[nutype(
+    sanitize(with = |s: String| format!("{:<8}", s))
+    validate(present, max_len = 8)
+)]
+#[derive(*)]
+pub struct PatchName(String);
+
 #[cfg(test)]
 mod tests {
     use super::{*};
+
+    #[test]
+    fn test_short_patch_name_is_right_padded() {
+        let patch_name = PatchName::new("Short");
+        assert_eq!(patch_name.unwrap().into_inner(), "Short   ");
+    }
+
+    #[test]
+    fn test_long_patch_name_is_truncated() {
+        assert_eq!(
+            PatchName::new("WayTooLong"),
+            Err(PatchNameError::TooLong)
+        );
+    }
 
 }
