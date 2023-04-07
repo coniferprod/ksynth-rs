@@ -6,7 +6,7 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k4;
-use crate::k4::{Level};
+use crate::k4::{Level, MIDIChannel, PatchNumber, EffectNumber, Transpose};
 
 const SECTION_COUNT: usize = 8;  // number of sections in a multi
 
@@ -14,8 +14,8 @@ const SECTION_COUNT: usize = 8;  // number of sections in a multi
 pub struct MultiPatch {
     pub name: String,
     pub volume: Level,
-    pub effect: u8,
-    pub sections: Vec<Section>,
+    pub effect: EffectNumber,
+    pub sections: [Section; SECTION_COUNT],
 }
 
 impl MultiPatch {
@@ -24,10 +24,10 @@ impl MultiPatch {
 
         buf.extend(self.name.as_bytes());
         buf.push(self.volume.into_inner());
-        buf.push(self.effect - 1);  // adjust 1~32 to 0~31
+        buf.extend(self.effect.to_bytes());  // adjust 1~32 to 0~31
 
-        for i in 0..8 {
-            buf.extend(self.sections[i].to_bytes());
+        for s in self.sections  {
+            buf.extend(s.to_bytes());
         }
 
         buf
@@ -39,8 +39,8 @@ impl Default for MultiPatch {
         MultiPatch {
             name: "NewMulti  ".to_string(),
             volume: Level::new(100).unwrap(),
-            effect: 1,
-            sections: vec![Default::default(); SECTION_COUNT],
+            effect: EffectNumber::new(1).unwrap(),
+            sections: [Default::default(); SECTION_COUNT],
         }
     }
 }
@@ -48,7 +48,7 @@ impl Default for MultiPatch {
 impl fmt::Display for MultiPatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} volume={} effect={}",
-            self.name, self.volume.into_inner(), self.effect)
+            self.name, self.volume.into_inner(), self.effect.into_inner())
 
             // TODO: Write the sections too
     }
@@ -67,16 +67,16 @@ impl SystemExclusiveData for MultiPatch {
 
         offset += crate::k4::NAME_LENGTH + 2;  // skip over name, volume and effect to sections
 
-        let mut sections = Vec::<Section>::new();
-        for _i in 0..SECTION_COUNT {
-            sections.push(Section::from_bytes(data[offset .. offset + 8].to_vec()));
+        let mut sections: [Section; SECTION_COUNT] = [Default::default(); SECTION_COUNT];
+        for i in 0..SECTION_COUNT {
+            sections[i] = Section::from_bytes(data[offset .. offset + 8].to_vec());
             offset += 8;
         }
 
         MultiPatch {
             name: name,
             volume: Level::new(data[10]).unwrap(),
-            effect: data[11] + 1,  // use 1...32 for effect patch
+            effect: EffectNumber::new(data[11]).unwrap(),
             sections: sections,
         }
     }
@@ -103,30 +103,30 @@ impl Checksum for MultiPatch {
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Section {
-    pub single_number: u8,
+    pub single_number: PatchNumber,
     pub zone: Zone,
     pub velocity_switch: VelocitySwitch,
-    pub receive_channel: u8,
+    pub receive_channel: MIDIChannel,
     pub is_muted: bool,
     pub out_select: u8,
     pub play_mode: PlayMode,
-    pub level: u8,
-    pub transpose: i8,  // +-24 (in SysEx 0~48)
+    pub level: Level,
+    pub transpose: Transpose,
     pub tune: i8,  // +-50 (in SysEx 0~100)
 }
 
 impl Section {
     pub fn new() -> Section {
         Section {
-            single_number: 0,
-            zone: Zone { low_key: 0, high_key: 127 },
+            single_number: PatchNumber::new(0).unwrap(),
+            zone: Zone { low_key: Key { note: 0 }, high_key: Key { note: 127 } },
             velocity_switch: VelocitySwitch::All,
-            receive_channel: 1,  // use 1...16 for MIDI channel here
+            receive_channel: MIDIChannel::new(1).unwrap(),  // use 1...16 for MIDI channel here
             is_muted: false,
             out_select: 0,
             play_mode: PlayMode::Keyboard,
-            level: 100,
-            transpose: 0,
+            level: Level::new(100).unwrap(),
+            transpose: Transpose::new(0).unwrap(),
             tune: 0,
         }
     }
@@ -141,15 +141,15 @@ impl Default for Section {
 impl SystemExclusiveData for Section {
     fn from_bytes(data: Vec<u8>) -> Self {
         Section {
-            single_number: data[0],
-            zone: Zone { low_key: data[1], high_key: data[2] },
+            single_number: PatchNumber::new(data[0]).unwrap(),
+            zone: Zone::from_bytes(vec![data[1], data[2]]),
             velocity_switch: VelocitySwitch::try_from((data[3] >> 4) & 0b0000_0011).unwrap(),
-            receive_channel: (data[3] & 0b0000_1111) + 1,  // adjust MIDI channel to 1...16
+            receive_channel: MIDIChannel::from_bytes(vec![data[3] & 0b0000_1111]),  // adjust MIDI channel to 1...16
             is_muted: if data[3] >> 6 == 1 { true } else { false },
             out_select: data[4] & 0b0000_0111,
             play_mode: PlayMode::try_from((data[4] >> 3) & 0b0000_0011).unwrap(),
-            level: data[5],
-            transpose: (data[6] as i8) - 24,
+            level: Level::new(data[5]).unwrap(),
+            transpose: Transpose::from_bytes(vec![data[6]]),
             tune: (data[7] as i8) - 50,
         }
     }
@@ -157,19 +157,19 @@ impl SystemExclusiveData for Section {
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.single_number);
-        buf.push(self.zone.low_key);
-        buf.push(self.zone.high_key);
+        buf.push(self.single_number.into_inner());
+        buf.push(self.zone.low_key.note);
+        buf.push(self.zone.high_key.note);
 
-        let mut m15 = (self.receive_channel - 1) | ((self.velocity_switch as u8) << 4);
+        let mut m15 = (self.receive_channel.to_bytes()[0]) | ((self.velocity_switch as u8) << 4);
         m15.set_bit(6, if self.is_muted { true } else { false });
         buf.push(m15);
 
         let m16 = self.out_select | ((self.play_mode as u8) << 3);
         buf.push(m16);
 
-        buf.push(self.level);
-        buf.push((self.transpose + 24) as u8);
+        buf.push(self.level.into_inner());
+        buf.push(self.transpose.to_bytes()[0]);
         buf.push((self.tune + 50) as u8);
 
         buf
@@ -178,18 +178,47 @@ impl SystemExclusiveData for Section {
     fn data_size(&self) -> usize { 8 }
 }
 
+/// Key in a keyboard zone.
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub struct Key {
+    /// MIDI note number for the key.
+    pub note: u8,
+}
+
+impl Key {
+    pub fn get_note_name(note_number: u8) -> String {
+        let notes = vec!["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
+        let octave = (note_number / 12) - 2;
+        let name = notes[note_number as usize % 12];
+
+        format!("{}{}", name, octave.to_string())
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Zone {
-    pub low_key: u8,
-    pub high_key: u8,
+    pub low_key: Key,
+    pub high_key: Key,
 }
 
 impl fmt::Display for Zone {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} ... {}",
-            k4::get_note_name(self.low_key),
-            k4::get_note_name(self.high_key))
+            k4::get_note_name(self.low_key.note),
+            k4::get_note_name(self.high_key.note))
     }
+}
+
+impl SystemExclusiveData for Zone {
+    fn from_bytes(data: Vec<u8>) -> Self {
+        Zone { low_key: Key { note: data[0] }, high_key: Key { note: data[1] } }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![self.low_key.note, self.high_key.note]
+    }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]

@@ -1,3 +1,5 @@
+use crate::SystemExclusiveData;
+
 pub mod amp;
 pub mod effect;
 pub mod filter;
@@ -90,6 +92,18 @@ pub struct Resonance(u8);
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct EffectNumber(u8);
 
+impl SystemExclusiveData for EffectNumber {
+    fn from_bytes(data: Vec<u8>) -> Self {
+        Self::new(data[0] + 1).unwrap()  // adjust 0~31 to 1~32
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![self.into_inner() - 1]
+    }
+
+    fn data_size(&self) -> usize { 1 }
+}
+
 // Velocity or Key Scaling curve 1~8
 #[nutype(validate(min = 1, max = 8))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -109,3 +123,41 @@ pub struct Fine(i8);
 #[nutype(validate(min = 1, max = 256))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct WaveNumber(u16);
+
+// MIDI channel 1...16
+#[nutype(validate(min = 1, max = 16))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct MIDIChannel(u8);
+
+impl SystemExclusiveData for MIDIChannel {
+    fn from_bytes(data: Vec<u8>) -> Self {
+        Self::new(data[0] + 1).unwrap()
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![self.into_inner() - 1]
+    }
+
+    fn data_size(&self) -> usize { 1 }
+}
+
+// Patch number 0...63 (can be converted to A-1...D-16)
+#[nutype(validate(min = 0, max = 63))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct PatchNumber(u8);
+
+#[nutype(validate(min = -24, max = 24))]  // +-24 (in SysEx 0~48)
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Transpose(i8);
+
+impl SystemExclusiveData for Transpose {
+    fn from_bytes(data: Vec<u8>) -> Self {
+        Self::new(data[0] as i8 - 24).unwrap()
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![(self.into_inner() + 24) as u8]
+    }
+
+    fn data_size(&self) -> usize { 1 }
+}
