@@ -10,6 +10,7 @@ pub mod source;
 pub mod wave;
 pub mod drum;
 pub mod bank;
+pub mod sysex;
 
 pub const NAME_LENGTH: usize = 10;  // length of patch name
 pub const SOURCE_COUNT: usize = 4;  // number of sources in a single patch
@@ -140,6 +141,11 @@ impl SystemExclusiveData for MIDIChannel {
 
     fn data_size(&self) -> usize { 1 }
 }
+
+// MIDI note (0...127)
+#[nutype(validate(min = 0, max = 127))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct MIDINote(u8);
 
 // Patch number 0...63 (can be converted to A-1...D-16)
 #[nutype(validate(min = 0, max = 63))]

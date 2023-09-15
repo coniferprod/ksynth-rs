@@ -2069,7 +2069,7 @@ use nutype::nutype;
 /// Patch name
 #[nutype(
     sanitize(with = |s: String| format!("{:<8}", s))
-    validate(present, max_len = 8)
+    validate(not_empty, max_len = 8)
 )]
 #[derive(*)]
 pub struct PatchName(String);

@@ -1,4 +1,4 @@
-//! System Exclusive data definitions.
+//! System Exclusive data definitions for K5000.
 //!
 
 use std::convert::TryFrom;
@@ -97,7 +97,7 @@ enum PatchKind {
     Single = 0x00,
     Multi = 0x20, // combi on K5000W
     DrumKit = 0x10,
-    DrumInstrument = 0x11,    
+    DrumInstrument = 0x11,
 }
 
 #[derive(Debug, PartialEq)]
@@ -283,7 +283,7 @@ impl DumpCommand {
 
             // All others (must have this arm with slice patterns)
             _ => { None }
-        }        
+        }
 
     }
 
@@ -301,9 +301,9 @@ impl DumpCommand {
 impl fmt::Display for DumpCommand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(bank) = &self.bank_identifier {
-            write!(f, "{:?} {:?} for Bank {:?}, {}", 
-                self.cardinality, 
-                self.kind, 
+            write!(f, "{:?} {:?} for Bank {:?}, {}",
+                self.cardinality,
+                self.kind,
                 bank,
                 if self.cardinality == Cardinality::One {
                     self.sub_bytes[0].to_string()
@@ -314,8 +314,8 @@ impl fmt::Display for DumpCommand {
             )
         }
         else {
-            write!(f, "{:?} {:?}, {}", 
-                self.cardinality, 
+            write!(f, "{:?} {:?}, {}",
+                self.cardinality,
                 self.kind,
                 if self.cardinality == Cardinality::One {
                     if self.kind != PatchKind::DrumKit {
@@ -347,7 +347,7 @@ mod tests {
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::A),
                 kind: PatchKind::Single,
-                sub_bytes: vec![0x00]                
+                sub_bytes: vec![0x00]
             }
         );
     }
@@ -414,9 +414,9 @@ mod tests {
 
     #[test]
     fn test_block_add_bank_a() {
-        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x00, 
-            /* tone map of 19 bytes follows */ 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x00,
+            /* tone map of 19 bytes follows */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];  // Block ADD Bank A
 
         assert_eq!(
@@ -428,14 +428,14 @@ mod tests {
                 kind: PatchKind::Single,
                 sub_bytes: vec![0x00; 19]
             }
-        );            
+        );
     }
 
     #[test]
     fn test_block_add_bank_d() {
-        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x02, 
-                    /* tone map of 19 bytes follows */ 
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x02,
+                    /* tone map of 19 bytes follows */
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];  // Block ADD Bank D
         assert_eq!(
             DumpCommand::identify_vec(&cmd).unwrap(),
@@ -446,14 +446,14 @@ mod tests {
                 kind: PatchKind::Single,
                 sub_bytes: vec![0x00; 19]
             }
-        );                       
+        );
     }
 
     #[test]
     fn test_block_exp_bank_e() {
-        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x03, 
-            /* tone map of 19 bytes follows */ 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x03,
+            /* tone map of 19 bytes follows */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];  // Block Exp Bank E
         assert_eq!(
             DumpCommand::identify_vec(&cmd).unwrap(),
@@ -464,14 +464,14 @@ mod tests {
                 kind: PatchKind::Single,
                 sub_bytes: vec![0x00; 19]
             }
-        );    
+        );
     }
 
     #[test]
     fn test_block_exp_bank_f() {
-        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x04, 
-            /* tone map of 19 bytes follows */ 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x04,
+            /* tone map of 19 bytes follows */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];  // Block Exp Bank F
         assert_eq!(
             DumpCommand::identify_vec(&cmd).unwrap(),
@@ -482,7 +482,7 @@ mod tests {
                 kind: PatchKind::Single,
                 sub_bytes: vec![0x00; 19]
             }
-        );    
+        );
     }
 
     #[test]
