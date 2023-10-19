@@ -20,7 +20,7 @@ pub mod sysex;
 
 /// A simple struct for wrapping an `i32` with const generic parameters to limit
 /// the range of allowed values.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RangedInteger<const MIN: i32, const MAX: i32> {
     value: i32,
 }
@@ -1996,7 +1996,7 @@ impl fmt::Display for Fine {
 
 pub type MacroParameterDepthValue = RangedInteger::<-31, 31>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for macro parameter depth.
 #[derive(Debug, Copy, Clone)]
 pub struct MacroParameterDepth {
     value: MacroParameterDepthValue,  // private field to prevent accidental range violations
@@ -2074,6 +2074,70 @@ use nutype::nutype;
 #[derive(*)]
 pub struct PatchName(String);
 
+
+pub type MIDIChannelValue = RangedInteger::<1, 16>;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct MIDIChannel {
+    value: MIDIChannelValue,  // private field to prevent accidental range violations
+}
+
+impl MIDIChannel {
+    /// Makes a new MIDIChannel initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: MIDIChannelValue::new(value) }
+    }
+
+    /// Gets the value wrapped by the private RangedInteger field.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for MIDIChannel {
+    fn name(&self) -> String {
+        "MIMDIChannel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *MIDIChannelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *MIDIChannelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        MIDIChannelValue::random_value()
+    }
+}
+
+impl Default for MIDIChannel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for MIDIChannel {
+    fn from(value: u8) -> MIDIChannel {
+        MIDIChannel::new((value as i32) + 1)  // 0~15 to 1~16
+    }
+}
+
+impl Into<u8> for MIDIChannel {
+    fn into(self) -> u8 {
+        (self.value() as u8) - 1  // 1~16 to 0~15
+    }
+}
+
+impl fmt::Display for MIDIChannel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{*};
@@ -2090,6 +2154,20 @@ mod tests {
             PatchName::new("WayTooLong"),
             Err(PatchNameError::TooLong)
         );
+    }
+
+    #[test]
+    fn test_midi_channel_from_byte() {
+        let ch = MIDIChannel::from(0x00);
+        let value = ch.value();
+        assert_eq!(value, 1);  // 0x00 goes in, channel should be 1
+    }
+
+    #[test]
+    fn test_byte_from_midi_channel() {
+        let ch = MIDIChannel::new(16);  // channel 16
+        let b: u8 = ch.into();
+        assert_eq!(b, 0x0F);
     }
 
 }
