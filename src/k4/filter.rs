@@ -134,7 +134,10 @@ impl SystemExclusiveData for Filter {
 
         b = data[offset];
         offset += 1;
-        let resonance = (b & 0x07) + 1;  // from 0...7 to 1...8
+
+        // The Kawai K4 SysEx spec has "0~7 / 1~8" for resonance,
+        // but it's described as 0...7 in the user manual, so let's go with that.
+        let resonance = b & 0b111;  // use the bottom three bits
         let lfo_modulates_cutoff = b.bit(3);
 
         start = offset;
