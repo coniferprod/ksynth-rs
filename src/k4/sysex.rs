@@ -5,6 +5,10 @@ use std::convert::TryFrom;
 use std::fmt;
 use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
+use crate::k4::MIDIChannel;
+
+const GROUP: u8 = 0x00;      // synth group
+const MACHINE_ID: u8 = 0x04; // K4/K4r ID
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
@@ -46,10 +50,8 @@ impl fmt::Display for Function {
 
 /// K4 System Exclusive Message header
 pub struct Header {
-    pub channel: u8,
+    pub channel: MIDIChannel,
     pub function: Function,
-    pub group: u8,
-    pub machine_id: u8,
     pub substatus1: u8,
     pub substatus2: u8,
 }
@@ -63,7 +65,7 @@ impl Header {
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Ch: {}  Fn: {}, Sub1: {}, Sub2: {}",
-            self.channel,
+            self.channel.into_inner(),
             self.function,
             self.substatus1,
             self.substatus2)
@@ -73,10 +75,8 @@ impl fmt::Display for Header {
 impl SystemExclusiveData for Header {
     fn from_bytes(data: Vec<u8>) -> Self {
         Header {
-            channel: data[0] + 1,
+            channel: MIDIChannel::new(data[0] + 1).unwrap(),
             function: Function::try_from(data[1]).unwrap(),
-            group: data[2],
-            machine_id: data[3],
             substatus1: data[4],
             substatus2: data[5],
         }
@@ -84,10 +84,10 @@ impl SystemExclusiveData for Header {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.channel - 1,  // 1...16 to 0...15
+            (self.channel.into_inner() - 1).try_into().unwrap(),  // 1...16 to 0...15
             self.function as u8,
-            self.group,
-            self.machine_id,
+            GROUP,
+            MACHINE_ID,
             self.substatus1,
             self.substatus2,
         ]
