@@ -1,8 +1,16 @@
+//! Data model for source in a single patch.
+//!
+
 use std::fmt;
+
 use bit::BitIndex;
+
+use crate::SystemExclusiveData;
 use crate::k4::{Level, Curve, Coarse, Fine};
 use crate::k4::wave::Wave;
 
+
+/// Source in a single patch.
 #[derive(Copy, Clone)]
 pub struct Source {
     pub delay: Level,
@@ -56,7 +64,7 @@ impl fmt::Display for Source {
     }
 }
 
-impl crate::SystemExclusiveData for Source {
+impl SystemExclusiveData for Source {
     fn from_bytes(data: Vec<u8>) -> Self {
         let mut offset: usize = 0;
 
@@ -156,6 +164,7 @@ impl crate::SystemExclusiveData for Source {
     fn data_size(&self) -> usize { 7 }
 }
 
+/// Key tracking setting.
 #[derive(Copy, Clone)]
 pub enum KeyTrack {
     On,

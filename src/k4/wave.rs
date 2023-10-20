@@ -1,3 +1,6 @@
+//! Data model for waveform.
+//!
+
 use std::fmt;
 use std::convert::TryInto;
 
@@ -275,6 +278,7 @@ static WAVE_NAMES: &[&str] = &[
     "LOOP 12"
 ];
 
+/// Wave in a source of a single patch DCO.
 #[derive(Copy, Clone)]
 pub struct Wave {
     pub number: WaveNumber,  // 1~256

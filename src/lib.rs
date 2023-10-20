@@ -12,6 +12,7 @@ pub trait SystemExclusiveData {
     fn data_size(&self) -> usize { 0 }
 }
 
+/// Checksum for a patch.
 pub trait Checksum {
     fn checksum(&self) -> u8;
 }

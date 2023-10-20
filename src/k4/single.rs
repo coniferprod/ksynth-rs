@@ -1,3 +1,6 @@
+//! Data model for single patches.
+//!
+
 use std::convert::TryInto;
 use std::convert::TryFrom;
 use std::fmt;
@@ -13,6 +16,7 @@ use crate::k4::amp::Amplifier;
 use crate::k4::filter::Filter;
 use crate::k4::effect::Submix;
 
+/// Source mode setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum SourceMode {
@@ -35,6 +39,7 @@ impl fmt::Display for SourceMode {
     }
 }
 
+/// Polyphone mode setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum PolyphonyMode {
@@ -59,6 +64,7 @@ impl fmt::Display for PolyphonyMode {
     }
 }
 
+/// Modulation wheel assignment setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum WheelAssign {
@@ -81,6 +87,7 @@ impl fmt::Display for WheelAssign {
     }
 }
 
+/// Auto-bend setting.
 #[derive(Copy, Clone)]
 pub struct AutoBend {
     pub time: Level,
@@ -146,6 +153,7 @@ impl SystemExclusiveData for AutoBend {
     fn data_size(&self) -> usize { 4 }
 }
 
+/// Single patch.
 #[derive(Clone)]
 pub struct SinglePatch {
     pub name: String,

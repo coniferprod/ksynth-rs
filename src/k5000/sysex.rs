@@ -7,9 +7,10 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::k5000::MIDIChannel;
 
+/// Kawai K5000 System Exclusive functions.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
-pub enum SystemExclusiveFunction {
+pub enum Function {
     OneBlockDumpRequest = 0x00,
     AllBlockDumpRequest = 0x01,
     ParameterSend = 0x10,
@@ -25,10 +26,10 @@ pub enum SystemExclusiveFunction {
     WriteErrorByNoExpandedMemory = 0x45,
 }
 
-/// K5000 System Exclusive Message.
+/// K5000 System Exclusive message.
 pub struct SystemExclusiveMessage {
     pub channel: MIDIChannel,
-    pub function: SystemExclusiveFunction,
+    pub function: Function,
     pub function_data: Vec<u8>,
     pub subdata: Vec<u8>,
     pub patch_data: Vec<u8>,
@@ -38,7 +39,7 @@ impl SystemExclusiveData for SystemExclusiveMessage {
     fn from_bytes(data: Vec<u8>) -> Self {
         SystemExclusiveMessage {
             channel: MIDIChannel::new(data[2].into()),
-            function: SystemExclusiveFunction::try_from(data[3]).unwrap(),
+            function: Function::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this
             subdata: Vec::<u8>::new(),  // TODO: fix this
             patch_data: data[3..].to_vec(),
@@ -61,6 +62,7 @@ impl SystemExclusiveData for SystemExclusiveMessage {
 }
 
 
+/// Cardinality of SysEx message (one patch or block of patches).
 #[derive(Debug, PartialEq)]
 #[repr(u8)]
 pub enum Cardinality {
@@ -74,6 +76,7 @@ impl From<Cardinality> for u8 {
     }
 }
 
+/// K5000 bank identifier.
 #[derive(Debug, PartialEq)]
 #[repr(u8)]
 pub enum BankIdentifier {
@@ -100,6 +103,7 @@ impl TryFrom<u8> for BankIdentifier {
     }
 }
 
+/// Patch kind.
 #[derive(Debug, PartialEq)]
 #[repr(u8)]
 pub enum PatchKind {
@@ -109,8 +113,9 @@ pub enum PatchKind {
     DrumInstrument = 0x11,
 }
 
+/// System Exclusive dump header.
 #[derive(Debug, PartialEq)]
-pub struct DumpHeader {
+pub struct Header {
     pub channel: MIDIChannel,
     pub cardinality: Cardinality,
     pub bank_identifier: Option<BankIdentifier>,
@@ -118,13 +123,21 @@ pub struct DumpHeader {
     pub sub_bytes: Vec<u8>,
 }
 
-impl DumpHeader {
-    pub fn identify_vec(buf: &Vec<u8>) -> Option<DumpHeader> {
+impl Header {
+    /// Identifies a dump header from a byte vector.
+    ///
+    /// Returns `Some(Header)` if the header could be parsed,
+    /// `None` otherwise.
+    ///
+    /// # Arguments
+    ///
+    /// * `buf` - a byte vector with the header data
+    pub fn identify_vec(buf: &Vec<u8>) -> Option<Header> {
         let channel = MIDIChannel::from(buf[0]);  // will be converted to 1...16
         match &buf[1..] {
             // One ADD Bank A (see 3.1.1b)
             [0x20, 0x00, 0x0A, 0x00, 0x00, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: Some(BankIdentifier::A),
@@ -135,7 +148,7 @@ impl DumpHeader {
 
             // One PCM Bank B (see 3.1.1d)
             [0x20, 0x00, 0x0A, 0x00, 0x01, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: Some(BankIdentifier::B),
@@ -146,7 +159,7 @@ impl DumpHeader {
 
             // One ADD Bank D (see 3.1.1k)
             [0x20, 0x00, 0x0A, 0x00, 0x02, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: Some(BankIdentifier::D),
@@ -157,7 +170,7 @@ impl DumpHeader {
 
             // One Exp Bank E (see 3.1.1m)
             [0x20, 0x00, 0x0A, 0x00, 0x03, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: Some(BankIdentifier::E),
@@ -168,7 +181,7 @@ impl DumpHeader {
 
             // One Exp Bank F (see 3.1.1o)
             [0x20, 0x00, 0x0A, 0x00, 0x04, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: Some(BankIdentifier::F),
@@ -179,7 +192,7 @@ impl DumpHeader {
 
             // One Multi/Combi (see 3.1.1i)
             [0x20, 0x00, 0x0A, 0x20, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: None,
@@ -190,7 +203,7 @@ impl DumpHeader {
 
             // Block ADD Bank A (see 3.1.1a)
             [0x21, 0x00, 0x0A, 0x00, 0x00, tone_map @ ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: Some(BankIdentifier::A),
@@ -201,7 +214,7 @@ impl DumpHeader {
 
             // Block PCM Bank B -- all PCM data, no tone map
             [0x21, 0x00, 0x0A, 0x00, 0x01, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: Some(BankIdentifier::B),
@@ -212,7 +225,7 @@ impl DumpHeader {
 
             // Block ADD Bank D (see 3.1.1j)
             [0x21, 0x00, 0x0A, 0x00, 0x02, tone_map @ ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: Some(BankIdentifier::D),
@@ -223,7 +236,7 @@ impl DumpHeader {
 
             // Block Exp Bank E (see 3.1.1l)
             [0x21, 0x00, 0x0A, 0x00, 0x03, tone_map @ ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: Some(BankIdentifier::E),
@@ -234,7 +247,7 @@ impl DumpHeader {
 
             // Block Exp Bank F (see 3.1.1n)
             [0x21, 0x00, 0x0A, 0x00, 0x04, tone_map @ ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: Some(BankIdentifier::F),
@@ -245,7 +258,7 @@ impl DumpHeader {
 
             // Block Multi/Combi (see 3.1.1h)
             [0x21, 0x00, 0x0A, 0x20, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: None,
@@ -256,7 +269,7 @@ impl DumpHeader {
 
             // One drum kit (see 3.1.1e)
             [0x20, 0x00, 0x0A, 0x10, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: None,
@@ -267,7 +280,7 @@ impl DumpHeader {
 
             // One drum instrument (see 3.1.1g)
             [0x20, 0x00, 0x0A, 0x11, sub1, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::One,
                     bank_identifier: None,
@@ -278,7 +291,7 @@ impl DumpHeader {
 
             // Block drum instrument (see 3.1.1f)
             [0x21, 0x00, 0x0A, 0x11, ..] => {
-                Some(DumpHeader {
+                Some(Header {
                     channel,
                     cardinality: Cardinality::Block,
                     bank_identifier: None,
@@ -294,7 +307,7 @@ impl DumpHeader {
     }
 
     // Returns the size of this dump command in bytes
-    fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         1 + // channel     ("3rd" in K5000 MIDI spec)
         1 + // cardinality ("4th" in K5000 MIDI spec)
         1 + // 0x00 ("5th")
@@ -304,7 +317,7 @@ impl DumpHeader {
     }
 }
 
-impl fmt::Display for DumpHeader {
+impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(bank) = &self.bank_identifier {
             write!(f, "{:?} {:?} for Bank {:?}, {}",
@@ -347,8 +360,8 @@ mod tests {
     fn test_one_add_bank_a() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00 ]; // One ADD Bank A
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::A),
@@ -362,8 +375,8 @@ mod tests {
     fn test_one_add_bank_d() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x00, 0x02, 0x00 ]; // One ADD Bank D
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::D),
@@ -377,8 +390,8 @@ mod tests {
     fn test_one_exp_bank_e() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x00, 0x03, 0x00 ]; // One Exp Bank E
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::E),
@@ -392,8 +405,8 @@ mod tests {
     fn test_one_exp_bank_f() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x00, 0x04, 0x00 ]; // One Exp Bank F
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::F),
@@ -407,8 +420,8 @@ mod tests {
     fn test_one_multi() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x20, 0x00 ]; // One Multi
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: None,
@@ -426,8 +439,8 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];  // Block ADD Bank A
 
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::A),
@@ -444,8 +457,8 @@ mod tests {
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];  // Block ADD Bank D
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::D),
@@ -462,8 +475,8 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];  // Block Exp Bank E
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::E),
@@ -480,8 +493,8 @@ mod tests {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];  // Block Exp Bank F
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::F),
@@ -495,8 +508,8 @@ mod tests {
     fn test_block_multi() {
         let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x20 ]; // Block Multi
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: None,
@@ -510,8 +523,8 @@ mod tests {
     fn test_one_pcm_bank_b() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x00, 0x01, 0x00 ]; // One PCM Bank B
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::B),
@@ -525,8 +538,8 @@ mod tests {
     fn test_block_pcm_bank_b() {
         let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x00, 0x01 ]; // Block PCM Bank B
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::B),
@@ -540,8 +553,8 @@ mod tests {
     fn test_one_drum_kit() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x10 ]; // One Drum Kit
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: None,
@@ -555,8 +568,8 @@ mod tests {
     fn test_one_drum_instrument() {
         let cmd: Vec<u8> = vec![ 0x00, 0x20, 0x00, 0x0A, 0x11, 0x00 ]; // One Drum Instrument
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: None,
@@ -570,8 +583,8 @@ mod tests {
     fn test_block_drum_instrument() {
         let cmd: Vec<u8> = vec![ 0x00, 0x21, 0x00, 0x0A, 0x11 ]; // Block Drum Instrument
         assert_eq!(
-            DumpHeader::identify_vec(&cmd).unwrap(),
-            DumpHeader {
+            Header::identify_vec(&cmd).unwrap(),
+            Header {
                 channel: MIDIChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: None,

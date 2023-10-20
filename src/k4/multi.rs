@@ -1,15 +1,22 @@
+//! Data model for multi patches.
+//!
+
 use std::fmt;
 use std::convert::TryFrom;
 use std::convert::TryInto;
+
 use bit::BitIndex;
 use num_enum::TryFromPrimitive;
+
 use crate::SystemExclusiveData;
 use crate::Checksum;
 use crate::k4;
 use crate::k4::{Level, MIDIChannel, PatchNumber, EffectNumber, Transpose};
 
-const SECTION_COUNT: usize = 8;  // number of sections in a multi
+/// Number of sections in a multi patch.
+pub const SECTION_COUNT: usize = 8;
 
+/// Multi patch.
 #[derive(Clone)]
 pub struct MultiPatch {
     pub name: String,
@@ -101,6 +108,7 @@ impl Checksum for MultiPatch {
     }
 }
 
+/// Section of a multi patch.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Section {
     pub single_number: PatchNumber,
@@ -195,6 +203,7 @@ impl Key {
     }
 }
 
+/// Keyboard zone.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Zone {
     pub low_key: Key,
@@ -221,6 +230,7 @@ impl SystemExclusiveData for Zone {
     fn data_size(&self) -> usize { 2 }
 }
 
+/// Velocity switch setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum VelocitySwitch {
@@ -239,6 +249,7 @@ impl fmt::Display for VelocitySwitch {
     }
 }
 
+/// Play mode setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum PlayMode {

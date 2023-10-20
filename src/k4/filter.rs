@@ -1,3 +1,6 @@
+//! Data model for DCF.
+//!
+
 use std::convert::TryInto;
 use std::fmt;
 
@@ -7,6 +10,7 @@ use crate::SystemExclusiveData;
 use crate::k4::{EnvelopeTime, FilterEnvelopeLevel, Cutoff, Resonance, ModulationDepth};
 use crate::k4::amp::{LevelModulation, TimeModulation};
 
+/// Filter envelope.
 #[derive(Copy, Clone)]
 pub struct Envelope {
     pub attack: EnvelopeTime,
@@ -68,6 +72,7 @@ impl SystemExclusiveData for Envelope {
     fn data_size(&self) -> usize { 4 }
 }
 
+/// Filter (DCF).
 #[derive(Copy, Clone)]
 pub struct Filter {
     pub cutoff: Cutoff,  // 0~100

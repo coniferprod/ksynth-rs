@@ -1,3 +1,6 @@
+//! Data model for effects.
+//!
+
 use std::fmt;
 use std::convert::TryFrom;
 use std::convert::TryInto;

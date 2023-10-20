@@ -1,7 +1,10 @@
+//! Data model for patch bank.
+//!
+
 use std::fmt;
 use log::debug;
 
-use crate::{SystemExclusiveData};
+use crate::SystemExclusiveData;
 use crate::k4::single::SinglePatch;
 use crate::k4::multi::MultiPatch;
 use crate::k4::effect::EffectPatch;

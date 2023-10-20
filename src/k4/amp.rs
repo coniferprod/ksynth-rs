@@ -1,3 +1,6 @@
+//! Data model for DCA.
+//!
+
 use std::convert::TryInto;
 use std::fmt;
 use crate::SystemExclusiveData;

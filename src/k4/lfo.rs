@@ -1,3 +1,6 @@
+//! Data model for LFO.
+//!
+
 use std::convert::TryInto;
 use std::convert::TryFrom;
 use std::fmt;
@@ -7,7 +10,7 @@ use num_enum::TryFromPrimitive;
 use crate::SystemExclusiveData;
 use crate::k4::{Level, ModulationDepth};
 
-
+/// LFO shape.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Shape {
@@ -31,6 +34,7 @@ impl fmt::Display for Shape {
     }
 }
 
+/// LFO.
 #[derive(Copy, Clone)]
 pub struct Lfo {
     pub shape: Shape,
@@ -100,6 +104,7 @@ impl SystemExclusiveData for Lfo {
     fn data_size(&self) -> usize { 5 }
 }
 
+/// Vibrato settings.
 #[derive(Copy, Clone)]
 pub struct Vibrato {
     pub shape: Shape,

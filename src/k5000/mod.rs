@@ -60,7 +60,7 @@ trait Parameter {
     fn random_value() -> i32;
 }
 
-// The following types are all based on RangedInteger.
+// The following types are all based on `RangedInteger`.
 // It would be nice if they could be generated with a macro.
 // The macro should generate the type to hold the value, with
 // the minimum and maximum value. It should also generate the
@@ -76,12 +76,12 @@ pub struct Volume {
 }
 
 impl Volume {
-    /// Makes a new Volume initialized with the specified value.
+    /// Makes a new `Volume` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: VolumeValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -140,12 +140,12 @@ pub struct BenderPitch {
 }
 
 impl BenderPitch {
-    /// Makes a new BenderPitch initialized with the specified value.
+    /// Makes a new `BenderPitch` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: BenderPitchValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -204,12 +204,12 @@ pub struct BenderCutoff {
 }
 
 impl BenderCutoff {
-    /// Makes a new BenderCutoff initialized with the specified value.
+    /// Makes a new `BenderCutoff` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: BenderCutoffValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -268,12 +268,12 @@ pub struct EnvelopeTime {
 }
 
 impl EnvelopeTime {
-    /// Makes a new EnvelopeTime initialized with the specified value.
+    /// Makes a new `EnvelopeTime` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: EnvelopeTimeValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -323,21 +323,21 @@ impl fmt::Display for EnvelopeTime {
     }
 }
 
-pub type EnvelopeLevelValue = RangedInteger::<-63, 63>;
+type EnvelopeLevelValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for envelope level parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct EnvelopeLevel {
     value: EnvelopeLevelValue,  // private field to prevent accidental range violations
 }
 
 impl EnvelopeLevel {
-    /// Makes a new EnvelopeLevel initialized with the specified value.
+    /// Makes a new `EnvelopeLevel` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: EnvelopeLevelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -387,21 +387,21 @@ impl fmt::Display for EnvelopeLevel {
     }
 }
 
-pub type EnvelopeRateValue = RangedInteger::<0, 127>;
+type EnvelopeRateValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for envelope rate parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct EnvelopeRate {
     value: EnvelopeRateValue,  // private field to prevent accidental range violations
 }
 
 impl EnvelopeRate {
-    /// Makes a new EnvelopeRate initialized with the specified value.
+    /// Makes a new `EnvelopeRate` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: EnvelopeRateValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -451,21 +451,21 @@ impl fmt::Display for EnvelopeRate {
     }
 }
 
-pub type HarmonicEnvelopeLevelValue = RangedInteger::<0, 63>;
+type HarmonicEnvelopeLevelValue = RangedInteger::<0, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for harmonic envelope level parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct HarmonicEnvelopeLevel {
     value: HarmonicEnvelopeLevelValue,  // private field to prevent accidental range violations
 }
 
 impl HarmonicEnvelopeLevel {
-    /// Makes a new HarmonicEnvelopeLevel initialized with the specified value.
+    /// Makes a new `HarmonicEnvelopeLevel` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: HarmonicEnvelopeLevelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -515,21 +515,21 @@ impl fmt::Display for HarmonicEnvelopeLevel {
     }
 }
 
-pub type BiasValue = RangedInteger::<-63, 63>;
+type BiasValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for bias parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Bias {
     value: BiasValue,  // private field to prevent accidental range violations
 }
 
 impl Bias {
-    /// Makes a new Bias initialized with the specified value.
+    /// Makes a new `Bias` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: BiasValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -580,21 +580,21 @@ impl fmt::Display for Bias {
 }
 
 
-pub type ControlTimeValue = RangedInteger::<-63, 63>;
+type ControlTimeValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for control time parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct ControlTime {
     value: ControlTimeValue,  // private field to prevent accidental range violations
 }
 
 impl ControlTime {
-    /// Makes a new ControlTime initialized with the specified value.
+    /// Makes a new `ControlTime` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: ControlTimeValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -644,21 +644,21 @@ impl fmt::Display for ControlTime {
     }
 }
 
-pub type EnvelopeDepthValue = RangedInteger::<-63, 63>;
+type EnvelopeDepthValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for envelope depth parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct EnvelopeDepth {
     value: EnvelopeDepthValue,  // private field to prevent accidental range violations
 }
 
 impl EnvelopeDepth {
-    /// Makes a new EnvelopeDepth initialized with the specified value.
+    /// Makes a new `EnvelopeDepth` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: EnvelopeDepthValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -708,21 +708,21 @@ impl fmt::Display for EnvelopeDepth {
     }
 }
 
-pub type LFOSpeedValue = RangedInteger::<0, 127>;
+type LFOSpeedValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for LFO speed parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct LFOSpeed {
     value: LFOSpeedValue,  // private field to prevent accidental range violations
 }
 
 impl LFOSpeed {
-    /// Makes a new LFOSpeed initialized with the specified value.
+    /// Makes a new `LFOSpeed` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: LFOSpeedValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -772,21 +772,21 @@ impl fmt::Display for LFOSpeed {
     }
 }
 
-pub type LFODepthValue = RangedInteger::<0, 63>;
+type LFODepthValue = RangedInteger::<0, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for LFO depth parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct LFODepth {
     value: LFODepthValue,  // private field to prevent accidental range violations
 }
 
 impl LFODepth {
-    /// Makes a new LFODepth initialized with the specified value.
+    /// Makes a new `LFODepth` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: LFODepthValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -837,21 +837,21 @@ impl fmt::Display for LFODepth {
 }
 
 
-pub type KeyScalingValue = RangedInteger::<-63, 63>;
+type KeyScalingValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for key scaling parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct KeyScaling {
     value: KeyScalingValue,  // private field to prevent accidental range violations
 }
 
 impl KeyScaling {
-    /// Makes a new KeyScaling initialized with the specified value.
+    /// Makes a new `KeyScaling` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: KeyScalingValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -902,21 +902,21 @@ impl fmt::Display for KeyScaling {
 }
 
 
-pub type EffectParameterValue = RangedInteger::<0, 127>;
+type EffectParameterValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for effect parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct EffectParameter {
     value: EffectParameterValue,  // private field to prevent accidental range violations
 }
 
 impl EffectParameter {
-    /// Makes a new EffectParameter initialized with the specified value.
+    /// Makes a new `EffectParameter` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: EffectParameterValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -967,21 +967,21 @@ impl fmt::Display for EffectParameter {
 }
 
 
-pub type CutoffValue = RangedInteger::<0, 127>;
+type CutoffValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for cutoff parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Cutoff {
     value: CutoffValue,  // private field to prevent accidental range violations
 }
 
 impl Cutoff {
-    /// Makes a new Cutoff initialized with the specified value.
+    /// Makes a new `Cutoff` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: CutoffValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the value wrapped by the private `RangedInteger` field.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1031,21 +1031,21 @@ impl fmt::Display for Cutoff {
     }
 }
 
-pub type ResonanceValue = RangedInteger::<0, 31>;
+type ResonanceValue = RangedInteger::<0, 31>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for resonance parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Resonance {
     value: ResonanceValue,  // private field to prevent accidental range violations
 }
 
 impl Resonance {
-    /// Makes a new Resonance initialized with the specified value.
+    /// Makes a new `Resonance` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: ResonanceValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1095,21 +1095,21 @@ impl fmt::Display for Resonance {
     }
 }
 
-pub type LevelValue = RangedInteger::<0, 31>;
+type LevelValue = RangedInteger::<0, 31>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for level parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Level {
     value: LevelValue,  // private field to prevent accidental range violations
 }
 
 impl Level {
-    /// Makes a new Level initialized with the specified value.
+    /// Makes a new `Level` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: LevelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1160,21 +1160,21 @@ impl fmt::Display for Level {
 }
 
 
-pub type PitchEnvelopeLevelValue = RangedInteger::<-63, 63>;
+type PitchEnvelopeLevelValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for pitch envelope level parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct PitchEnvelopeLevel {
     value: PitchEnvelopeLevelValue,  // private field to prevent accidental range violations
 }
 
 impl PitchEnvelopeLevel {
-    /// Makes a new PitchEnvelopeLevel initialized with the specified value.
+    /// Makes a new `PitchEnvelopeLevel` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: PitchEnvelopeLevelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1224,21 +1224,21 @@ impl fmt::Display for PitchEnvelopeLevel {
     }
 }
 
-pub type PitchEnvelopeTimeValue = RangedInteger::<0, 127>;
+type PitchEnvelopeTimeValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for pitch envelope time parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct PitchEnvelopeTime {
     value: PitchEnvelopeTimeValue,  // private field to prevent accidental range violations
 }
 
 impl PitchEnvelopeTime {
-    /// Makes a new PitchEnvelopeTime initialized with the specified value.
+    /// Makes a new `PitchEnvelopeTime` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: PitchEnvelopeTimeValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1288,21 +1288,21 @@ impl fmt::Display for PitchEnvelopeTime {
     }
 }
 
-pub type VelocityDepthValue = RangedInteger::<0, 127>;
+type VelocityDepthValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for velocity depth parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct VelocityDepth {
     value: VelocityDepthValue,  // private field to prevent accidental range violations
 }
 
 impl VelocityDepth {
-    /// Makes a new VelocityDepth initialized with the specified value.
+    /// Makes a new `VelocityDepth` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: VelocityDepthValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1352,21 +1352,21 @@ impl fmt::Display for VelocityDepth {
     }
 }
 
-pub type VelocityControlLevelValue = RangedInteger::<0, 127>;
+type VelocityControlLevelValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for velocity control level parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct VelocityControlLevel {
     value: VelocityControlLevelValue,  // private field to prevent accidental range violations
 }
 
 impl VelocityControlLevel {
-    /// Makes a new VelocityControlLevel initialized with the specified value.
+    /// Makes a new `VelocityControlLevel` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: VelocityControlLevelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1417,21 +1417,21 @@ impl fmt::Display for VelocityControlLevel {
 }
 
 
-pub type PortamentoLevelValue = RangedInteger::<0, 127>;
+type PortamentoLevelValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for portamento level parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct PortamentoLevel {
     value: PortamentoLevelValue,  // private field to prevent accidental range violations
 }
 
 impl PortamentoLevel {
-    /// Makes a new PortamentoLevel initialized with the specified value.
+    /// Makes a new `PortamentoLevel` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: PortamentoLevelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1481,21 +1481,21 @@ impl fmt::Display for PortamentoLevel {
     }
 }
 
-pub type KeyOnDelayValue = RangedInteger::<0, 127>;
+type KeyOnDelayValue = RangedInteger::<0, 127>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for key on delay parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct KeyOnDelay {
     value: KeyOnDelayValue,  // private field to prevent accidental range violations
 }
 
 impl KeyOnDelay {
-    /// Makes a new KeyOnDelay initialized with the specified value.
+    /// Makes a new `KeyOnDelay` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: KeyOnDelayValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1546,21 +1546,21 @@ impl fmt::Display for KeyOnDelay {
 }
 
 
-pub type VelocitySensitivityValue = RangedInteger::<-63, 63>;
+type VelocitySensitivityValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for velocity sensitivity parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct VelocitySensitivity {
     value: VelocitySensitivityValue,  // private field to prevent accidental range violations
 }
 
 impl VelocitySensitivity {
-    /// Makes a new VelocitySensitivity initialized with the specified value.
+    /// Makes a new `VelocitySensitivity` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: VelocitySensitivityValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1610,20 +1610,21 @@ impl fmt::Display for VelocitySensitivity {
     }
 }
 
-pub type ControlDepthValue  = RangedInteger::<-63, 63>;
+type ControlDepthValue  = RangedInteger::<-63, 63>;
 
+/// Wrapper for control depth parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct ControlDepth {
     value: ControlDepthValue,  // private field to prevent accidental range violations
 }
 
 impl ControlDepth {
-    /// Makes a new ControlDepth initialized with the specified value.
+    /// Makes a new `ControlDepth` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: ControlDepthValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1673,21 +1674,21 @@ impl fmt::Display for ControlDepth {
     }
 }
 
-pub type DepthValue = RangedInteger::<0, 100>;
+type DepthValue = RangedInteger::<0, 100>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for depth parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Depth {
     value: DepthValue,  // private field to prevent accidental range violations
 }
 
 impl Depth {
-    /// Makes a new Depth initialized with the specified value.
+    /// Makes a new `Depth` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: DepthValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1737,21 +1738,21 @@ impl fmt::Display for Depth {
     }
 }
 
-pub type PanValue = RangedInteger::<-63, 63>;
+type PanValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for pan parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Pan {
     value: PanValue,  // private field to prevent accidental range violations
 }
 
 impl Pan {
-    /// Makes a new Pan initialized with the specified value.
+    /// Makes a new `Pan` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: PanValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1801,21 +1802,21 @@ impl fmt::Display for Pan {
     }
 }
 
-pub type KeyScalingToGainValue = RangedInteger::<-63, 63>;
+type KeyScalingToGainValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for key scaling to gain parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct KeyScalingToGain {
     value: KeyScalingToGainValue,  // private field to prevent accidental range violations
 }
 
 impl KeyScalingToGain {
-    /// Makes a new KeyScalingToGain initialized with the specified value.
+    /// Makes a new `KeyScalingToGain` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: KeyScalingToGainValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1865,21 +1866,21 @@ impl fmt::Display for KeyScalingToGain {
     }
 }
 
-pub type CoarseValue = RangedInteger::<-24, 24>;
+type CoarseValue = RangedInteger::<-24, 24>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for coarse parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Coarse {
     value: CoarseValue,  // private field to prevent accidental range violations
 }
 
 impl Coarse {
-    /// Makes a new Coarse initialized with the specified value.
+    /// Makes a new `Coarse` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: CoarseValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1930,21 +1931,21 @@ impl fmt::Display for Coarse {
 }
 
 
-pub type FineValue = RangedInteger::<-63, 63>;
+type FineValue = RangedInteger::<-63, 63>;
 
-/// Wrapper for envelope time parameter.
+/// Wrapper for fine parameter.
 #[derive(Debug, Copy, Clone)]
 pub struct Fine {
     value: FineValue,  // private field to prevent accidental range violations
 }
 
 impl Fine {
-    /// Makes a new Fine initialized with the specified value.
+    /// Makes a new `Fine` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: FineValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -1994,7 +1995,7 @@ impl fmt::Display for Fine {
     }
 }
 
-pub type MacroParameterDepthValue = RangedInteger::<-31, 31>;
+type MacroParameterDepthValue = RangedInteger::<-31, 31>;
 
 /// Wrapper for macro parameter depth.
 #[derive(Debug, Copy, Clone)]
@@ -2003,12 +2004,12 @@ pub struct MacroParameterDepth {
 }
 
 impl MacroParameterDepth {
-    /// Makes a new MacroParameterDepth initialized with the specified value.
+    /// Makes a new `MacroParameterDepth` initialized with the specified value.
     pub fn new(value: i32) -> Self {
         Self { value: MacroParameterDepthValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -2066,7 +2067,7 @@ pub trait RandomValue {
 
 use nutype::nutype;
 
-/// Patch name
+/// Patch name.
 #[nutype(
     sanitize(with = |s: String| format!("{:<8}", s))
     validate(not_empty, max_len = 8)
@@ -2075,8 +2076,9 @@ use nutype::nutype;
 pub struct PatchName(String);
 
 
-pub type MIDIChannelValue = RangedInteger::<1, 16>;
+type MIDIChannelValue = RangedInteger::<1, 16>;
 
+/// MIDI channel.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct MIDIChannel {
     value: MIDIChannelValue,  // private field to prevent accidental range violations
@@ -2088,7 +2090,7 @@ impl MIDIChannel {
         Self { value: MIDIChannelValue::new(value) }
     }
 
-    /// Gets the value wrapped by the private RangedInteger field.
+    /// Gets the wrapped value.
     pub fn value(&self) -> i32 {
         self.value.value
     }
@@ -2096,7 +2098,7 @@ impl MIDIChannel {
 
 impl Parameter for MIDIChannel {
     fn name(&self) -> String {
-        "MIMDIChannel".to_string()
+        "MIDIChannel".to_string()
     }
 
     fn minimum_value() -> i32 {
