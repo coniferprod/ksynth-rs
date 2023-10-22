@@ -27,7 +27,7 @@ pub enum Function {
 }
 
 /// K5000 System Exclusive message.
-pub struct SystemExclusiveMessage {
+pub struct Message {
     pub channel: MIDIChannel,
     pub function: Function,
     pub function_data: Vec<u8>,
@@ -35,9 +35,9 @@ pub struct SystemExclusiveMessage {
     pub patch_data: Vec<u8>,
 }
 
-impl SystemExclusiveData for SystemExclusiveMessage {
+impl SystemExclusiveData for Message {
     fn from_bytes(data: Vec<u8>) -> Self {
-        SystemExclusiveMessage {
+        Message {
             channel: MIDIChannel::new(data[2].into()),
             function: Function::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this

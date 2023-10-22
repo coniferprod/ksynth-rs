@@ -271,8 +271,6 @@ impl fmt::Display for PlayMode {
 #[cfg(test)]
 mod tests {
     use super::{*};
-    use crate::k4::bank::Bank;
-    use syxpack::Message;
 
     #[test]
     fn test_multi_patch_from_bytes() {
@@ -281,29 +279,4 @@ mod tests {
         assert_eq!(patch.name, "Fatt!Anna5");
         assert_eq!(patch.volume.into_inner(), 0x50);
     }
-
-/*
-    #[test]
-    fn test_a403_multi_a9() {
-        let data: [u8; 15123] = include!("a403.in");
-        match Message::new(&data.to_vec()) {
-            Ok(message) => {
-                match message {
-                    Message::ManufacturerSpecific { manufacturer, payload } => {
-                        let bank = Bank::from_bytes(payload);
-                        let multi = &bank.multis[8];
-                        assert_eq!(multi.name, "Solo Now! ");  // trailing NUL replaced by SPACE
-                    },
-                    _ => {
-                        panic!("Not a manufacturer-specific message");
-                    },
-                }
-            },
-            Err(e) => {
-                panic!("{:?}", e);
-            }
-        }
-    }
-
- */
 }

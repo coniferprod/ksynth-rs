@@ -216,7 +216,7 @@ mod tests {
     fn test_dump_identify_all() {
         let data: [u8; 15123] = include!("a401.in");
         match Message::new(&data.to_vec()) {
-            Ok(Message::ManufacturerSpecific { manufacturer, payload }) => {
+            Ok(Message::ManufacturerSpecific { manufacturer: _, payload }) => {
                 match Dump::identify(payload) {
                     Ok(dump) => {
                         assert_eq!(dump.kind, Kind::All);
@@ -226,7 +226,7 @@ mod tests {
                     }
                 }
             },
-            Ok(Message::Universal { kind, target, sub_id1, sub_id2, payload }) => {
+            Ok(Message::Universal { kind: _, target: _, sub_id1: _, sub_id2: _, payload: _ }) => {
                 panic!("Universal message, not manufacturer-specific");
             }
             Err(e) => {
