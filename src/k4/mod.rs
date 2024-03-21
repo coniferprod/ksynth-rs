@@ -45,61 +45,83 @@ pub fn get_note_name(note_number: u8) -> String {
 use nutype::nutype;
 
 /// Envelope time for DCA/DCF attack, decay and release
-#[nutype(validate(min = 0, max = 100))]
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 100),
+    derive(Copy, Clone, PartialEq, Eq)
+)]
 pub struct EnvelopeTime(u8);
 
 /// Envelope level for DCA/DCF sustain
 type EnvelopeLevel = EnvelopeTime;
 
 /// Level from 0 to 100
-#[nutype(validate(min = 0, max = 100))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 100),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct Level(u8);
 
 /// Depth used for DCA/DCF modulation values
-#[nutype(validate(min = -50, max = 50))]
-#[derive(Copy, Clone)]
+#[nutype(
+    validate(greater_or_equal = -50, less_or_equal = 50),
+    derive(Copy, Clone)
+)]
 pub struct ModulationDepth(i8);  // note: signed inner type
 
 /// MIDI channel
-#[nutype(validate(min = 1, max = 16))]
-#[derive(Copy, Clone)]
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 16),
+    derive(Copy, Clone)
+)]
 pub struct Channel(u8);
 
 /// Drum source 1 and 2 decay
-#[nutype(validate(min = 1, max = 100))]
-#[derive(Copy, Clone)]
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 100),
+    derive(Copy, Clone)
+)]
 pub struct Decay(u8);
 
 /// Small effect parameter
-#[nutype(validate(min = -7, max = 7))]
-#[derive(Copy, Clone)]
+#[nutype(
+    validate(greater_or_equal = -7, less_or_equal = 7),
+    derive(Copy, Clone)
+)]
 pub struct SmallEffectParameter(i8);
 
 /// Big effect parameter
-#[nutype(validate(min = 0, max = 31))]
-#[derive(Copy, Clone)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 31),
+    derive(Copy, Clone)
+)]
 pub struct BigEffectParameter(u8);
 
 /// Envelope level for DCF sustain
-#[nutype(validate(min = -50, max = 50))]
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = -50, less_or_equal = 50),
+    derive(Copy, Clone, PartialEq, Eq)
+)]
 pub struct FilterEnvelopeLevel(i8);
 
 /// Filter cutoff
-#[nutype(validate(min = 0, max = 100))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 100),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct Cutoff(u8);
 
 /// Filter resonance
-#[nutype(validate(min = 0, max = 7))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 7),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct Resonance(u8);
 
 /// Effect number
-#[nutype(validate(min = 1, max = 32))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 32),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct EffectNumber(u8);
 
 impl SystemExclusiveData for EffectNumber {
@@ -115,28 +137,38 @@ impl SystemExclusiveData for EffectNumber {
 }
 
 /// Velocity or Key Scaling curve 1~8
-#[nutype(validate(min = 1, max = 8))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 8),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct Curve(u8);
 
 /// DCO coarse tuning
-#[nutype(validate(min = -24, max = 24))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = -24, less_or_equal = 24),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct Coarse(i8);
 
 /// DCO fine tuning
-#[nutype(validate(min = -50, max = 50))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = -50, less_or_equal = 50),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct Fine(i8);
 
 /// Wave number
-#[nutype(validate(min = 1, max = 256))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 256),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct WaveNumber(u16);
 
 /// MIDI channel
-#[nutype(validate(min = 1, max = 16))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 1, less_or_equal = 16),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct MIDIChannel(u8);
 
 impl SystemExclusiveData for MIDIChannel {
@@ -152,18 +184,24 @@ impl SystemExclusiveData for MIDIChannel {
 }
 
 /// MIDI note (0...127)
-#[nutype(validate(min = 0, max = 127))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 127),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct MIDINote(u8);
 
 /// Patch number 0...63 (can be converted to A-1...D-16)
-#[nutype(validate(min = 0, max = 63))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 63),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
 pub struct PatchNumber(u8);
 
 /// Transpose
-#[nutype(validate(min = -24, max = 24))]  // +-24 (in SysEx 0~48)
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[nutype(
+    validate(greater_or_equal = -24, less_or_equal = 24), // +-24 (in SysEx 0~48)
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]  
 pub struct Transpose(i8);
 
 impl SystemExclusiveData for Transpose {
