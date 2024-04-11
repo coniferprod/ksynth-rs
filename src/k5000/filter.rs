@@ -6,7 +6,7 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::{EnvelopeTime, EnvelopeLevel, ControlTime, EnvelopeDepth, Cutoff, Resonance, Level};
 use crate::k5000::control::VelocityCurve;
 
@@ -67,15 +67,15 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Envelope {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Envelope {
             attack_time: EnvelopeTime::from(data[0]),
             decay1_time: EnvelopeTime::from(data[1]),
             decay1_level: EnvelopeLevel::from(data[2]),
             decay2_time: EnvelopeTime::from(data[3]),
             decay2_level: EnvelopeLevel::from(data[4]),
             release_time: EnvelopeTime::from(data[5]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -106,11 +106,11 @@ impl Default for KeyScalingControl {
 }
 
 impl SystemExclusiveData for KeyScalingControl {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        KeyScalingControl {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(KeyScalingControl {
             attack_time: ControlTime::from(data[1]),
             decay1_time: ControlTime::from(data[2]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -139,12 +139,12 @@ impl Default for VelocityControl {
 }
 
 impl SystemExclusiveData for VelocityControl {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        VelocityControl {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(VelocityControl {
             depth: EnvelopeDepth::from(data[0]),
             attack_time: ControlTime::from(data[1]),
             decay1_time: ControlTime::from(data[2]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -172,11 +172,11 @@ impl Default for Modulation {
 }
 
 impl SystemExclusiveData for Modulation {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Modulation {
-            ks_to_env: KeyScalingControl::from_bytes(data[..2].to_vec()),
-            vel_to_env: VelocityControl::from_bytes(data[2..5].to_vec()),
-        }
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Modulation {
+            ks_to_env: KeyScalingControl::from_bytes(data[..2].to_vec())?,
+            vel_to_env: VelocityControl::from_bytes(data[2..5].to_vec())?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -240,8 +240,8 @@ impl fmt::Display for Filter {
 }
 
 impl SystemExclusiveData for Filter {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Filter {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Filter {
             is_active: if data[0] == 1 { false } else { true },  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
             velocity_curve: VelocityCurve::try_from(data[2]).unwrap(),  // from 0 ~ 11 to enum
@@ -251,8 +251,8 @@ impl SystemExclusiveData for Filter {
             ks_to_cutoff: EnvelopeDepth::from(data[6]),
             vel_to_cutoff: EnvelopeDepth::from(data[7]),
             envelope_depth: EnvelopeDepth::from(data[8]),
-            envelope: Envelope::from_bytes(data[9..].to_vec())
-        }
+            envelope: Envelope::from_bytes(data[9..].to_vec())?
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

@@ -7,7 +7,7 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::{MacroParameterDepth, Pan, ControlDepth};
 
 /// Velocity switch settings.
@@ -82,14 +82,14 @@ impl fmt::Display for VelocitySwitchSettings {
 }
 
 impl SystemExclusiveData for VelocitySwitchSettings {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let vs = data[0].bit_range(5..7) & 0b11;  // bits 5-6
         let t = data[0].bit_range(0..5); // bits 0-4
         eprintln!("VelocitySwitchSettings: vs = 0b{:b} ({}), t = 0b{:b} ({})", vs, vs, t, t);
-        VelocitySwitchSettings {
+        Ok(VelocitySwitchSettings {
             switch_type: VelocitySwitch::try_from(vs).unwrap(),
             threshold: VelocitySwitchSettings::threshold_from(t as usize),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -208,15 +208,15 @@ impl fmt::Display for MacroController {
 }
 
 impl SystemExclusiveData for MacroController {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("MacroController from bytes {:?}", data);
 
-        MacroController {
+        Ok(MacroController {
             destination1: ControlDestination::try_from(data[0]).unwrap(),
             depth1: MacroParameterDepth::from(data[1]),
             destination2: ControlDestination::try_from(data[2]).unwrap(),
             depth2: MacroParameterDepth::from(data[3]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -247,12 +247,12 @@ impl Default for AssignableController {
 }
 
 impl SystemExclusiveData for AssignableController {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        AssignableController {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(AssignableController {
             source: ControlSource::try_from(data[0]).unwrap(),
             destination: ControlDestination::try_from(data[1]).unwrap(),
             depth: ControlDepth::from(data[2]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -282,14 +282,14 @@ impl Default for ModulationSettings {
 }
 
 impl SystemExclusiveData for ModulationSettings {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        ModulationSettings {
-            pressure: MacroController::from_bytes(data[..4].to_vec()),
-            wheel: MacroController::from_bytes(data[4..8].to_vec()),
-            expression: MacroController::from_bytes(data[8..12].to_vec()),
-            assignable1: AssignableController::from_bytes(data[12..15].to_vec()),  // NOTE: only three bytes
-            assignable2: AssignableController::from_bytes(data[15..18].to_vec()),  // not four like macros
-        }
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(ModulationSettings {
+            pressure: MacroController::from_bytes(data[..4].to_vec())?,
+            wheel: MacroController::from_bytes(data[4..8].to_vec())?,
+            expression: MacroController::from_bytes(data[8..12].to_vec())?,
+            assignable1: AssignableController::from_bytes(data[12..15].to_vec())?,  // NOTE: only three bytes
+            assignable2: AssignableController::from_bytes(data[15..18].to_vec())?,  // not four like macros
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -346,11 +346,11 @@ impl Default for PanSettings {
 }
 
 impl SystemExclusiveData for PanSettings {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        PanSettings {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(PanSettings {
             pan_type: PanKind::try_from(data[0]).unwrap(),
             pan_value: Pan::from(data[1]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -430,13 +430,13 @@ impl Default for SwitchControl {
 }
 
 impl SystemExclusiveData for SwitchControl {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        SwitchControl {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(SwitchControl {
             switch1: Switch::try_from(data[0]).unwrap(),
             switch2: Switch::try_from(data[1]).unwrap(),
             footswitch1: Switch::try_from(data[2]).unwrap(),
             footswitch2: Switch::try_from(data[3]).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -537,7 +537,7 @@ mod tests {
     fn test_macro_controller_from_bytes() {
         let data = vec![0x01, 0x4f, 0x03, 0x40];
         let mac = MacroController::from_bytes(data);
-        assert_eq!(mac.destination1, ControlDestination::CutoffOffset);
+        assert_eq!(mac.unwrap().destination1, ControlDestination::CutoffOffset);
     }
 
     /*

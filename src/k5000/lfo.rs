@@ -6,7 +6,7 @@ use std::convert::TryFrom;
 
 use num_enum::TryFromPrimitive;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::{LFOSpeed, Depth, KeyScaling};
 
 /// LFO waveform type.
@@ -59,11 +59,11 @@ impl fmt::Display for Control {
 }
 
 impl SystemExclusiveData for Control {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Control {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Control {
             depth: Depth::from(data[0]),
             key_scaling: KeyScaling::from(data[1]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -109,8 +109,8 @@ impl fmt::Display for Lfo {
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Lfo {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Lfo {
             waveform: Waveform::try_from(data[0]).unwrap(),
             speed: LFOSpeed::from(data[1]),
             fade_in_time: LFOSpeed::from(data[2]),
@@ -128,7 +128,7 @@ impl SystemExclusiveData for Lfo {
                 depth: Depth::from(data[9]),
                 key_scaling: KeyScaling::from(data[10]),
             },
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

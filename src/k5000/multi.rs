@@ -6,7 +6,7 @@ use std::convert::TryInto;
 use std::fmt;
 use std::collections::BTreeMap;
 use bit::BitIndex;
-use crate::{SystemExclusiveData, Checksum};
+use crate::{SystemExclusiveData, ParseError, Checksum};
 use crate::k5000::control::{
     Polyphony, AmplitudeModulation, MacroController, SwitchControl,
     ControlDestination, Switch,

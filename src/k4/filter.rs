@@ -6,7 +6,7 @@ use std::fmt;
 
 use bit::BitIndex;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k4::{EnvelopeTime, FilterEnvelopeLevel, Cutoff, Resonance, ModulationDepth};
 use crate::k4::amp::{LevelModulation, TimeModulation};
 
@@ -49,13 +49,13 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Envelope {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Envelope {
             attack: EnvelopeTime::new(data[0]).unwrap(),
             decay: EnvelopeTime::new(data[1]).unwrap(),
             sustain: FilterEnvelopeLevel::new((data[2] as i8) - 50).unwrap(),
             release: EnvelopeTime::new(data[3]).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -122,7 +122,7 @@ impl fmt::Display for Filter {
 }
 
 impl SystemExclusiveData for Filter {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -165,16 +165,16 @@ impl SystemExclusiveData for Filter {
         let time_mod_bytes = data[start..end].to_vec();
         let time_mod = TimeModulation::from_bytes(time_mod_bytes);
 
-        Filter {
+        Ok(Filter {
             cutoff: Cutoff::new(cutoff).unwrap(),
             resonance: Resonance::new(resonance).unwrap(),
-            cutoff_mod,
+            cutoff_mod: cutoff_mod?,
             lfo_modulates_cutoff,
             env_depth: ModulationDepth::new(env_depth).unwrap(),
             env_vel_depth: ModulationDepth::new(env_vel_depth).unwrap(),
-            envelope,
-            time_mod,
-        }
+            envelope: envelope?,
+            time_mod: time_mod?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

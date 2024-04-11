@@ -5,7 +5,7 @@ use std::fmt;
 
 use bit::BitIndex;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k4::{Level, Curve, Coarse, Fine};
 use crate::k4::wave::Wave;
 
@@ -65,7 +65,7 @@ impl fmt::Display for Source {
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
 
         let mut b: u8;
@@ -111,9 +111,9 @@ impl SystemExclusiveData for Source {
         let vibrato = b.bit(1);
         let velocity_curve = ((b >> 2) & 0x07) + 1;  // 0...7 to 1...8
 
-        Source {
+        Ok(Source {
             delay: Level::new(delay).unwrap(),
-            wave,
+            wave: wave?,
             ks_curve: Curve::new(ks_curve).unwrap(),
             coarse: Coarse::new(coarse).unwrap(),
             key_track,
@@ -121,7 +121,7 @@ impl SystemExclusiveData for Source {
             press_freq,
             vibrato,
             velocity_curve: Curve::new(velocity_curve).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

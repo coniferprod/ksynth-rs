@@ -2,7 +2,7 @@
 //!
 
 use bit::BitIndex;
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
 use crate::k5000::{EnvelopeRate, HarmonicEnvelopeLevel};
@@ -25,7 +25,7 @@ impl Default for Levels {
 }
 
 impl SystemExclusiveData for Levels {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         let mut soft: [u8; HARMONIC_COUNT] = [0; HARMONIC_COUNT];
@@ -40,10 +40,10 @@ impl SystemExclusiveData for Levels {
             offset += 1;
         }
 
-        Levels {
+        Ok(Levels {
             soft: soft,
             loud: loud,
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -71,11 +71,11 @@ impl Default for EnvelopeSegment {
 }
 
 impl SystemExclusiveData for EnvelopeSegment {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        EnvelopeSegment {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(EnvelopeSegment {
             rate: EnvelopeRate::from(data[0]),
             level: HarmonicEnvelopeLevel::from(data[1]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -124,7 +124,7 @@ impl Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let segment0_rate = EnvelopeRate::from(data[0]);
         let segment0_level = HarmonicEnvelopeLevel::from(data[1]);
         let segment1_rate = EnvelopeRate::from(data[2]);
@@ -138,7 +138,7 @@ impl SystemExclusiveData for Envelope {
         let segment3_rate = EnvelopeRate::from(data[6]);
         let segment3_level = HarmonicEnvelopeLevel::from(data[7]);
 
-        Envelope {
+        Ok(Envelope {
             attack: EnvelopeSegment {
                 rate: segment0_rate,
                 level: segment0_level,
@@ -163,7 +163,7 @@ impl SystemExclusiveData for Envelope {
                     (false, false) => Loop::Off,
                 }
             }
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

@@ -1,9 +1,10 @@
 //! Data model for DCA.
 //!
 
+use core::time;
 use std::convert::TryInto;
 use std::fmt;
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k4::{EnvelopeTime, EnvelopeLevel, ModulationDepth, Level};
 
 #[derive(Copy, Clone)]
@@ -42,13 +43,13 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Envelope {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Envelope {
             attack: EnvelopeTime::new(data[0] & 0x7f).unwrap(),
             decay: EnvelopeTime::new(data[1] & 0x7f).unwrap(),
             sustain: EnvelopeLevel::new(data[2] & 0x7f).unwrap(),
             release: EnvelopeTime::new(data[3] & 0x7f).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -101,12 +102,12 @@ impl fmt::Display for LevelModulation {
 }
 
 impl SystemExclusiveData for LevelModulation {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        LevelModulation {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(LevelModulation {
             velocity_depth: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
             pressure_depth: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
             key_scaling_depth: ModulationDepth::new((data[2] as i8) - 50).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -158,12 +159,12 @@ impl fmt::Display for TimeModulation {
 }
 
 impl SystemExclusiveData for TimeModulation {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        TimeModulation {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(TimeModulation {
             attack_velocity: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
             release_velocity: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
             key_scaling: ModulationDepth::new((data[2] as i8) - 50).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -215,7 +216,7 @@ impl fmt::Display for Amplifier {
 }
 
 impl SystemExclusiveData for Amplifier {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -241,12 +242,12 @@ impl SystemExclusiveData for Amplifier {
         let time_mod_bytes = data[start..end].to_vec();
         let time_modulation = TimeModulation::from_bytes(time_mod_bytes);
 
-        Amplifier {
+        Ok(Amplifier {
             level,
-            envelope,
-            level_modulation,
-            time_modulation,
-        }
+            envelope: envelope?,
+            level_modulation: level_modulation?,
+            time_modulation: time_modulation?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

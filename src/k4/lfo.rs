@@ -7,7 +7,7 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k4::{Level, ModulationDepth};
 
 /// LFO shape.
@@ -76,14 +76,14 @@ impl fmt::Display for Lfo {
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Lfo {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Lfo {
             shape: Shape::try_from(data[0] & 0x03).unwrap(),
             speed: Level::new(data[1] & 0x7f).unwrap(),
             delay: Level::new(data[2] & 0x7f).unwrap(),
             depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
             pressure_depth: ModulationDepth::new(((data[4] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -143,13 +143,13 @@ impl fmt::Display for Vibrato {
 }
 
 impl SystemExclusiveData for Vibrato {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Vibrato {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Vibrato {
             shape: Shape::try_from((data[0] >> 4) & 0x03).unwrap(),
             speed: Level::new(data[1] & 0x7f).unwrap(),
             pressure: ModulationDepth::new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
             depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

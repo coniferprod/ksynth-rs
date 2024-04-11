@@ -7,7 +7,7 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 use pretty_hex::*;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 use crate::k5000::{Coarse, Fine};
 use crate::k5000::wave::Wave;
@@ -30,12 +30,12 @@ impl fmt::Display for FixedKey {
 }
 
 impl SystemExclusiveData for FixedKey {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         if data[0] == 0x00 {
-            FixedKey::Off
+            Ok(FixedKey::Off)
         }
         else {
-            FixedKey::On(Key { note: data[0] - 21 })
+            Ok(FixedKey::On(Key { note: data[0] - 21 }))
         }
     }
 
@@ -97,16 +97,16 @@ impl fmt::Display for Oscillator {
 }
 
 impl SystemExclusiveData for Oscillator {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("OSC data = {}", simple_hex(&data));
-        Oscillator {
-            wave: Wave::from_bytes(vec![data[0], data[1]]),
+        Ok(Oscillator {
+            wave: Wave::from_bytes(vec![data[0], data[1]])?,
             coarse: Coarse::from(data[2]),
             fine: Fine::from(data[3]),
             ks_to_pitch: KeyScaling::try_from(data[4]).unwrap(),
-            fixed_key: FixedKey::from_bytes(vec![data[5]]),
-            pitch_envelope: PitchEnvelope::from_bytes(data[6..].to_vec()),
-        }
+            fixed_key: FixedKey::from_bytes(vec![data[5]])?,
+            pitch_envelope: PitchEnvelope::from_bytes(data[6..].to_vec())?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

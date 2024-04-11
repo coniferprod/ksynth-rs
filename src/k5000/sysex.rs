@@ -4,7 +4,7 @@
 use std::convert::TryFrom;
 use std::fmt;
 use num_enum::TryFromPrimitive;
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::MIDIChannel;
 
 /// Kawai K5000 System Exclusive functions.
@@ -36,14 +36,14 @@ pub struct Message {
 }
 
 impl SystemExclusiveData for Message {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Message {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Message {
             channel: MIDIChannel::new(data[2].into()),
             function: Function::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this
             subdata: Vec::<u8>::new(),  // TODO: fix this
             patch_data: data[3..].to_vec(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

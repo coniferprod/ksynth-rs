@@ -4,7 +4,7 @@
 use std::convert::TryFrom;
 use std::fmt;
 use num_enum::TryFromPrimitive;
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k4::MIDIChannel;
 
 const GROUP: u8 = 0x00;      // synth group
@@ -73,13 +73,13 @@ impl fmt::Display for Header {
 }
 
 impl SystemExclusiveData for Header {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Header {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Header {
             channel: MIDIChannel::new(data[0] + 1).unwrap(),
             function: Function::try_from(data[1]).unwrap(),
             substatus1: data[4],
             substatus2: data[5],
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -148,7 +148,7 @@ impl Dump {
         // The raw data is everything in the payload after the header.
         let raw_data = &payload[Header::data_size() as usize..];
 
-        match (header.function, header.substatus1, header.substatus2) {
+        match (header.as_ref().unwrap().function, header.as_ref().unwrap().substatus1, header.as_ref().unwrap().substatus2) {
             (Function::OnePatchDataDump, 0x00, number) if (0..=63).contains(&number) =>
                 Ok(Dump { kind: Kind::OneSingle(number), locality: Locality::Internal, payload: raw_data.to_vec() }),
             (Function::OnePatchDataDump, 0x00, number) if (64..=127).contains(&number) =>
@@ -184,26 +184,6 @@ impl Dump {
             _ => Err(ParseError::Unidentified),
 
         }
-    }
-}
-
-/// Error type for parsing data from MIDI System Exclusive bytes.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum ParseError {
-    NotEnoughData(u32, u32),  // actual, expected
-    BadChecksum(u8, u8),  // actual, expected
-    InvalidData(u32),  // offset in data
-    Unidentified,  // can't identify this kind
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            ParseError::NotEnoughData(actual, expected) => format!("Got {} bytes of data, expected {} bytes.", actual, expected),
-            ParseError::BadChecksum(actual, expected) => format!("Computed checksum was {}H, expected {}H.", actual, expected),
-            ParseError::InvalidData(offset) => format!("Invalid data at offset {}.", offset),
-            ParseError::Unidentified => String::from("Unable to identify this System Exclusive file."),
-        })
     }
 }
 

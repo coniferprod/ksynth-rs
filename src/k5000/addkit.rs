@@ -1,8 +1,7 @@
 //! Data model for the "additive kit" used by an ADD source.
 //!
 
-use crate::SystemExclusiveData;
-use crate::Checksum;
+use crate::{SystemExclusiveData, ParseError, Checksum};
 use crate::k5000::formant::FormantFilter;
 use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
 use crate::k5000::harmonic::Levels;
@@ -45,7 +44,7 @@ impl AdditiveKit {
 }
 
 impl SystemExclusiveData for AdditiveKit {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset = 165; // FF bands should start here
 
         let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
@@ -56,18 +55,18 @@ impl SystemExclusiveData for AdditiveKit {
 
         let mut envelopes: Vec::<HarmonicEnvelope> = vec![HarmonicEnvelope::new(); HARMONIC_COUNT];
         for _ in 0..HARMONIC_COUNT {
-            envelopes.push(HarmonicEnvelope::from_bytes(data[offset..offset + 8].to_vec()));
+            envelopes.push(HarmonicEnvelope::from_bytes(data[offset..offset + 8].to_vec())?);
             offset += 8;
         }
 
-        AdditiveKit {
-            common: HarmonicCommon::from_bytes(data[1..7].to_vec()),
-            morf: MorfHarmonic::from_bytes(data[7..20].to_vec()),
-            formant_filter: FormantFilter::from_bytes(data[20..37].to_vec()),
-            levels: Levels::from_bytes(data[37..165].to_vec()),
+        Ok(AdditiveKit {
+            common: HarmonicCommon::from_bytes(data[1..7].to_vec())?,
+            morf: MorfHarmonic::from_bytes(data[7..20].to_vec())?,
+            formant_filter: FormantFilter::from_bytes(data[20..37].to_vec())?,
+            levels: Levels::from_bytes(data[37..165].to_vec())?,
             bands: bands,
             envelopes: envelopes,
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

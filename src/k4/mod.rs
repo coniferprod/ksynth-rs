@@ -1,4 +1,4 @@
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 
 pub mod amp;
 pub mod effect;
@@ -103,8 +103,8 @@ pub struct Resonance(u8);
 pub struct EffectNumber(u8);
 
 impl SystemExclusiveData for EffectNumber {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Self::new(data[0] + 1).unwrap()  // adjust 0~31 to 1~32
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Self::new(data[0] + 1).unwrap())  // adjust 0~31 to 1~32
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -140,8 +140,8 @@ pub struct WaveNumber(u16);
 pub struct MIDIChannel(u8);
 
 impl SystemExclusiveData for MIDIChannel {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Self::new(data[0] + 1).unwrap()
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Self::new(data[0] + 1).unwrap())
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -167,8 +167,8 @@ pub struct PatchNumber(u8);
 pub struct Transpose(i8);
 
 impl SystemExclusiveData for Transpose {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Self::new(data[0] as i8 - 24).unwrap()
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Self::new(data[0] as i8 - 24).unwrap())
     }
 
     fn to_bytes(&self) -> Vec<u8> {

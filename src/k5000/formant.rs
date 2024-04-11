@@ -3,7 +3,7 @@
 
 use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::morf::Loop;
 use crate::k5000::{EnvelopeRate, EnvelopeLevel, EnvelopeDepth, Bias, LFODepth, LFOSpeed};
 
@@ -35,11 +35,11 @@ impl Default for EnvelopeSegment {
 }
 
 impl SystemExclusiveData for EnvelopeSegment {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        EnvelopeSegment {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(EnvelopeSegment {
             rate: EnvelopeRate::from(data[0]),
             level: EnvelopeLevel::from(data[1]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -73,16 +73,16 @@ impl Default for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Envelope {
-            attack: EnvelopeSegment::from_bytes(data[..2].to_vec()),
-            decay1: EnvelopeSegment::from_bytes(data[2..4].to_vec()),
-            decay2: EnvelopeSegment::from_bytes(data[4..6].to_vec()),
-            release: EnvelopeSegment::from_bytes(data[6..8].to_vec()),
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Envelope {
+            attack: EnvelopeSegment::from_bytes(data[..2].to_vec())?,
+            decay1: EnvelopeSegment::from_bytes(data[2..4].to_vec())?,
+            decay2: EnvelopeSegment::from_bytes(data[4..6].to_vec())?,
+            release: EnvelopeSegment::from_bytes(data[6..8].to_vec())?,
             decay_loop: Loop::try_from(data[8]).unwrap(),
             velocity_depth: EnvelopeDepth::from(data[9]),
             ks_depth: EnvelopeDepth::from(data[10]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -135,12 +135,12 @@ impl Default for Lfo {
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Lfo {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Lfo {
             speed: LFOSpeed::from(data[0]),
             shape: LFOShape::try_from(data[1]).unwrap(),
             depth: LFODepth::from(data[2]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -170,14 +170,14 @@ impl Default for FormantFilter {
 }
 
 impl SystemExclusiveData for FormantFilter {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        FormantFilter {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(FormantFilter {
             bias: Bias::from(data[0]),
             mode: Mode::try_from(data[1]).unwrap(),
             envelope_depth: EnvelopeDepth::from(data[2]),
-            envelope: Envelope::from_bytes(data[3..14].to_vec()),
-            lfo: Lfo::from_bytes(data[14..].to_vec()),
-        }
+            envelope: Envelope::from_bytes(data[3..14].to_vec())?,
+            lfo: Lfo::from_bytes(data[14..].to_vec())?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

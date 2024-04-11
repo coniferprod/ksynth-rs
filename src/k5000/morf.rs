@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 
 use num_enum::TryFromPrimitive;
 
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::{VelocityDepth, EnvelopeTime, KeyScalingToGain};
 use crate::k5000::control::VelocityCurve;
 
@@ -45,15 +45,15 @@ impl Default for HarmonicCommon {
 }
 
 impl SystemExclusiveData for HarmonicCommon {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        HarmonicCommon {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(HarmonicCommon {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
             group: HarmonicGroup::try_from(data[2]).unwrap(),
             ks_to_gain: KeyScalingToGain::from(data[3]),
             velocity_curve: VelocityCurve::try_from(data[4]).unwrap(), // 0~11 maps to enum
             velocity_depth: VelocityDepth::from(data[5]),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -84,11 +84,11 @@ impl Default for MorfHarmonicCopyParameters {
 }
 
 impl SystemExclusiveData for MorfHarmonicCopyParameters {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        MorfHarmonicCopyParameters {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(MorfHarmonicCopyParameters {
             patch_number: data[0],
             source_number: data[1],
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -131,14 +131,14 @@ impl Default for MorfHarmonicEnvelope {
 }
 
 impl SystemExclusiveData for MorfHarmonicEnvelope {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        MorfHarmonicEnvelope {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(MorfHarmonicEnvelope {
             time1: EnvelopeTime::from(data[0]),
             time2: EnvelopeTime::from(data[1]),
             time3: EnvelopeTime::from(data[2]),
             time4: EnvelopeTime::from(data[3]),
             loop_type: Loop::try_from(data[4]).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -174,14 +174,14 @@ impl Default for MorfHarmonic {
 }
 
 impl SystemExclusiveData for MorfHarmonic {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        MorfHarmonic {
-            copy1: MorfHarmonicCopyParameters::from_bytes(data[..2].to_vec()),
-            copy2: MorfHarmonicCopyParameters::from_bytes(data[2..4].to_vec()),
-            copy3: MorfHarmonicCopyParameters::from_bytes(data[4..6].to_vec()),
-            copy4: MorfHarmonicCopyParameters::from_bytes(data[6..8].to_vec()),
-            envelope: MorfHarmonicEnvelope::from_bytes(data[8..].to_vec()),
-        }
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(MorfHarmonic {
+            copy1: MorfHarmonicCopyParameters::from_bytes(data[..2].to_vec())?,
+            copy2: MorfHarmonicCopyParameters::from_bytes(data[2..4].to_vec())?,
+            copy3: MorfHarmonicCopyParameters::from_bytes(data[4..6].to_vec())?,
+            copy4: MorfHarmonicCopyParameters::from_bytes(data[6..8].to_vec())?,
+            envelope: MorfHarmonicEnvelope::from_bytes(data[8..].to_vec())?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

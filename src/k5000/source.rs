@@ -4,7 +4,7 @@
 use std::fmt;
 
 use crate::k5000::control::{VelocitySwitchSettings, ModulationSettings, PanSettings};
-use crate::SystemExclusiveData;
+use crate::{SystemExclusiveData, ParseError};
 use crate::k5000::osc::*;
 use crate::k5000::filter::*;
 use crate::k5000::amp::*;
@@ -60,8 +60,8 @@ impl fmt::Display for Zone {
 }
 
 impl SystemExclusiveData for Zone {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Zone { low: Key { note: data[0] }, high: Key { note: data[1] } }
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(Zone { low: Key { note: data[0] }, high: Key { note: data[1] } })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -112,20 +112,20 @@ impl fmt::Display for SourceControl {
 }
 
 impl SystemExclusiveData for SourceControl {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("Source control data = {}", simple_hex(&data));
 
-        SourceControl {
+        Ok(SourceControl {
             zone: Zone { low: Key { note: data[0] }, high: Key { note: data[1] } },
-            vel_sw: VelocitySwitchSettings::from_bytes(vec![data[2]]),
+            vel_sw: VelocitySwitchSettings::from_bytes(vec![data[2]])?,
             effect_path: data[3],
             volume: Volume::from(data[4]),
             bender_pitch: BenderPitch::from(data[5]),
             bender_cutoff: BenderCutoff::from(data[6]),
-            modulation: ModulationSettings::from_bytes(data[7..25].to_vec()),
+            modulation: ModulationSettings::from_bytes(data[7..25].to_vec())?,
             key_on_delay: KeyOnDelay::from(data[25]),
-            pan: PanSettings::from_bytes(data[26..28].to_vec()),
-        }
+            pan: PanSettings::from_bytes(data[26..28].to_vec())?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -202,15 +202,15 @@ impl fmt::Display for Source {
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("Source data ({} bytes): {:?}", data.len(), data);
-        Source {
-            control: SourceControl::from_bytes(data[..28].to_vec()),
-            oscillator: Oscillator::from_bytes(data[28..40].to_vec()),
-            filter: Filter::from_bytes(data[40..60].to_vec()),
-            amplifier: Amplifier::from_bytes(data[60..75].to_vec()),
-            lfo: Lfo::from_bytes(data[75..86].to_vec()),
-        }
+        Ok(Source {
+            control: SourceControl::from_bytes(data[..28].to_vec())?,
+            oscillator: Oscillator::from_bytes(data[28..40].to_vec())?,
+            filter: Filter::from_bytes(data[40..60].to_vec())?,
+            amplifier: Amplifier::from_bytes(data[60..75].to_vec())?,
+            lfo: Lfo::from_bytes(data[75..86].to_vec())?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -254,9 +254,9 @@ mod tests {
         ];
 
         let source_control = SourceControl::from_bytes(data);
-        assert_eq!(source_control.zone.low.note, 0x00);
-        assert_eq!(source_control.zone.high.note, 0x7f);
-        assert_eq!(source_control.volume.value(), 0x78);
+        assert_eq!(source_control.as_ref().unwrap().zone.low.note, 0x00);
+        assert_eq!(source_control.as_ref().unwrap().zone.high.note, 0x7f);
+        assert_eq!(source_control.as_ref().unwrap().volume.value(), 0x78);
     }
 
     #[test]
@@ -311,6 +311,6 @@ mod tests {
         ];
 
         let source = Source::from_bytes(data);
-        assert_eq!(source.lfo.speed.value(), 0x5d);
+        assert_eq!(source.unwrap().lfo.speed.value(), 0x5d);
     }
 }

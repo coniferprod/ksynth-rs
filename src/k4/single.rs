@@ -8,7 +8,7 @@ use std::fmt;
 use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
-use crate::{SystemExclusiveData, Checksum, every_nth_byte};
+use crate::{SystemExclusiveData, ParseError, Checksum, every_nth_byte};
 use crate::k4::{Level, ModulationDepth, EffectNumber, NAME_LENGTH, get_effect_number};
 use crate::k4::source::Source;
 use crate::k4::lfo::*;
@@ -127,13 +127,13 @@ impl fmt::Display for AutoBend {
 }
 
 impl SystemExclusiveData for AutoBend {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        AutoBend {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(AutoBend {
             time: Level::new(data[0] & 0x7f).unwrap(),
             depth: ModulationDepth::new(((data[1] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
             key_scaling_time: ModulationDepth::new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
             velocity_depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -326,7 +326,7 @@ impl fmt::Display for SinglePatch {
 }
 
 impl SystemExclusiveData for SinglePatch {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize = 0;
 
@@ -457,7 +457,7 @@ impl SystemExclusiveData for SinglePatch {
         // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
         //let original_checksum = b; // store the checksum as we got it from SysEx
 
-        SinglePatch {
+        Ok(SinglePatch {
             name: name,
             volume: Level::new(volume).unwrap(),
             effect: EffectNumber::new(effect).unwrap(),
@@ -470,15 +470,15 @@ impl SystemExclusiveData for SinglePatch {
             bender_range: bender_range,
             wheel_assign: WheelAssign::try_from(wheel_assign).unwrap(),
             wheel_depth: wheel_depth,
-            auto_bend: auto_bend,
-            lfo: lfo,
-            vibrato: vibrato,
+            auto_bend: auto_bend?,
+            lfo: lfo?,
+            vibrato: vibrato?,
             press_freq: press_freq,
-            sources: [s1, s2, s3, s4],
-            amplifiers: [a1, a2, a3, a4],
-            filter1: f1,
-            filter2: f2,
-        }
+            sources: [s1?, s2?, s3?, s4?],
+            amplifiers: [a1?, a2?, a3?, a4?],
+            filter1: f1?,
+            filter2: f2?,
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -509,7 +509,7 @@ mod tests {
     fn test_single_patch_from_bytes() {
         let data: [u8; 131] = include!("a401single1.in");
         let single_patch = SinglePatch::from_bytes(data.to_vec());
-        assert_eq!(single_patch.name, "Melo Vox 1");
-        assert_eq!(single_patch.volume.into_inner(), 100);
+        assert_eq!(single_patch.as_ref().unwrap().name, "Melo Vox 1");
+        assert_eq!(single_patch.as_ref().unwrap().volume.into_inner(), 100);
     }
 }

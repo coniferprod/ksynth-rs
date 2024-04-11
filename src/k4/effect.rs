@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use num_enum::TryFromPrimitive;
 use crate::k4::{Level, SUBMIX_COUNT, SmallEffectParameter, BigEffectParameter};
-use crate::{SystemExclusiveData, Checksum};
+use crate::{SystemExclusiveData, ParseError, Checksum};
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -142,7 +142,7 @@ impl EffectPatch {
 }
 
 impl SystemExclusiveData for EffectPatch {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         // data bytes 4...9 are the dummy bytes,
         // submix settings start at 10 with three bytes each
         let mut submixes = [Default::default(); SUBMIX_COUNT];
@@ -159,13 +159,13 @@ impl SystemExclusiveData for EffectPatch {
             i += 1;
         }
 
-        EffectPatch {
+        Ok(EffectPatch {
             effect: Effect::try_from(data[0] + 1).unwrap(),
             param1: SmallEffectParameter::new((data[1] as i8) - 7).unwrap(),
             param2: SmallEffectParameter::new((data[2] as i8) - 7).unwrap(),
             param3: BigEffectParameter::new(data[3]).unwrap(),
             submixes,
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -210,12 +210,12 @@ impl Default for SubmixSettings {
 }
 
 impl SystemExclusiveData for SubmixSettings {
-    fn from_bytes(data: Vec<u8>) -> Self {
-        SubmixSettings {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        Ok(SubmixSettings {
             pan: data[0] as i32 - 7,
             send1: Level::new(data[1]).unwrap(),
             send2: Level::new(data[2]).unwrap(),
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -279,7 +279,7 @@ mod tests {
     fn test_effect_patch_from_bytes() {
         let data: [u8; 35] = include!("a401effect32.in");
         let patch = EffectPatch::from_bytes(data.to_vec());
-        assert_eq!(patch.effect, Effect::Reverb1);
+        assert_eq!(patch.unwrap().effect, Effect::Reverb1);
     }
 
     #[test]

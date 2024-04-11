@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 use bit::BitIndex;
 
-use crate::{SystemExclusiveData, Checksum};
+use crate::{SystemExclusiveData, ParseError, Checksum};
 use crate::k5000::control::{
     Polyphony, AmplitudeModulation, MacroController, SwitchControl,
     ControlDestination, Switch
@@ -86,7 +86,7 @@ fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("Common data ({} bytes): {:?}", data.len(), data);
 
         let mut offset = 0;
@@ -211,8 +211,8 @@ impl SystemExclusiveData for Common {
         };
         eprintln!("Switches: {:?}", switches);
 
-        Common {
-            effects: effects,
+        Ok(Common {
+            effects: effects?,
             geq: vec_to_array(geq_values),
             name: name,
             volume,
@@ -220,11 +220,11 @@ impl SystemExclusiveData for Common {
             source_count,
             source_mutes,
             amplitude_modulation,
-            effect_control,
+            effect_control: effect_control?,
             portamento,
             macros: macros,
             switches,
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -327,9 +327,9 @@ impl SinglePatch {
         let common = Common::from_bytes(data[1..82].to_vec());
         offset += 81;
         let mut sources = Vec::<Source>::new();
-        for _i in 0..common.source_count {
+        for _i in 0..common.unwrap().source_count {
             let source = Source::from_bytes(data[offset..offset + 86].to_vec());
-            sources.push(source);
+            sources.push(source.unwrap());
             offset += 86;
         }
 
@@ -379,7 +379,7 @@ impl Default for SinglePatch {
 }
 
 impl SystemExclusiveData for SinglePatch {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -399,17 +399,17 @@ impl SystemExclusiveData for SinglePatch {
         let common = Common::from_bytes(common_data);
         offset += size;
 
-        eprintln!("Starting to parse {} sources, offset = {}", common.source_count, offset);
+        eprintln!("Starting to parse {} sources, offset = {}", common.as_ref().unwrap().source_count, offset);
 
         size = 86;
         let mut sources = Vec::<Source>::new();
-        for i in 0..common.source_count {
+        for i in 0..common.as_ref().unwrap().source_count {
             start = offset;
             end = start + size;
             let source_data = data[start..end].to_vec();
             eprintln!("Parsing source {}...", i + 1);
             let source = Source::from_bytes(source_data);
-            sources.push(source);
+            sources.push(source?);
             offset += size;
         }
 
@@ -426,15 +426,15 @@ impl SystemExclusiveData for SinglePatch {
             let kit = AdditiveKit::from_bytes(kit_data);
             offset += size;
             let kit_name = format!("s{}", kit_index + 1);
-            additive_kits.insert(kit_name, kit);
+            additive_kits.insert(kit_name, kit?);
             kit_index += 1;
         }
 
-        SinglePatch {
-            common: common,
+        Ok(SinglePatch {
+            common: common?,
             sources: sources,
             additive_kits: additive_kits,
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -536,13 +536,13 @@ mod tests {
         ];
 
         let common = Common::from_bytes(data);
-        assert_eq!(common.name, "WizooIni");
+        assert_eq!(common.unwrap().name, "WizooIni");
     }
 
     #[test]
     fn test_single_patch_from_bytes() {
         let data: [u8; 1070] = include!("WizooIni.in");
         let single_patch = SinglePatch::from_bytes(data[10..].to_vec());  // skip sysex header and checksum
-        assert_eq!(single_patch.common.name, "WizooIni");
+        assert_eq!(single_patch.unwrap().common.name, "WizooIni");
     }
 }
