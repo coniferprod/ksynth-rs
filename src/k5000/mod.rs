@@ -2069,10 +2069,10 @@ use nutype::nutype;
 
 /// Patch name.
 #[nutype(
-    sanitize(with = |s: String| format!("{:<8}", s))
-    validate(not_empty, max_len = 8)
+    sanitize(with = |s: String| format!("{:<8}", s)),
+    validate(not_empty, len_char_max = 8),
+    derive(Debug, PartialEq)
 )]
-#[derive(*)]
 pub struct PatchName(String);
 
 
@@ -2154,7 +2154,7 @@ mod tests {
     fn test_long_patch_name_is_truncated() {
         assert_eq!(
             PatchName::new("WayTooLong"),
-            Err(PatchNameError::TooLong)
+            Err(PatchNameError::LenCharMaxViolated)
         );
     }
 
