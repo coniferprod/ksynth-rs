@@ -385,17 +385,14 @@ impl SystemExclusiveData for SinglePatch {
         let mut end: usize;
         let mut size: usize;
 
-        /*
-        let original_checksum = data[offset];
-        eprintln!("original checksum = {:#02x}", original_checksum);
+        let checksum = data[offset];
+        eprintln!("single patch checksum = {:#02x}", checksum);
         offset += 1;
-        */
 
         size = 81;
         start = offset;
         end = start + size;
         let common_data = data[start..end].to_vec();
-        eprintln!("Starting to parse source common...");
         let common = Common::from_bytes(common_data);
         offset += size;
 

@@ -76,8 +76,8 @@ impl Oscillator {
             wave: Wave { number: 512 }, // ADD
             coarse: Coarse::new(0),
             fine: Fine::new(0),
-            ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: FixedKey::Off,
+            ks_to_pitch: KeyScaling::ZeroCent,
             pitch_envelope: PitchEnvelope::new(),
         }
     }
@@ -103,8 +103,8 @@ impl SystemExclusiveData for Oscillator {
             wave: Wave::from_bytes(vec![data[0], data[1]])?,
             coarse: Coarse::from(data[2]),
             fine: Fine::from(data[3]),
-            ks_to_pitch: KeyScaling::try_from(data[4]).unwrap(),
-            fixed_key: FixedKey::from_bytes(vec![data[5]])?,
+            fixed_key: FixedKey::from_bytes(vec![data[4]])?,
+            ks_to_pitch: KeyScaling::try_from(data[5]).unwrap(),
             pitch_envelope: PitchEnvelope::from_bytes(data[6..].to_vec())?,
         })
     }

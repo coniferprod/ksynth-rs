@@ -45,7 +45,11 @@ impl AdditiveKit {
 
 impl SystemExclusiveData for AdditiveKit {
     fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
-        let mut offset = 165; // FF bands should start here
+        let mut offset = 0;
+        let checksum = data[offset];
+        eprintln!("additive kit checksum = {:#02x}", checksum);
+
+        offset = 166; // FF bands should start here
 
         let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
         for i in 0..BAND_COUNT {
@@ -60,12 +64,12 @@ impl SystemExclusiveData for AdditiveKit {
         }
 
         Ok(AdditiveKit {
-            common: HarmonicCommon::from_bytes(data[1..7].to_vec())?,
-            morf: MorfHarmonic::from_bytes(data[7..20].to_vec())?,
-            formant_filter: FormantFilter::from_bytes(data[20..37].to_vec())?,
-            levels: Levels::from_bytes(data[37..165].to_vec())?,
-            bands: bands,
-            envelopes: envelopes,
+            common: HarmonicCommon::from_bytes(data[2..8].to_vec())?,
+            morf: MorfHarmonic::from_bytes(data[8..21].to_vec())?,
+            formant_filter: FormantFilter::from_bytes(data[21..38].to_vec())?,
+            levels: Levels::from_bytes(data[38..166].to_vec())?,
+            bands,
+            envelopes,
         })
     }
 
