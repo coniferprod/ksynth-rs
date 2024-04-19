@@ -10,15 +10,13 @@ use crate::k5000::{VelocityDepth, EnvelopeTime, KeyScalingToGain};
 use crate::k5000::control::VelocityCurve;
 
 /// Harmonic group.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum HarmonicGroup {
+    #[default]
     Low,
-    High
-}
 
-impl Default for HarmonicGroup {
-    fn default() -> Self { HarmonicGroup::Low }
+    High
 }
 
 /// Harmonic common settings.
@@ -69,18 +67,10 @@ impl SystemExclusiveData for HarmonicCommon {
 }
 
 /// MORF harmonic copy parameters.
+#[derive(Default)]
 pub struct MorfHarmonicCopyParameters {
     pub patch_number: u8,
     pub source_number: u8,
-}
-
-impl Default for MorfHarmonicCopyParameters {
-    fn default() -> Self {
-        MorfHarmonicCopyParameters {
-            patch_number: 0,
-            source_number: 0,
-        }
-    }
 }
 
 impl SystemExclusiveData for MorfHarmonicCopyParameters {
@@ -97,16 +87,14 @@ impl SystemExclusiveData for MorfHarmonicCopyParameters {
 }
 
 /// MORF harmonic envelope loop type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum Loop {
+    #[default]
     Off,
+
     Loop1,
     Loop2,
-}
-
-impl Default for Loop {
-    fn default() -> Self { Loop::Off }
 }
 
 /// MORF harmonic envelope.
@@ -153,24 +141,13 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
 }
 
 /// MORF harmonic settings.
+#[derive(Default)]
 pub struct MorfHarmonic {
     pub copy1: MorfHarmonicCopyParameters,
     pub copy2: MorfHarmonicCopyParameters,
     pub copy3: MorfHarmonicCopyParameters,
     pub copy4: MorfHarmonicCopyParameters,
     pub envelope: MorfHarmonicEnvelope,
-}
-
-impl Default for MorfHarmonic {
-    fn default() -> Self {
-        MorfHarmonic {
-            copy1: Default::default(),
-            copy2: Default::default(),
-            copy3: Default::default(),
-            copy4: Default::default(),
-            envelope: Default::default(),
-        }
-    }
 }
 
 impl SystemExclusiveData for MorfHarmonic {

@@ -1,6 +1,6 @@
 [package]
 name = "ksynth"
-version = "0.17.1"
+version = "0.18.0"
 authors = ["Jere Käpyaho <2261936+jerekapyaho@users.noreply.github.com>"]
 edition = "2021"
 license = "MIT"
@@ -17,4 +17,4 @@ log = "0.4.21"  # https://crates.io/crates/log
 rand = "0.8.5"  # https://crates.io/crates/rand
 syxpack = "0.14.0"  # https://crates.io/crates/syxpack
 pretty-hex = "0.4.1"  # https://crates.io/crates/pretty-hex
-nutype = "0.4.0" # https://crates.io/crates/nutype
+nutype = "0.4.2" # https://crates.io/crates/nutype

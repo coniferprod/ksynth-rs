@@ -27,7 +27,7 @@ pub enum Portamento {
 impl fmt::Display for Portamento {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Portamento::Off => write!(f, "{}", "OFF"),
+            Portamento::Off => write!(f, "OFF"),
             Portamento::On(speed) => write!(f, "{}", speed),
         }
     }
@@ -214,7 +214,7 @@ impl SystemExclusiveData for Common {
         Ok(Common {
             effects: effects?,
             geq: vec_to_array(geq_values),
-            name: name,
+            name,
             volume,
             polyphony,
             source_count,
@@ -222,7 +222,7 @@ impl SystemExclusiveData for Common {
             amplitude_modulation,
             effect_control: effect_control?,
             portamento,
-            macros: macros,
+            macros,
             switches,
         })
     }
@@ -429,8 +429,8 @@ impl SystemExclusiveData for SinglePatch {
 
         Ok(SinglePatch {
             common: common?,
-            sources: sources,
-            additive_kits: additive_kits,
+            sources,
+            additive_kits,
         })
     }
 

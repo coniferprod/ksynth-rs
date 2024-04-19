@@ -49,7 +49,7 @@ impl StringUtils for String {
     }
 }
 
-fn every_nth_byte(v: &Vec<u8>, n: usize, start: usize) -> Vec<u8> {
+fn every_nth_byte(v: &[u8], n: usize, start: usize) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
 
     for (index, _value) in v.iter().enumerate() {

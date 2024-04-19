@@ -6,22 +6,27 @@ use std::convert::TryFrom;
 
 use num_enum::TryFromPrimitive;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k5000::{LFOSpeed, Depth, KeyScaling};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k5000::{
+    LFOSpeed, 
+    Depth, 
+    KeyScaling
+};
 
 /// LFO waveform type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum Waveform {
+    #[default]
     Triangle,
+
     Square,
     Sawtooth,
     Sine,
     Random,
-}
-
-impl Default for Waveform {
-    fn default() -> Self { Waveform::Triangle }
 }
 
 impl fmt::Display for Waveform {

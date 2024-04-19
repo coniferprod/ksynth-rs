@@ -2,15 +2,24 @@
 //!
 
 use std::convert::TryFrom;
-use std::convert::TryInto;
 use std::fmt;
 use log::debug;
 use bit::BitIndex;
-use crate::{SystemExclusiveData, ParseError, Checksum};
-use crate::k4::DRUM_NOTE_COUNT;
+
+use crate::{
+    SystemExclusiveData, 
+    ParseError, 
+    Checksum
+};
+use crate::k4::{
+    DRUM_NOTE_COUNT,
+    Channel, 
+    Level, 
+    ModulationDepth, 
+    Decay
+};
 use crate::k4::wave::Wave;
 use crate::k4::effect::Submix;
-use crate::k4::{Channel, Level, ModulationDepth, Decay};
 
 pub struct DrumPatch {
     pub common: Common,
@@ -71,7 +80,7 @@ impl SystemExclusiveData for DrumPatch {
 
         Ok(DrumPatch {
             common: common?,
-            notes: notes,
+            notes,
         })
     }
 
@@ -128,7 +137,7 @@ impl Common {
     fn collect_data(&self) -> Vec<u8> {
         vec![
             self.channel.into_inner() - 1,
-            self.volume.into_inner() as u8,
+            self.volume.into_inner(),
             (self.velocity_depth.into_inner() + 50) as u8,
             0, 0, 0, 0, 0, 0, 0,  // seven dummy bytes by design
         ]
@@ -140,7 +149,7 @@ impl Checksum for Common {
         let data = self.collect_data();
         let mut total = data.iter().fold(0, |acc, x| acc + ((*x as u32) & 0xFF));
         total += 0xA5;
-        ((total & 0x7F) as u8).try_into().unwrap()
+        (total & 0x7F) as u8
     }
 }
 
@@ -219,7 +228,7 @@ impl Checksum for Note {
         let data = self.collect_data();
         let mut total = data.iter().fold(0, |acc, x| acc + ((*x as u32) & 0xFF));
         total += 0xA5;
-        ((total & 0x7F) as u8).try_into().unwrap()
+        (total & 0x7F) as u8
     }
 }
 

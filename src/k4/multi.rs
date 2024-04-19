@@ -3,14 +3,24 @@
 
 use std::fmt;
 use std::convert::TryFrom;
-use std::convert::TryInto;
 
 use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
-use crate::{SystemExclusiveData, Checksum, ParseError};
+use crate::{
+    SystemExclusiveData, 
+    Checksum, 
+    ParseError
+};
 use crate::k4;
-use crate::k4::{Level, MIDIChannel, PatchNumber, EffectNumber, Transpose};
+use crate::k4::{
+    get_note_name,
+    Level, 
+    MIDIChannel, 
+    PatchNumber, 
+    EffectNumber, 
+    Transpose
+};
 
 /// Number of sections in a multi patch.
 pub const SECTION_COUNT: usize = 8;
@@ -80,10 +90,10 @@ impl SystemExclusiveData for MultiPatch {
         }
 
         Ok(MultiPatch {
-            name: name,
+            name,
             volume: Level::new(data[10]).unwrap(),
             effect: EffectNumber::new(data[11]).unwrap(),
-            sections: sections,
+            sections,
         })
     }
 
@@ -103,7 +113,7 @@ impl Checksum for MultiPatch {
         let data = self.collect_data();
         let mut total = data.iter().fold(0, |acc, x| acc + ((*x as u32) & 0xFF));
         total += 0xA5;
-        ((total & 0x7F) as u8).try_into().unwrap()
+        (total & 0x7F) as u8
     }
 }
 
@@ -152,7 +162,7 @@ impl SystemExclusiveData for Section {
             zone: Zone::from_bytes(vec![data[1], data[2]])?,
             velocity_switch: VelocitySwitch::try_from((data[3] >> 4) & 0b0000_0011).unwrap(),
             receive_channel: MIDIChannel::from_bytes(vec![data[3] & 0b0000_1111])?,  // adjust MIDI channel to 1...16
-            is_muted: if data[3] >> 6 == 1 { true } else { false },
+            is_muted: data[3] >> 6 == 1,
             out_select: data[4] & 0b0000_0111,
             play_mode: PlayMode::try_from((data[4] >> 3) & 0b0000_0011).unwrap(),
             level: Level::new(data[5]).unwrap(),
@@ -169,7 +179,7 @@ impl SystemExclusiveData for Section {
         buf.push(self.zone.high_key.note);
 
         let mut m15 = (self.receive_channel.to_bytes()[0]) | ((self.velocity_switch as u8) << 4);
-        m15.set_bit(6, if self.is_muted { true } else { false });
+        m15.set_bit(6, self.is_muted);
         buf.push(m15);
 
         let m16 = self.out_select | ((self.play_mode as u8) << 3);
@@ -193,12 +203,9 @@ pub struct Key {
 }
 
 impl Key {
-    pub fn get_note_name(note_number: u8) -> String {
-        let notes = vec!["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
-        let octave = (note_number / 12) - 2;
-        let name = notes[note_number as usize % 12];
-
-        format!("{}{}", name, octave.to_string())
+    /// Name of this key's note.
+    pub fn note_name(&self) -> String {
+        get_note_name(self.note)
     }
 }
 
@@ -219,7 +226,12 @@ impl fmt::Display for Zone {
 
 impl SystemExclusiveData for Zone {
     fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
-        Ok(Zone { low_key: Key { note: data[0] }, high_key: Key { note: data[1] } })
+        Ok(
+            Zone { 
+                low_key: Key { note: data[0] }, 
+                high_key: Key { note: data[1] } 
+            }
+        )
     }
 
     fn to_bytes(&self) -> Vec<u8> {

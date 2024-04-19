@@ -40,10 +40,7 @@ impl SystemExclusiveData for Levels {
             offset += 1;
         }
 
-        Ok(Levels {
-            soft: soft,
-            loud: loud,
-        })
+        Ok(Levels { soft, loud })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -84,25 +81,13 @@ impl SystemExclusiveData for EnvelopeSegment {
 }
 
 /// Harmonic envelope with four segments and loop type.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Envelope {
     pub attack: EnvelopeSegment,
     pub decay1: EnvelopeSegment,
     pub decay2: EnvelopeSegment,
     pub release: EnvelopeSegment,
     pub loop_type: Loop,
-}
-
-impl Default for Envelope {
-    fn default() -> Self {
-        Envelope {
-            attack: Default::default(),
-            decay1: Default::default(),
-            decay2: Default::default(),
-            release: Default::default(),
-            loop_type: Default::default(),
-        }
-    }
 }
 
 impl Envelope {
@@ -114,10 +99,10 @@ impl Envelope {
         };
 
         Envelope {
-            attack: zero_segment.clone(),
-            decay1: zero_segment.clone(),
-            decay2: zero_segment.clone(),
-            release: zero_segment.clone(),
+            attack: zero_segment,
+            decay1: zero_segment,
+            decay2: zero_segment,
+            release: zero_segment,
             loop_type: Loop::Off,
         }
     }

@@ -31,7 +31,7 @@ impl Default for Common {
     fn default() -> Self {
         Common {
             effects: Default::default(),
-            geq: [0, 0, 0, 0, 0, 0, 0],
+            geq: [0; 7],
             name: "NewMulti".to_string(),
             section_mutes: 0x00,  // all sections muted by default
             effect_control: Default::default(),
@@ -46,7 +46,7 @@ impl fmt::Display for Common {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("Multi/combi common data ({} bytes): {:?}", data.len(), data);
 
         let mut offset = 0;
@@ -91,14 +91,14 @@ impl SystemExclusiveData for Common {
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
 
-        Common {
+        Ok(Common {
             effects,
             geq,
             name,
             volume,
             section_mutes,
             effect_control
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -159,7 +159,7 @@ impl Default for Section {
 }
 
 impl SystemExclusiveData for Section {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         eprintln!("Multi section data, {} bytes", data.len());
 
         let mut offset = 0;
@@ -188,7 +188,10 @@ impl SystemExclusiveData for Section {
         eprintln!("Tune = {}", tune);
         offset += 1;
 
-        let zone = Zone { low: Key { note: data[offset] }, high: Key { note: data[offset + 1] } };
+        let zone = Zone { 
+            low: Key { note: data[offset] }, 
+            high: Key { note: data[offset + 1] } 
+        };
         offset += 2;
 
         let vel_switch = VelocitySwitchSettings::from_bytes(vec![data[offset]]);
@@ -198,7 +201,7 @@ impl SystemExclusiveData for Section {
         // FIXME: Do we need to deal with this?
         let receive_channel = data[offset] + 1;
 
-        Section {
+        Ok(Section {
             single,
             volume,
             pan,
@@ -208,7 +211,7 @@ impl SystemExclusiveData for Section {
             zone,
             vel_switch,
             receive_channel,
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {

@@ -20,7 +20,7 @@ pub struct Key {
     pub note: u8,
 }
 
-static NOTE_NAMES: &'static str = "C C#D D#E F F#G G#A A#B ";
+static NOTE_NAMES: &str = "C C#D D#E F F#G G#A A#B ";
 
 impl Key {
     // TODO: Add constructor from note name
@@ -65,12 +65,10 @@ impl SystemExclusiveData for Zone {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let mut result: Vec<u8> = Vec::new();
-
-        result.push(self.low.note);
-        result.push(self.high.note);
-
-        result
+        vec![
+            self.low.note,
+            self.high.note,
+        ]
     }
 }
 
@@ -146,6 +144,7 @@ impl SystemExclusiveData for SourceControl {
 }
 
 /// Source.
+#[derive(Default)]
 pub struct Source {
     pub oscillator: Oscillator,
     pub filter: Filter,
@@ -174,18 +173,6 @@ impl Source {
     pub fn additive() -> Source {
         Source {
             oscillator: Oscillator::additive(),
-            filter: Default::default(),
-            amplifier: Default::default(),
-            lfo: Default::default(),
-            control: Default::default(),
-        }
-    }
-}
-
-impl Default for Source {
-    fn default() -> Self {
-        Source {
-            oscillator: Default::default(),
             filter: Default::default(),
             amplifier: Default::default(),
             lfo: Default::default(),

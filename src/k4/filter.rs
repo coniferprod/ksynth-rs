@@ -59,14 +59,12 @@ impl SystemExclusiveData for Envelope {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let mut buf: Vec<u8> = Vec::new();
-
-        buf.push(self.attack.into_inner());
-        buf.push(self.decay.into_inner());
-        buf.push((self.sustain.into_inner() + 50).try_into().unwrap());
-        buf.push(self.release.into_inner());
-
-        buf
+        vec![
+            self.attack.into_inner(),
+            self.decay.into_inner(),
+            (self.sustain.into_inner() + 50).try_into().unwrap(),
+            self.release.into_inner(),
+        ]
     }
 
     fn data_size(&self) -> usize { 4 }

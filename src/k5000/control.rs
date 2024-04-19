@@ -7,21 +7,26 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k5000::{MacroParameterDepth, Pan, ControlDepth};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k5000::{
+    MacroParameterDepth, 
+    Pan, 
+    ControlDepth
+};
 
 /// Velocity switch settings.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum VelocitySwitch {
+    #[default]
     Off,
+
     Loud,
     Soft,
     Unknown,
-}
-
-impl Default for VelocitySwitch {
-    fn default() -> Self { VelocitySwitch::Off }
 }
 
 impl fmt::Display for VelocitySwitch {
@@ -36,18 +41,10 @@ impl fmt::Display for VelocitySwitch {
 }
 
 /// Velocity switch settings.
+#[derive(Default)]
 pub struct VelocitySwitchSettings {
     pub switch_type: VelocitySwitch,
     pub threshold: u8,
-}
-
-impl Default for VelocitySwitchSettings {
-    fn default() -> Self {
-        VelocitySwitchSettings {
-            switch_type: Default::default(),
-            threshold: 0,
-        }
-    }
 }
 
 impl VelocitySwitchSettings {
@@ -100,10 +97,12 @@ impl SystemExclusiveData for VelocitySwitchSettings {
 }
 
 /// Control source.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum ControlSource {
+    #[default]
     Bender,
+
     ChannelPressure,
     Wheel,
     Expression,
@@ -119,15 +118,13 @@ pub enum ControlSource {
     GeneralController8,
 }
 
-impl Default for ControlSource {
-    fn default() -> Self { ControlSource::Bender }
-}
-
 /// Control destination.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum ControlDestination {
+    #[default]
     PitchOffset,
+
     CutoffOffset,
     Level,
     VibratoDepthOffset,
@@ -147,10 +144,6 @@ pub enum ControlDestination {
     HarmonicHighOffset,
     HarmonicEvenOffset,
     HarmonicOddOffset,
-}
-
-impl Default for ControlDestination {
-    fn default() -> Self { ControlDestination::PitchOffset }
 }
 
 impl fmt::Display for ControlDestination {
@@ -230,20 +223,11 @@ impl SystemExclusiveData for MacroController {
 }
 
 /// Assignable controller.
+#[derive(Default)]
 pub struct AssignableController {
     pub source: ControlSource,
     pub destination: ControlDestination,
     pub depth: ControlDepth,
-}
-
-impl Default for AssignableController {
-    fn default() -> Self {
-        AssignableController {
-            source: Default::default(),
-            destination: Default::default(),
-            depth: Default::default(),
-        }
-    }
 }
 
 impl SystemExclusiveData for AssignableController {
@@ -261,24 +245,13 @@ impl SystemExclusiveData for AssignableController {
 }
 
 /// Modulation settings.
+#[derive(Default)]
 pub struct ModulationSettings {
     pub pressure: MacroController,
     pub wheel: MacroController,
     pub expression: MacroController,
     pub assignable1: AssignableController,
     pub assignable2: AssignableController,
-}
-
-impl Default for ModulationSettings {
-    fn default() -> Self {
-        ModulationSettings {
-            pressure: Default::default(),
-            wheel: Default::default(),
-            expression: Default::default(),
-            assignable1: Default::default(),
-            assignable2: Default::default(),
-        }
-    }
 }
 
 impl SystemExclusiveData for ModulationSettings {
@@ -306,17 +279,15 @@ impl SystemExclusiveData for ModulationSettings {
 }
 
 /// Pan type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum PanKind {
+    #[default]
     Normal,
+
     Random,
     KeyScale,
     NegativeKeyScale,
-}
-
-impl Default for PanKind {
-    fn default() -> Self { PanKind::Normal }
 }
 
 impl fmt::Display for PanKind {
@@ -359,10 +330,12 @@ impl SystemExclusiveData for PanSettings {
 }
 
 /// Switch kind.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum Switch {
+    #[default]
     Off,
+
     HarmMax,
     HarmBright,
     HarmDark,
@@ -379,10 +352,6 @@ pub enum Switch {
     FfComb,
     FfHiCut,
     FfComb2,
-}
-
-impl Default for Switch {
-    fn default() -> Self { Switch::Off }
 }
 
 impl fmt::Display for Switch {
@@ -410,23 +379,12 @@ impl fmt::Display for Switch {
 }
 
 /// Switch control settings.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SwitchControl {
     pub switch1: Switch,
     pub switch2: Switch,
     pub footswitch1: Switch,
     pub footswitch2: Switch,
-}
-
-impl Default for SwitchControl {
-    fn default() -> Self {
-        SwitchControl {
-            switch1: Default::default(),
-            switch2: Default::default(),
-            footswitch1: Default::default(),
-            footswitch2: Default::default(),
-        }
-    }
 }
 
 impl SystemExclusiveData for SwitchControl {
@@ -464,19 +422,17 @@ impl fmt::Display for Polyphony {
 }
 
 /// Amplitude modulation kind.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum AmplitudeModulation {
+    #[default]
     Off,
+
     Source2,
     Source3,
     Source4,
     Source5,
     Source6,
-}
-
-impl Default for AmplitudeModulation {
-    fn default() -> Self { AmplitudeModulation::Off }
 }
 
 impl fmt::Display for AmplitudeModulation {

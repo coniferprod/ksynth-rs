@@ -226,7 +226,7 @@ impl SinglePatch {
 
         let mut s14 = vibrato_bytes[0] << 4;
         for i in 0..4 {
-            s14.set_bit(i, if self.source_mutes[i] { true } else { false });
+            s14.set_bit(i, self.source_mutes[i]);
         }
         buf.push(s14);
 
@@ -458,22 +458,22 @@ impl SystemExclusiveData for SinglePatch {
         //let original_checksum = b; // store the checksum as we got it from SysEx
 
         Ok(SinglePatch {
-            name: name,
+            name,
             volume: Level::new(volume).unwrap(),
             effect: EffectNumber::new(effect).unwrap(),
-            submix: submix,
+            submix,
             source_mode: SourceMode::try_from(source_mode).unwrap(),
             polyphony_mode: PolyphonyMode::try_from(polyphony_mode).unwrap(),
-            am12: am12,
-            am34: am34,
-            source_mutes: source_mutes,
-            bender_range: bender_range,
+            am12,
+            am34,
+            source_mutes,
+            bender_range,
             wheel_assign: WheelAssign::try_from(wheel_assign).unwrap(),
-            wheel_depth: wheel_depth,
+            wheel_depth,
             auto_bend: auto_bend?,
             lfo: lfo?,
             vibrato: vibrato?,
-            press_freq: press_freq,
+            press_freq,
             sources: [s1?, s2?, s3?, s4?],
             amplifiers: [a1?, a2?, a3?, a4?],
             filter1: f1?,
@@ -497,7 +497,7 @@ impl Checksum for SinglePatch {
         let data = self.collect_data();
         let mut total = data.iter().fold(0, |acc, x| acc + ((*x as u32) & 0xFF));
         total += 0xA5;
-        ((total & 0x7F) as u8).try_into().unwrap()
+        (total & 0x7F) as u8
     }
 }
 

@@ -54,7 +54,7 @@ pub enum Effect {
 
 impl fmt::Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", EFFECT_NAMES[*self as usize].to_string())
+        write!(f, "{}", EFFECT_NAMES[*self as usize])
     }
 }
 
@@ -107,7 +107,7 @@ impl fmt::Display for EffectPatch {
         write!(
             f,
             "{}, {} = {}, {} = {}, {} = {}",
-            EFFECT_NAMES[self.effect as usize].to_string(),
+            EFFECT_NAMES[self.effect as usize],
             EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1.into_inner(),
             EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2.into_inner(),
             EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3.into_inner()
@@ -117,12 +117,13 @@ impl fmt::Display for EffectPatch {
 
 impl EffectPatch {
     fn collect_data(&self) -> Vec<u8> {
-        let mut buf: Vec<u8> = Vec::new();
+        let mut buf = vec![
+            self.effect as u8 - 1,
+            (self.param1.into_inner() + 7) as u8,
+            (self.param2.into_inner() + 7) as u8,
+            self.param3.into_inner()
+        ];
 
-        buf.push(self.effect as u8 - 1);
-        buf.push((self.param1.into_inner() + 7) as u8);
-        buf.push((self.param2.into_inner() + 7) as u8);
-        buf.push(self.param3.into_inner());
         buf.extend(vec![0, 0, 0, 0, 0, 0]); // six dummy bytes
 
         for i in 0..SUBMIX_COUNT {
@@ -133,11 +134,11 @@ impl EffectPatch {
     }
 
     pub fn parameter_names(&self) -> Vec<String> {
-        let mut result = Vec::<String>::new();
-        result.push(EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0].to_string());
-        result.push(EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1].to_string());
-        result.push(EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2].to_string());
-        result
+        vec![
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0].to_string(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1].to_string(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2].to_string(),
+        ]
     }
 }
 
@@ -184,7 +185,7 @@ impl Checksum for EffectPatch {
         let data = self.collect_data();
         let mut total = data.iter().fold(0, |acc, x| acc + ((*x as u32) & 0xFF));
         total += 0xA5;
-        ((total & 0x7F) as u8).try_into().unwrap()
+        (total & 0x7F) as u8
     }
 }
 

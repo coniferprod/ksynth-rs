@@ -4,7 +4,9 @@
 use std::convert::TryFrom;
 use std::fmt;
 use num_enum::TryFromPrimitive;
-use crate::{SystemExclusiveData, ParseError};
+use crate::{
+    SystemExclusiveData, ParseError
+};
 use crate::k5000::MIDIChannel;
 
 /// Kawai K5000 System Exclusive functions.
@@ -63,7 +65,7 @@ impl SystemExclusiveData for Message {
 
 
 /// Cardinality of SysEx message (one patch or block of patches).
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
 pub enum Cardinality {
     One = 0x20,
@@ -76,8 +78,16 @@ impl From<Cardinality> for u8 {
     }
 }
 
+/*
+impl Into<u8> for Cardinality {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+ */
+
 /// K5000 bank identifier.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
 pub enum BankIdentifier {
     A = 0x00,
@@ -86,6 +96,12 @@ pub enum BankIdentifier {
     D = 0x02,  // only on K5000S/R
     E = 0x03,
     F = 0x04,
+}
+
+impl From<BankIdentifier> for u8 {
+    fn from(b: BankIdentifier) -> u8 {
+        b as u8
+    }
 }
 
 impl TryFrom<u8> for BankIdentifier {
@@ -104,13 +120,19 @@ impl TryFrom<u8> for BankIdentifier {
 }
 
 /// Patch kind.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
 pub enum PatchKind {
     Single = 0x00,
     Multi = 0x20, // combi on K5000W
     DrumKit = 0x10,
     DrumInstrument = 0x11,
+}
+
+impl From<PatchKind> for u8 {
+    fn from(val: PatchKind) -> Self {
+        val as u8
+    }
 }
 
 /// System Exclusive dump header.
@@ -132,7 +154,7 @@ impl Header {
     /// # Arguments
     ///
     /// * `buf` - a byte vector with the header data
-    pub fn identify_vec(buf: &Vec<u8>) -> Option<Header> {
+    pub fn identify_vec(buf: &[u8]) -> Option<Header> {
         let channel = MIDIChannel::from(buf[0]);  // will be converted to 1...16
         match &buf[1..] {
             // One ADD Bank A (see 3.1.1b)
@@ -349,6 +371,51 @@ impl fmt::Display for Header {
                 }
             )
         }
+    }
+}
+
+impl SystemExclusiveData for Header {
+    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+        if let Some(header) = Header::identify_vec(&data) {
+            Ok(header)
+        }
+        else {
+            Err(ParseError::InvalidData(0))
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut result = vec![
+            // Every dump command header has the MIDI channel.
+            // into() converts channel to SysEx-compatible u8
+            // (from 1...16 to 0...15)
+            self.channel.into(),
+
+            self.cardinality.into(),
+
+            // Every command header has these constant bytes:
+            0x00,
+            0x0A,
+
+            // Kind is "7th" byte in the MIDI manual
+            self.kind.into(),
+        ];
+
+        // Only single patches need a bank
+        if self.kind == PatchKind::Single {
+            result.push(self.bank_identifier.unwrap().into());
+        }
+
+        // Add any sub-bytes (zero or more).
+        // For drum kit and drum instrument, and "Block PCM Bank B",
+        // sub-bytes will be empty.
+        result.extend(&self.sub_bytes);
+
+        result
+    }
+
+    fn data_size(&self) -> usize { 
+        self.size() 
     }
 }
 

@@ -6,8 +6,19 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k5000::{EnvelopeTime, EnvelopeLevel, ControlTime, EnvelopeDepth, Cutoff, Resonance, Level};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k5000::{
+    EnvelopeTime, 
+    EnvelopeLevel, 
+    ControlTime, 
+    EnvelopeDepth, 
+    Cutoff, 
+    Resonance, 
+    Level
+};
 use crate::k5000::control::VelocityCurve;
 
 /// Filter mode.
@@ -157,18 +168,10 @@ impl SystemExclusiveData for VelocityControl {
 }
 
 /// Modulation settings for the filter.
+#[derive(Default)]
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_to_env: VelocityControl,
-}
-
-impl Default for Modulation {
-    fn default() -> Self {
-        Modulation {
-            ks_to_env: Default::default(),
-            vel_to_env: Default::default(),
-        }
-    }
 }
 
 impl SystemExclusiveData for Modulation {
@@ -242,7 +245,7 @@ impl fmt::Display for Filter {
 impl SystemExclusiveData for Filter {
     fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         Ok(Filter {
-            is_active: if data[0] == 1 { false } else { true },  // value of 1 means filter is bypassed
+            is_active: data[0] != 1,  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
             velocity_curve: VelocityCurve::try_from(data[2]).unwrap(),  // from 0 ~ 11 to enum
             resonance: Resonance::from(data[3]),

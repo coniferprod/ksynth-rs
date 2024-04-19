@@ -64,10 +64,12 @@ static EFFECT_NAMES: &[&str] = &[
 ];
 
 /// Effect type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash, Default)]
 #[repr(u8)]
 pub enum Effect {
+    #[default]
     Hall1,
+
     Hall2,
     Hall3,
     Room1,
@@ -117,13 +119,9 @@ pub enum Effect {
     DistortionAndDelay,
 }
 
-impl Default for Effect {
-    fn default() -> Self { Effect::Hall1 }
-}
-
 impl fmt::Display for Effect {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", EFFECT_NAMES[*self as usize].to_string())
+        write!(f, "{}", EFFECT_NAMES[*self as usize])
     }
 }
 
@@ -218,7 +216,7 @@ impl fmt::Display for EffectDefinition {
         write!(
             f,
             "{}, depth = {}, {} = {}, {} = {}, {} = {}, {} = {}",
-            EFFECT_NAMES[self.effect as usize].to_string(),
+            EFFECT_NAMES[self.effect as usize],
             self.depth.value(),
             EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1.value(),
             EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2.value(),
@@ -327,10 +325,12 @@ impl SystemExclusiveData for EffectSettings {
 }
 
 /// Effect destinations.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum EffectDestination {
+    #[default]
     Effect1DryWet,
+
     Effect1Parameter,
     Effect2DryWet,
     Effect2Parameter,
@@ -340,26 +340,12 @@ pub enum EffectDestination {
     Effect4Parameter,
 }
 
-impl Default for EffectDestination {
-    fn default() -> Self { EffectDestination::Effect1DryWet }
-}
-
 /// Effect control source.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ControlSource {
     pub source: control::ControlSource,  // 0~13
     pub destination: EffectDestination,  // 0~9
     pub depth: Depth, // (-31)33~(+31)95
-}
-
-impl Default for ControlSource {
-    fn default() -> Self {
-        ControlSource {
-            source: Default::default(),
-            destination: Default::default(),
-            depth: Default::default(),
-        }
-    }
 }
 
 impl SystemExclusiveData for ControlSource {
@@ -377,20 +363,12 @@ impl SystemExclusiveData for ControlSource {
 }
 
 /// Effect control with two sources.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct EffectControl {
     pub source1: ControlSource,
     pub source2: ControlSource,
 }
 
-impl Default for EffectControl {
-    fn default() -> Self {
-        EffectControl {
-            source1: Default::default(),
-            source2: Default::default(),
-        }
-    }
-}
 impl SystemExclusiveData for EffectControl {
     fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
         Ok(EffectControl {

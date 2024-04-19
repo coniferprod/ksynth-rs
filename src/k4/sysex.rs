@@ -84,7 +84,7 @@ impl SystemExclusiveData for Header {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            (self.channel.into_inner() - 1).try_into().unwrap(),  // 1...16 to 0...15
+            self.channel.into_inner() - 1,  // 1...16 to 0...15
             self.function as u8,
             GROUP,
             MACHINE_ID,
@@ -161,9 +161,9 @@ impl Dump {
                 Ok(Dump { kind: Kind::OneEffect(number), locality: Locality::Internal, payload: raw_data.to_vec() }),
             (Function::OnePatchDataDump, 0x03, number) if (0..=31).contains(&number) =>
                 Ok(Dump { kind: Kind::OneEffect(number), locality: Locality::External, payload: raw_data.to_vec() }),
-            (Function::OnePatchDataDump, 0x01, number) if number == 32 =>
+            (Function::OnePatchDataDump, 0x01, 32) =>
                 Ok(Dump { kind: Kind::Drum, locality: Locality::Internal, payload: raw_data.to_vec() }),
-            (Function::OnePatchDataDump, 0x03, number) if number == 32 =>
+            (Function::OnePatchDataDump, 0x03, 32) =>
                 Ok(Dump { kind: Kind::Drum, locality: Locality::External, payload: raw_data.to_vec() }),
             (Function::BlockPatchDataDump, 0x00, 0x00) =>
                 Ok(Dump { kind: Kind::BlockSingle, locality: Locality::Internal, payload: raw_data.to_vec() }),

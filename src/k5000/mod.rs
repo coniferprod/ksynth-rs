@@ -18,6 +18,9 @@ pub mod addkit;
 pub mod wave;
 pub mod sysex;
 
+/// Length of patch name
+pub const NAME_LENGTH: usize = 8;
+
 /// A simple struct for wrapping an `i32` with const generic parameters to limit
 /// the range of allowed values.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -119,9 +122,9 @@ impl From<u8> for Volume {
     }
 }
 
-impl Into<u8> for Volume {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<Volume> for u8 {
+    fn from(val: Volume) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -183,9 +186,9 @@ impl From<u8> for BenderPitch {
     }
 }
 
-impl Into<u8> for BenderPitch {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<BenderPitch> for u8 {
+    fn from(val: BenderPitch) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -247,9 +250,9 @@ impl From<u8> for BenderCutoff {
     }
 }
 
-impl Into<u8> for BenderCutoff {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<BenderCutoff> for u8 {
+    fn from(val: BenderCutoff) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -311,9 +314,9 @@ impl From<u8> for EnvelopeTime {
     }
 }
 
-impl Into<u8> for EnvelopeTime {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<EnvelopeTime> for u8 {
+    fn from(val: EnvelopeTime) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -375,9 +378,9 @@ impl From<u8> for EnvelopeLevel {
     }
 }
 
-impl Into<u8> for EnvelopeLevel {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<EnvelopeLevel> for u8 {
+    fn from(val: EnvelopeLevel) -> Self {
+        (val.value() + 64) as u8
     }
 }
 
@@ -439,9 +442,9 @@ impl From<u8> for EnvelopeRate {
     }
 }
 
-impl Into<u8> for EnvelopeRate {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<EnvelopeRate> for u8 {
+    fn from(val: EnvelopeRate) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -503,9 +506,9 @@ impl From<u8> for HarmonicEnvelopeLevel {
     }
 }
 
-impl Into<u8> for HarmonicEnvelopeLevel {
-    fn into(self) -> u8 {
-        self.value() as u8
+impl From<HarmonicEnvelopeLevel> for u8 {
+    fn from(val: HarmonicEnvelopeLevel) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -567,9 +570,9 @@ impl From<u8> for Bias {
     }
 }
 
-impl Into<u8> for Bias {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<Bias> for u8 {
+    fn from(val: Bias) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -578,7 +581,6 @@ impl fmt::Display for Bias {
         write!(f, "{}", self.value())
     }
 }
-
 
 type ControlTimeValue = RangedInteger::<-63, 63>;
 
@@ -632,9 +634,9 @@ impl From<u8> for ControlTime {
     }
 }
 
-impl Into<u8> for ControlTime {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<ControlTime> for u8 {
+    fn from(val: ControlTime) -> Self {
+        (val.value() + 64) as u8 // value needs adjustment for SysEx
     }
 }
 
@@ -696,9 +698,9 @@ impl From<u8> for EnvelopeDepth {
     }
 }
 
-impl Into<u8> for EnvelopeDepth {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<EnvelopeDepth> for u8 {
+    fn from(val: EnvelopeDepth) -> Self {
+        (val.value() + 64) as u8 // value needs adjustment for SysEx
     }
 }
 
@@ -760,9 +762,9 @@ impl From<u8> for LFOSpeed {
     }
 }
 
-impl Into<u8> for LFOSpeed {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<LFOSpeed> for u8 {
+    fn from(val: LFOSpeed) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -824,9 +826,9 @@ impl From<u8> for LFODepth {
     }
 }
 
-impl Into<u8> for LFODepth {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<LFODepth> for u8 {
+    fn from(val: LFODepth) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -889,9 +891,9 @@ impl From<u8> for KeyScaling {
     }
 }
 
-impl Into<u8> for KeyScaling {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<KeyScaling> for u8 {
+    fn from(val: KeyScaling) -> Self {
+        (val.value() + 64) as u8 // value needs adjustment for SysEx
     }
 }
 
@@ -954,9 +956,9 @@ impl From<u8> for EffectParameter {
     }
 }
 
-impl Into<u8> for EffectParameter {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<EffectParameter> for u8 {
+    fn from(val: EffectParameter) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1019,9 +1021,9 @@ impl From<u8> for Cutoff {
     }
 }
 
-impl Into<u8> for Cutoff {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<Cutoff> for u8 {
+    fn from(val: Cutoff) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1083,9 +1085,9 @@ impl From<u8> for Resonance {
     }
 }
 
-impl Into<u8> for Resonance {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<Resonance> for u8 {
+    fn from(val: Resonance) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1147,9 +1149,9 @@ impl From<u8> for Level {
     }
 }
 
-impl Into<u8> for Level {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<Level> for u8 {
+    fn from(val: Level) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1212,9 +1214,9 @@ impl From<u8> for PitchEnvelopeLevel {
     }
 }
 
-impl Into<u8> for PitchEnvelopeLevel {
-    fn into(self) -> u8 {
-        (self.value() as u8) + 64
+impl From<PitchEnvelopeLevel> for u8 {
+    fn from(val: PitchEnvelopeLevel) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1276,9 +1278,9 @@ impl From<u8> for PitchEnvelopeTime {
     }
 }
 
-impl Into<u8> for PitchEnvelopeTime {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<PitchEnvelopeTime> for u8 {
+    fn from(val: PitchEnvelopeTime) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1340,9 +1342,9 @@ impl From<u8> for VelocityDepth {
     }
 }
 
-impl Into<u8> for VelocityDepth {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<VelocityDepth> for u8 {
+    fn from(val: VelocityDepth) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1404,9 +1406,9 @@ impl From<u8> for VelocityControlLevel {
     }
 }
 
-impl Into<u8> for VelocityControlLevel {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<VelocityControlLevel> for u8 {
+    fn from(val: VelocityControlLevel) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1469,9 +1471,9 @@ impl From<u8> for PortamentoLevel {
     }
 }
 
-impl Into<u8> for PortamentoLevel {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<PortamentoLevel> for u8 {
+    fn from(val: PortamentoLevel) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1533,9 +1535,9 @@ impl From<u8> for KeyOnDelay {
     }
 }
 
-impl Into<u8> for KeyOnDelay {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<KeyOnDelay> for u8 {
+    fn from(val: KeyOnDelay) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1598,9 +1600,9 @@ impl From<u8> for VelocitySensitivity {
     }
 }
 
-impl Into<u8> for VelocitySensitivity {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<VelocitySensitivity> for u8 {
+    fn from(val: VelocitySensitivity) -> Self {
+        (val.value() + 64) as u8
     }
 }
 
@@ -1662,9 +1664,9 @@ impl From<u8> for ControlDepth {
     }
 }
 
-impl Into<u8> for ControlDepth {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<ControlDepth> for u8 {
+    fn from(val: ControlDepth) -> Self {
+        (val.value() + 64) as u8        
     }
 }
 
@@ -1726,9 +1728,9 @@ impl From<u8> for Depth {
     }
 }
 
-impl Into<u8> for Depth {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        self.value() as u8
+impl From<Depth> for u8 {
+    fn from(val: Depth) -> Self {
+        val.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -1790,9 +1792,9 @@ impl From<u8> for Pan {
     }
 }
 
-impl Into<u8> for Pan {
-    fn into(self) -> u8 {   // value can be used as such in SysEx
-        (self.value() + 64) as u8
+impl From<Pan> for u8 {
+    fn from(val: Pan) -> Self {
+        (val.value() + 64) as u8
     }
 }
 
@@ -1854,9 +1856,9 @@ impl From<u8> for KeyScalingToGain {
     }
 }
 
-impl Into<u8> for KeyScalingToGain {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<KeyScalingToGain> for u8 {
+    fn from(val: KeyScalingToGain) -> Self {
+        (val.value() + 64) as u8
     }
 }
 
@@ -1918,9 +1920,9 @@ impl From<u8> for Coarse {
     }
 }
 
-impl Into<u8> for Coarse {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+impl From<Coarse> for u8 {
+    fn from(val: Coarse) -> Self {
+        (val.value() + 64) as u8
     }
 }
 
@@ -1983,9 +1985,9 @@ impl From<u8> for Fine {
     }
 }
 
-impl Into<u8> for Fine {
-    fn into(self) -> u8 {
-        (self.value() as u8) + 64
+impl From<Fine> for u8 {
+    fn from(val: Fine) -> Self {
+        (val.value() as u8) + 64
     }
 }
 
@@ -2047,9 +2049,9 @@ impl From<u8> for MacroParameterDepth {
     }
 }
 
-impl Into<u8> for MacroParameterDepth {
-    fn into(self) -> u8 {
-        (self.value() as u8) + 64
+impl From<MacroParameterDepth> for u8 {
+    fn from(val: MacroParameterDepth) -> Self {
+        (val.value() as u8) + 64
     }
 }
 
@@ -2128,9 +2130,9 @@ impl From<u8> for MIDIChannel {
     }
 }
 
-impl Into<u8> for MIDIChannel {
-    fn into(self) -> u8 {
-        (self.value() as u8) - 1  // 1~16 to 0~15
+impl From<MIDIChannel> for u8 {
+    fn from(val: MIDIChannel) -> Self {
+        (val.value() as u8) - 1  // 1~16 to 0~15
     }
 }
 

@@ -4,8 +4,17 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k5000::{EnvelopeTime, EnvelopeLevel, ControlTime, KeyScaling, VelocityControlLevel};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k5000::{
+    EnvelopeTime, 
+    EnvelopeLevel, 
+    ControlTime, 
+    KeyScaling, 
+    VelocityControlLevel
+};
 use crate::k5000::control::VelocityCurve;
 
 /// Amplifier envelope.
@@ -168,19 +177,10 @@ impl SystemExclusiveData for VelocityControl {
 }
 
 /// Modulation settings for the amplifier section.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_sens: VelocityControl,
-}
-
-impl Default for Modulation {
-    fn default() -> Self {
-        Modulation {
-            ks_to_env: Default::default(),
-            vel_sens: Default::default(),
-        }
-    }
 }
 
 impl fmt::Display for Modulation {

@@ -8,15 +8,13 @@ use crate::k5000::morf::Loop;
 use crate::k5000::{EnvelopeRate, EnvelopeLevel, EnvelopeDepth, Bias, LFODepth, LFOSpeed};
 
 /// Formant filter envelope mode.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum Mode {
+    #[default]
     Envelope,
-    Lfo,
-}
 
-impl Default for Mode {
-    fn default() -> Self { Mode::Envelope }
+    Lfo,
 }
 
 /// Envelope segment.
@@ -105,16 +103,14 @@ impl SystemExclusiveData for Envelope {
 }
 
 /// Formant filter LFO shape.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
 #[repr(u8)]
 pub enum LFOShape {
+    #[default]
     Triangle,
+
     Sawtooth,
     Random,
-}
-
-impl Default for LFOShape {
-    fn default() -> Self { LFOShape::Triangle }
 }
 
 /// Formant filter LFO.

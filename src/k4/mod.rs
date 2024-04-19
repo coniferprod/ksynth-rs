@@ -32,11 +32,11 @@ fn get_effect_number(b: u8) -> u8 {
 }
 
 pub fn get_note_name(note_number: u8) -> String {
-    let notes = vec!["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
+    let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
     let octave = (note_number / 12) - 2;
     let name = notes[note_number as usize % 12];
 
-    format!("{}{}", name, octave.to_string())
+    format!("{}{}", name, octave)
 }
 
 // Domain types based on nutype.
