@@ -434,7 +434,7 @@ impl SystemExclusiveData for SinglePatch {
         let total_amp_data_size = 4 * 11;
         start = offset;
         end = start + total_amp_data_size;
-        let all_amp_data = data[start..end].to_vec();
+        let all_amp_data = &data[start..end];
 
         let a1 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 0));
         let a2 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 1));
@@ -446,7 +446,7 @@ impl SystemExclusiveData for SinglePatch {
         let total_filter_data_size = 2 * 14;
         start = offset;
         end = start + total_filter_data_size;
-        let all_filter_data = data[start..end].to_vec();
+        let all_filter_data = &data[start..end];
 
         let f1 = Filter::from_bytes(&every_nth_byte(&all_filter_data, 2, 0));
         let f2 = Filter::from_bytes(&every_nth_byte(&all_filter_data, 2, 1));
@@ -508,7 +508,7 @@ mod tests {
     #[test]
     fn test_single_patch_from_bytes() {
         let data: [u8; 131] = include!("a401single1.in");
-        let single_patch = SinglePatch::from_bytes(data.to_vec());
+        let single_patch = SinglePatch::from_bytes(&data);
         assert_eq!(single_patch.as_ref().unwrap().name, "Melo Vox 1");
         assert_eq!(single_patch.as_ref().unwrap().volume.into_inner(), 100);
     }

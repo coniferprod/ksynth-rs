@@ -46,7 +46,7 @@ impl fmt::Display for Common {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Multi/combi common data ({} bytes): {:?}", data.len(), data);
 
         let mut offset = 0;
@@ -54,13 +54,13 @@ impl SystemExclusiveData for Common {
         let mut start = offset;
         let mut end = offset + size;
 
-        let effects_data = data[start..end].to_vec();
+        let effects_data = &data[start..end];
         let effects = EffectSettings::from_bytes(effects_data);
         offset += size;
 
         size = 7;
         end = start + size;
-        let geq_data = data[start..end].to_vec();
+        let geq_data = data[start..end];
         let geq_values = geq_data.iter().map(|n| *n as i8 - 64).collect();  // 58(-6) ~ 70(+6), so 64 is zero
         offset += size;
 
@@ -86,7 +86,7 @@ impl SystemExclusiveData for Common {
         size = 6;
         start = offset;
         end = start + size;
-        let effect_control_data = data[start..end].to_vec();
+        let effect_control_data = data[start..end];
         let effect_control = EffectControl::from_bytes(effect_control_data);
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
@@ -159,7 +159,7 @@ impl Default for Section {
 }
 
 impl SystemExclusiveData for Section {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Multi section data, {} bytes", data.len());
 
         let mut offset = 0;
@@ -255,17 +255,17 @@ impl Default for MultiPatch {
 }
 
 impl SystemExclusiveData for MultiPatch {
-    fn from_bytes(data: Vec<u8>) -> Self {
+    fn from_bytes(data: &[u8]) -> Self {
         eprintln!("Multi");
 
         MultiPatch {
             checksum: data[0],
-            common: Common::from_bytes(data[1..55].to_vec()),
+            common: Common::from_bytes(data[1..55]),
             sections: [
-                Section::from_bytes(data[55..67].to_vec()),
-                Section::from_bytes(data[67..79].to_vec()),
-                Section::from_bytes(data[79..91].to_vec()),
-                Section::from_bytes(data[91..103].to_vec()),
+                Section::from_bytes(data[55..67]),
+                Section::from_bytes(data[67..79]),
+                Section::from_bytes(data[79..91]),
+                Section::from_bytes(data[91..103]),
             ]
         }
     }

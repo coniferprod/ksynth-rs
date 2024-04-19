@@ -226,19 +226,19 @@ impl SystemExclusiveData for Amplifier {
 
         start = offset;
         end = start + 4;
-        let envelope_bytes = data[start..end].to_vec();
+        let envelope_bytes = &data[start..end];
         let envelope = Envelope::from_bytes(&envelope_bytes);
         offset += 4;
 
         start = offset;
         end = start + 3;
-        let level_mod_bytes = data[start..end].to_vec();
+        let level_mod_bytes = &data[start..end];
         let level_modulation = LevelModulation::from_bytes(&level_mod_bytes);
         offset += 3;
 
         start = offset;
         end = start + 3;
-        let time_mod_bytes = data[start..end].to_vec();
+        let time_mod_bytes = &data[start..end];
         let time_modulation = TimeModulation::from_bytes(&time_mod_bytes);
 
         Ok(Amplifier {
