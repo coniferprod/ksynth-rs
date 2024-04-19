@@ -7,8 +7,14 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k4::{Level, ModulationDepth};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k4::{
+    Level, 
+    ModulationDepth
+};
 
 /// LFO shape.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -76,7 +82,7 @@ impl fmt::Display for Lfo {
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Lfo {
             shape: Shape::try_from(data[0] & 0x03).unwrap(),
             speed: Level::new(data[1] & 0x7f).unwrap(),
@@ -143,7 +149,7 @@ impl fmt::Display for Vibrato {
 }
 
 impl SystemExclusiveData for Vibrato {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Vibrato {
             shape: Shape::try_from((data[0] >> 4) & 0x03).unwrap(),
             speed: Level::new(data[1] & 0x7f).unwrap(),

@@ -8,9 +8,15 @@ use std::collections::HashMap;
 use num_enum::TryFromPrimitive;
 use lazy_static::lazy_static;
 
-use crate::{SystemExclusiveData, ParseError};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
 use crate::k5000::control;
-use crate::k5000::{EffectParameter, Depth};
+use crate::k5000::{
+    EffectParameter, 
+    Depth
+};
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -240,7 +246,7 @@ impl Default for EffectDefinition {
 }
 
 impl SystemExclusiveData for EffectDefinition {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectDefinition, data = {:02X?}", data);
         Ok(EffectDefinition {
             effect: Effect::try_from(data[0]).unwrap(),  // 11~47
@@ -295,15 +301,15 @@ impl Default for EffectSettings {
 }
 
 impl SystemExclusiveData for EffectSettings {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectSettings");
         Ok(EffectSettings {
             algorithm: EffectAlgorithm::try_from(data[0]).unwrap(),  // 0~3 to enum
-            reverb: EffectDefinition::from_bytes(data[1..7].to_vec())?,
-            effect1: EffectDefinition::from_bytes(data[7..13].to_vec())?,
-            effect2: EffectDefinition::from_bytes(data[13..19].to_vec())?,
-            effect3: EffectDefinition::from_bytes(data[19..25].to_vec())?,
-            effect4: EffectDefinition::from_bytes(data[25..31].to_vec())?,
+            reverb: EffectDefinition::from_bytes(&data[1..7])?,
+            effect1: EffectDefinition::from_bytes(&data[7..13])?,
+            effect2: EffectDefinition::from_bytes(&data[13..19])?,
+            effect3: EffectDefinition::from_bytes(&data[19..25])?,
+            effect4: EffectDefinition::from_bytes(&data[25..31])?,
         })
     }
 
@@ -349,7 +355,7 @@ pub struct ControlSource {
 }
 
 impl SystemExclusiveData for ControlSource {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(ControlSource {
             source: control::ControlSource::try_from(data[0]).unwrap(),
             destination: EffectDestination::try_from(data[1]).unwrap(),
@@ -370,10 +376,10 @@ pub struct EffectControl {
 }
 
 impl SystemExclusiveData for EffectControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(EffectControl {
-            source1: ControlSource::from_bytes(data[0..3].to_vec())?,
-            source2: ControlSource::from_bytes(data[3..6].to_vec())?,
+            source1: ControlSource::from_bytes(&data[0..3])?,
+            source2: ControlSource::from_bytes(&data[3..6])?,
         })
     }
 
@@ -430,7 +436,7 @@ mod tests {
             0x2a, 0x00, 0x0c, 0x0c, 0x63, 0x00,  // effect 4 (as above)
         ];
 
-        let effect_settings = EffectSettings::from_bytes(data);
+        let effect_settings = EffectSettings::from_bytes(&data);
         assert_eq!(effect_settings.unwrap().effect4.parameter3.value(), 0x63);
     }
 }

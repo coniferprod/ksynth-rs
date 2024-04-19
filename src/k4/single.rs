@@ -127,7 +127,7 @@ impl fmt::Display for AutoBend {
 }
 
 impl SystemExclusiveData for AutoBend {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(AutoBend {
             time: Level::new(data[0] & 0x7f).unwrap(),
             depth: ModulationDepth::new(((data[1] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
@@ -326,7 +326,7 @@ impl fmt::Display for SinglePatch {
 }
 
 impl SystemExclusiveData for SinglePatch {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize = 0;
 
@@ -397,7 +397,7 @@ impl SystemExclusiveData for SinglePatch {
 
         start = offset;
         end = offset + 4;
-        let auto_bend = AutoBend::from_bytes(data[start..end].to_vec());
+        let auto_bend = AutoBend::from_bytes(&data[start..end]);
         offset += 4;
 
         b = data[offset];
@@ -408,11 +408,11 @@ impl SystemExclusiveData for SinglePatch {
         offset += 1;
         vibrato_bytes.push(b);  // vib depth
 
-        let vibrato = Vibrato::from_bytes(vibrato_bytes);
+        let vibrato = Vibrato::from_bytes(&vibrato_bytes);
 
         start = offset;
         end = start + 5;
-        let lfo = Lfo::from_bytes(data[start..end].to_vec());
+        let lfo = Lfo::from_bytes(&data[start..end]);
         offset += 5;
 
         b = data[offset];
@@ -422,12 +422,12 @@ impl SystemExclusiveData for SinglePatch {
         let total_source_data_size = 4 * 7;
         start = offset;
         end = start + total_source_data_size;
-        let all_source_data = data[start..end].to_vec();
+        let all_source_data = &data[start..end];
 
-        let s1 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 0));
-        let s2 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 1));
-        let s3 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 2));
-        let s4 = Source::from_bytes(every_nth_byte(&all_source_data, 4, 3));
+        let s1 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 0));
+        let s2 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 1));
+        let s3 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 2));
+        let s4 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 3));
 
         offset += total_source_data_size;
 
@@ -436,10 +436,10 @@ impl SystemExclusiveData for SinglePatch {
         end = start + total_amp_data_size;
         let all_amp_data = data[start..end].to_vec();
 
-        let a1 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 0));
-        let a2 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 1));
-        let a3 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 2));
-        let a4 = Amplifier::from_bytes(every_nth_byte(&all_amp_data, 4, 3));
+        let a1 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 0));
+        let a2 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 1));
+        let a3 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 2));
+        let a4 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 3));
 
         offset += total_amp_data_size;
 
@@ -448,8 +448,8 @@ impl SystemExclusiveData for SinglePatch {
         end = start + total_filter_data_size;
         let all_filter_data = data[start..end].to_vec();
 
-        let f1 = Filter::from_bytes(every_nth_byte(&all_filter_data, 2, 0));
-        let f2 = Filter::from_bytes(every_nth_byte(&all_filter_data, 2, 1));
+        let f1 = Filter::from_bytes(&every_nth_byte(&all_filter_data, 2, 0));
+        let f2 = Filter::from_bytes(&every_nth_byte(&all_filter_data, 2, 1));
 
         //offset += total_filter_data_size;
 

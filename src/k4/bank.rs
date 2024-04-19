@@ -4,7 +4,10 @@
 use std::fmt;
 use log::debug;
 
-use crate::{SystemExclusiveData, ParseError};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
 use crate::k4::single::SinglePatch;
 use crate::k4::multi::MultiPatch;
 use crate::k4::effect::EffectPatch;
@@ -47,14 +50,14 @@ impl fmt::Display for Bank {
 }
 
 impl SystemExclusiveData for Bank {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         debug!("Parsing single patches, offset = {}", offset);
 
         let mut singles = Vec::<SinglePatch>::new();
         for i in 0..SINGLE_PATCH_COUNT {
-            let single = SinglePatch::from_bytes(data[offset..].to_vec());
+            let single = SinglePatch::from_bytes(&data[offset..]);
             debug!("{}: {}", i, single.as_ref().unwrap().name);
             offset += single.as_ref().unwrap().data_size();
             singles.push(single?);
@@ -70,7 +73,7 @@ impl SystemExclusiveData for Bank {
 
         let mut multis = Vec::<MultiPatch>::new();
         for i in 0..MULTI_PATCH_COUNT {
-            let multi = MultiPatch::from_bytes(data[offset..].to_vec());
+            let multi = MultiPatch::from_bytes(&data[offset..]);
             debug!("{}: {}", i, multi.as_ref().unwrap().name);
             offset += multi.as_ref().unwrap().data_size();
             multis.push(multi?);
@@ -82,7 +85,7 @@ impl SystemExclusiveData for Bank {
 
         debug!("Parsing drum patches, offset = {}", offset);
 
-        let drum = DrumPatch::from_bytes(data[offset..].to_vec());
+        let drum = DrumPatch::from_bytes(&data[offset..]);
         offset += drum.as_ref().unwrap().data_size();
 
         block_size = drum.as_ref().unwrap().data_size();
@@ -93,7 +96,7 @@ impl SystemExclusiveData for Bank {
 
         let mut effects = Vec::<EffectPatch>::new();
         for i in 0..EFFECT_PATCH_COUNT {
-            let effect = EffectPatch::from_bytes(data[offset..].to_vec());
+            let effect = EffectPatch::from_bytes(&data[offset..]);
             debug!("{}: {}", i, effect.as_ref().unwrap().effect);
             offset += effect.as_ref().unwrap().data_size();
             effects.push(effect?);
@@ -128,7 +131,8 @@ impl SystemExclusiveData for Bank {
             buf.extend(self.effects[i].to_bytes());
         }
 
-        assert_eq!(buf.len(), 15123 - 8 - 1);  // full bank minus SysEx header and terminator
+        // full bank minus SysEx header and terminator
+        assert_eq!(buf.len(), 15123 - 8 - 1);  
 
         buf
     }
@@ -150,7 +154,7 @@ mod tests {
         let data: [u8; 15123] = include!("a401.in");
 
         // Skip the SysEx header when constructing the bank
-        let bank = Bank::from_bytes(data[8..].to_vec());
+        let bank = Bank::from_bytes(&data[8..]);
 
         assert_eq!(bank.as_ref().unwrap().singles.len(), SINGLE_PATCH_COUNT);
         assert_eq!(bank.as_ref().unwrap().effects.len(), EFFECT_PATCH_COUNT);

@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use crate::{SystemExclusiveData, ParseError};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
 
 static WAVE_NAMES: &[&str] = &[
     "(not used)",  // just to bring the index in line with the one-based wave number
@@ -539,7 +542,7 @@ impl fmt::Display for Wave {
 }
 
 impl SystemExclusiveData for Wave {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let bit_str = format!("{:03b}{:07b}", data[0], data[1]);
         let n = u16::from_str_radix(&bit_str, 2).unwrap();
 
@@ -576,13 +579,13 @@ mod tests {
 
     #[test]
     fn test_wave_from_bytes() {
-        let w = Wave::from_bytes(vec![0x03, 0x1A]);
+        let w = Wave::from_bytes(&[0x03, 0x1A]);
         assert_eq!(w.unwrap().number, 411);
     }
 
     #[test]
     fn test_add_wave_from_bytes() {
-        let w = Wave::from_bytes(vec![0x04, 0x00]);
+        let w = Wave::from_bytes(&[0x04, 0x00]);
         assert_eq!(w.unwrap().number, 512);
     }
 

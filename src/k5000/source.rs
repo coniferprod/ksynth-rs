@@ -3,13 +3,25 @@
 
 use std::fmt;
 
-use crate::k5000::control::{VelocitySwitchSettings, ModulationSettings, PanSettings};
-use crate::{SystemExclusiveData, ParseError};
+use crate::k5000::control::{
+    VelocitySwitchSettings, 
+    ModulationSettings, 
+    PanSettings
+};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
 use crate::k5000::osc::*;
 use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
-use crate::k5000::{Volume, BenderPitch, BenderCutoff, KeyOnDelay};
+use crate::k5000::{
+    Volume, 
+    BenderPitch, 
+    BenderCutoff, 
+    KeyOnDelay
+};
 
 use pretty_hex::*;
 
@@ -60,7 +72,7 @@ impl fmt::Display for Zone {
 }
 
 impl SystemExclusiveData for Zone {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Zone { low: Key { note: data[0] }, high: Key { note: data[1] } })
     }
 
@@ -110,19 +122,19 @@ impl fmt::Display for SourceControl {
 }
 
 impl SystemExclusiveData for SourceControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Source control data = {}", simple_hex(&data));
 
         Ok(SourceControl {
             zone: Zone { low: Key { note: data[0] }, high: Key { note: data[1] } },
-            vel_sw: VelocitySwitchSettings::from_bytes(vec![data[2]])?,
+            vel_sw: VelocitySwitchSettings::from_bytes(&[data[2]])?,
             effect_path: data[3],
             volume: Volume::from(data[4]),
             bender_pitch: BenderPitch::from(data[5]),
             bender_cutoff: BenderCutoff::from(data[6]),
-            modulation: ModulationSettings::from_bytes(data[7..25].to_vec())?,
+            modulation: ModulationSettings::from_bytes(&data[7..25])?,
             key_on_delay: KeyOnDelay::from(data[25]),
-            pan: PanSettings::from_bytes(data[26..28].to_vec())?,
+            pan: PanSettings::from_bytes(&data[26..28])?,
         })
     }
 
@@ -189,14 +201,14 @@ impl fmt::Display for Source {
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Source data ({} bytes): {:?}", data.len(), data);
         Ok(Source {
-            control: SourceControl::from_bytes(data[..28].to_vec())?,
-            oscillator: Oscillator::from_bytes(data[28..40].to_vec())?,
-            filter: Filter::from_bytes(data[40..60].to_vec())?,
-            amplifier: Amplifier::from_bytes(data[60..75].to_vec())?,
-            lfo: Lfo::from_bytes(data[75..86].to_vec())?,
+            control: SourceControl::from_bytes(&data[..28])?,
+            oscillator: Oscillator::from_bytes(&data[28..40])?,
+            filter: Filter::from_bytes(&data[40..60])?,
+            amplifier: Amplifier::from_bytes(&data[60..75])?,
+            lfo: Lfo::from_bytes(&data[75..86])?,
         })
     }
 
@@ -240,7 +252,7 @@ mod tests {
             0x00, 0x40,  // pan type and value
         ];
 
-        let source_control = SourceControl::from_bytes(data);
+        let source_control = SourceControl::from_bytes(&data);
         assert_eq!(source_control.as_ref().unwrap().zone.low.note, 0x00);
         assert_eq!(source_control.as_ref().unwrap().zone.high.note, 0x7f);
         assert_eq!(source_control.as_ref().unwrap().volume.value(), 0x78);
@@ -297,7 +309,7 @@ mod tests {
             0x00, 0x40,  // DCA (tremolo) depth and KS
         ];
 
-        let source = Source::from_bytes(data);
+        let source = Source::from_bytes(&data);
         assert_eq!(source.unwrap().lfo.speed.value(), 0x5d);
     }
 }

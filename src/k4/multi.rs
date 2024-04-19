@@ -71,7 +71,7 @@ impl fmt::Display for MultiPatch {
 }
 
 impl SystemExclusiveData for MultiPatch {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let start: usize = 0;
 
@@ -85,7 +85,7 @@ impl SystemExclusiveData for MultiPatch {
 
         let mut sections: [Section; SECTION_COUNT] = [Default::default(); SECTION_COUNT];
         for i in 0..SECTION_COUNT {
-            sections[i] = Section::from_bytes(data[offset .. offset + 8].to_vec())?;
+            sections[i] = Section::from_bytes(&data[offset .. offset + 8])?;
             offset += 8;
         }
 
@@ -156,17 +156,17 @@ impl Default for Section {
 }
 
 impl SystemExclusiveData for Section {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Section {
             single_number: PatchNumber::new(data[0]).unwrap(),
-            zone: Zone::from_bytes(vec![data[1], data[2]])?,
+            zone: Zone::from_bytes(&[data[1], data[2]])?,
             velocity_switch: VelocitySwitch::try_from((data[3] >> 4) & 0b0000_0011).unwrap(),
-            receive_channel: MIDIChannel::from_bytes(vec![data[3] & 0b0000_1111])?,  // adjust MIDI channel to 1...16
+            receive_channel: MIDIChannel::from_bytes(&[data[3] & 0b0000_1111])?,  // adjust MIDI channel to 1...16
             is_muted: data[3] >> 6 == 1,
             out_select: data[4] & 0b0000_0111,
             play_mode: PlayMode::try_from((data[4] >> 3) & 0b0000_0011).unwrap(),
             level: Level::new(data[5]).unwrap(),
-            transpose: Transpose::from_bytes(vec![data[6]])?,
+            transpose: Transpose::from_bytes(&[data[6]])?,
             tune: (data[7] as i8) - 50,
         })
     }
@@ -225,7 +225,7 @@ impl fmt::Display for Zone {
 }
 
 impl SystemExclusiveData for Zone {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(
             Zone { 
                 low_key: Key { note: data[0] }, 
@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn test_multi_patch_from_bytes() {
         let data: [u8; 77] = include!("a401multi1.in");
-        let patch = MultiPatch::from_bytes(data.to_vec());
+        let patch = MultiPatch::from_bytes(&data);
         assert_eq!(patch.as_ref().unwrap().name, "Fatt!Anna5");
         assert_eq!(patch.as_ref().unwrap().volume.into_inner(), 0x50);
     }

@@ -5,10 +5,21 @@ use std::fmt;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::collections::HashMap;
+
 use lazy_static::lazy_static;
 use num_enum::TryFromPrimitive;
-use crate::k4::{Level, SUBMIX_COUNT, SmallEffectParameter, BigEffectParameter};
-use crate::{SystemExclusiveData, ParseError, Checksum};
+
+use crate::k4::{
+    Level, 
+    SUBMIX_COUNT, 
+    SmallEffectParameter, 
+    BigEffectParameter
+};
+use crate::{
+    SystemExclusiveData, 
+    ParseError, 
+    Checksum
+};
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -143,7 +154,7 @@ impl EffectPatch {
 }
 
 impl SystemExclusiveData for EffectPatch {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         // data bytes 4...9 are the dummy bytes,
         // submix settings start at 10 with three bytes each
         let mut submixes = [Default::default(); SUBMIX_COUNT];
@@ -211,7 +222,7 @@ impl Default for SubmixSettings {
 }
 
 impl SystemExclusiveData for SubmixSettings {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(SubmixSettings {
             pan: data[0] as i32 - 7,
             send1: Level::new(data[1]).unwrap(),
@@ -279,7 +290,7 @@ mod tests {
     #[test]
     fn test_effect_patch_from_bytes() {
         let data: [u8; 35] = include!("a401effect32.in");
-        let patch = EffectPatch::from_bytes(data.to_vec());
+        let patch = EffectPatch::from_bytes(&data);
         assert_eq!(patch.unwrap().effect, Effect::Reverb1);
     }
 

@@ -65,7 +65,7 @@ impl fmt::Display for Source {
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
 
         let mut b: u8;
@@ -80,7 +80,7 @@ impl SystemExclusiveData for Source {
         let wave_low = data[offset] & 0x7f;
         offset += 1;
 
-        let wave = Wave::from_bytes(vec![wave_high, wave_low]);
+        let wave = Wave::from_bytes(&[wave_high, wave_low]);
 
         b = data[offset];
         offset += 1;

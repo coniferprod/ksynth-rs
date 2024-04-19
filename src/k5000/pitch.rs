@@ -3,8 +3,15 @@
 
 use std::fmt;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k5000::{PitchEnvelopeLevel, PitchEnvelopeTime, VelocitySensitivity};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k5000::{
+    PitchEnvelopeLevel, 
+    PitchEnvelopeTime, 
+    VelocitySensitivity
+};
 
 /// Pitch envelope.
 pub struct Envelope {
@@ -56,7 +63,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
             start: PitchEnvelopeLevel::from(data[0]),
             attack_time: PitchEnvelopeTime::from(data[1]),

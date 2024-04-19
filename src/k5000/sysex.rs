@@ -3,9 +3,12 @@
 
 use std::convert::TryFrom;
 use std::fmt;
+
 use num_enum::TryFromPrimitive;
+
 use crate::{
-    SystemExclusiveData, ParseError
+    SystemExclusiveData, 
+    ParseError
 };
 use crate::k5000::MIDIChannel;
 
@@ -38,7 +41,7 @@ pub struct Message {
 }
 
 impl SystemExclusiveData for Message {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Message {
             channel: MIDIChannel::new(data[2].into()),
             function: Function::try_from(data[3]).unwrap(),
@@ -77,14 +80,6 @@ impl From<Cardinality> for u8 {
         c as u8
     }
 }
-
-/*
-impl Into<u8> for Cardinality {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
- */
 
 /// K5000 bank identifier.
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -375,7 +370,7 @@ impl fmt::Display for Header {
 }
 
 impl SystemExclusiveData for Header {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         if let Some(header) = Header::identify_vec(&data) {
             Ok(header)
         }

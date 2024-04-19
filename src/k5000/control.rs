@@ -79,7 +79,7 @@ impl fmt::Display for VelocitySwitchSettings {
 }
 
 impl SystemExclusiveData for VelocitySwitchSettings {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let vs = data[0].bit_range(5..7) & 0b11;  // bits 5-6
         let t = data[0].bit_range(0..5); // bits 0-4
         eprintln!("VelocitySwitchSettings: vs = 0b{:b} ({}), t = 0b{:b} ({})", vs, vs, t, t);
@@ -201,7 +201,7 @@ impl fmt::Display for MacroController {
 }
 
 impl SystemExclusiveData for MacroController {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("MacroController from bytes {:?}", data);
 
         Ok(MacroController {
@@ -231,7 +231,7 @@ pub struct AssignableController {
 }
 
 impl SystemExclusiveData for AssignableController {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(AssignableController {
             source: ControlSource::try_from(data[0]).unwrap(),
             destination: ControlDestination::try_from(data[1]).unwrap(),
@@ -255,13 +255,13 @@ pub struct ModulationSettings {
 }
 
 impl SystemExclusiveData for ModulationSettings {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(ModulationSettings {
-            pressure: MacroController::from_bytes(data[..4].to_vec())?,
-            wheel: MacroController::from_bytes(data[4..8].to_vec())?,
-            expression: MacroController::from_bytes(data[8..12].to_vec())?,
-            assignable1: AssignableController::from_bytes(data[12..15].to_vec())?,  // NOTE: only three bytes
-            assignable2: AssignableController::from_bytes(data[15..18].to_vec())?,  // not four like macros
+            pressure: MacroController::from_bytes(&data[..4])?,
+            wheel: MacroController::from_bytes(&data[4..8])?,
+            expression: MacroController::from_bytes(&data[8..12])?,
+            assignable1: AssignableController::from_bytes(&data[12..15])?,  // NOTE: only three bytes
+            assignable2: AssignableController::from_bytes(&data[15..18])?,  // not four like macros
         })
     }
 
@@ -317,7 +317,7 @@ impl Default for PanSettings {
 }
 
 impl SystemExclusiveData for PanSettings {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(PanSettings {
             pan_type: PanKind::try_from(data[0]).unwrap(),
             pan_value: Pan::from(data[1]),
@@ -388,7 +388,7 @@ pub struct SwitchControl {
 }
 
 impl SystemExclusiveData for SwitchControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(SwitchControl {
             switch1: Switch::try_from(data[0]).unwrap(),
             switch2: Switch::try_from(data[1]).unwrap(),
@@ -492,7 +492,7 @@ mod tests {
     #[test]
     fn test_macro_controller_from_bytes() {
         let data = vec![0x01, 0x4f, 0x03, 0x40];
-        let mac = MacroController::from_bytes(data);
+        let mac = MacroController::from_bytes(&data);
         assert_eq!(mac.unwrap().destination1, ControlDestination::CutoffOffset);
     }
 

@@ -65,15 +65,15 @@ impl fmt::Display for DrumPatch {
 }
 
 impl SystemExclusiveData for DrumPatch {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
-        let common = Common::from_bytes(data[0..].to_vec());
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let common = Common::from_bytes(&data[0..]);
         let mut offset = common.as_ref().unwrap().data_size();
         let mut notes = [Default::default(); DRUM_NOTE_COUNT];
 
         for i in 0..DRUM_NOTE_COUNT {
             debug!("Parsing drum note {}, offset = {}", i, offset);
 
-            let note = Note::from_bytes(data[offset..].to_vec())?;
+            let note = Note::from_bytes(&data[offset..])?;
             notes[i] = note;
             offset += note.data_size();
         }
@@ -154,7 +154,7 @@ impl Checksum for Common {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Common {
             channel: Channel::new(data[0] + 1).unwrap(),
             volume: Level::new(data[1]).unwrap(),
@@ -233,7 +233,7 @@ impl Checksum for Note {
 }
 
 impl SystemExclusiveData for Note {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         // The bytes have S1 and S2 interleaved, so group them:
         let mut source1_bytes = Vec::<u8>::new();
         let mut source2_bytes = Vec::<u8>::new();
@@ -253,8 +253,8 @@ impl SystemExclusiveData for Note {
 
         Ok(Note {
             submix,
-            source1: Source::from_bytes(source1_bytes)?,
-            source2: Source::from_bytes(source2_bytes)?,
+            source1: Source::from_bytes(&source1_bytes)?,
+            source2: Source::from_bytes(&source2_bytes)?,
         })
     }
 
@@ -309,9 +309,9 @@ impl fmt::Display for Source {
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Source {
-            wave: Wave::from_bytes(vec![data[0], data[1]])?,
+            wave: Wave::from_bytes(&[data[0], data[1]])?,
             decay: Decay::new(data[2]).unwrap(),
             tune: ModulationDepth::new((data[3] as i8) - 50).unwrap(),  // adjust to -50~+50
             level: Level::new(data[4]).unwrap(),

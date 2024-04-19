@@ -57,7 +57,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
             attack_time: EnvelopeTime::from(data[0]),
             decay1_time: EnvelopeTime::from(data[1]),
@@ -109,7 +109,7 @@ impl fmt::Display for KeyScalingControl {
 }
 
 impl SystemExclusiveData for KeyScalingControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(KeyScalingControl {
             level: KeyScaling::from(data[0]),
             attack_time: ControlTime::from(data[1]),
@@ -157,7 +157,7 @@ impl fmt::Display for VelocityControl {
 }
 
 impl SystemExclusiveData for VelocityControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(VelocityControl {
             level: VelocityControlLevel::from(data[0]),
             attack_time: ControlTime::from(data[1]),
@@ -192,10 +192,10 @@ impl fmt::Display for Modulation {
 }
 
 impl SystemExclusiveData for Modulation {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Modulation {
-            ks_to_env: KeyScalingControl::from_bytes(data[..4].to_vec())?,
-            vel_sens: VelocityControl::from_bytes(data[4..8].to_vec())?,
+            ks_to_env: KeyScalingControl::from_bytes(&data[..4])?,
+            vel_sens: VelocityControl::from_bytes(&data[4..8])?,
         })
     }
 
@@ -236,11 +236,11 @@ impl fmt::Display for Amplifier {
 }
 
 impl SystemExclusiveData for Amplifier {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Amplifier {
             velocity_curve: VelocityCurve::try_from(data[0]).unwrap(),  // 0-11 to enum
-            envelope: Envelope::from_bytes(data[1..7].to_vec())?,
-            modulation: Modulation::from_bytes(data[7..15].to_vec())?,
+            envelope: Envelope::from_bytes(&data[1..7])?,
+            modulation: Modulation::from_bytes(&data[7..15])?,
         })
     }
 

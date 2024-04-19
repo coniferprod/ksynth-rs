@@ -42,7 +42,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
             attack: EnvelopeTime::new(data[0] & 0x7f).unwrap(),
             decay: EnvelopeTime::new(data[1] & 0x7f).unwrap(),
@@ -101,7 +101,7 @@ impl fmt::Display for LevelModulation {
 }
 
 impl SystemExclusiveData for LevelModulation {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(LevelModulation {
             velocity_depth: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
             pressure_depth: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
@@ -158,7 +158,7 @@ impl fmt::Display for TimeModulation {
 }
 
 impl SystemExclusiveData for TimeModulation {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(TimeModulation {
             attack_velocity: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
             release_velocity: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
@@ -215,7 +215,7 @@ impl fmt::Display for Amplifier {
 }
 
 impl SystemExclusiveData for Amplifier {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -227,19 +227,19 @@ impl SystemExclusiveData for Amplifier {
         start = offset;
         end = start + 4;
         let envelope_bytes = data[start..end].to_vec();
-        let envelope = Envelope::from_bytes(envelope_bytes);
+        let envelope = Envelope::from_bytes(&envelope_bytes);
         offset += 4;
 
         start = offset;
         end = start + 3;
         let level_mod_bytes = data[start..end].to_vec();
-        let level_modulation = LevelModulation::from_bytes(level_mod_bytes);
+        let level_modulation = LevelModulation::from_bytes(&level_mod_bytes);
         offset += 3;
 
         start = offset;
         end = start + 3;
         let time_mod_bytes = data[start..end].to_vec();
-        let time_modulation = TimeModulation::from_bytes(time_mod_bytes);
+        let time_modulation = TimeModulation::from_bytes(&time_mod_bytes);
 
         Ok(Amplifier {
             level,

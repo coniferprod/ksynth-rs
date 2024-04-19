@@ -78,7 +78,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
             attack_time: EnvelopeTime::from(data[0]),
             decay1_time: EnvelopeTime::from(data[1]),
@@ -117,7 +117,7 @@ impl Default for KeyScalingControl {
 }
 
 impl SystemExclusiveData for KeyScalingControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(KeyScalingControl {
             attack_time: ControlTime::from(data[1]),
             decay1_time: ControlTime::from(data[2]),
@@ -150,7 +150,7 @@ impl Default for VelocityControl {
 }
 
 impl SystemExclusiveData for VelocityControl {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(VelocityControl {
             depth: EnvelopeDepth::from(data[0]),
             attack_time: ControlTime::from(data[1]),
@@ -175,10 +175,10 @@ pub struct Modulation {
 }
 
 impl SystemExclusiveData for Modulation {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Modulation {
-            ks_to_env: KeyScalingControl::from_bytes(data[..2].to_vec())?,
-            vel_to_env: VelocityControl::from_bytes(data[2..5].to_vec())?,
+            ks_to_env: KeyScalingControl::from_bytes(&data[..2])?,
+            vel_to_env: VelocityControl::from_bytes(&data[2..5])?,
         })
     }
 
@@ -243,7 +243,7 @@ impl fmt::Display for Filter {
 }
 
 impl SystemExclusiveData for Filter {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Filter {
             is_active: data[0] != 1,  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
@@ -254,7 +254,7 @@ impl SystemExclusiveData for Filter {
             ks_to_cutoff: EnvelopeDepth::from(data[6]),
             vel_to_cutoff: EnvelopeDepth::from(data[7]),
             envelope_depth: EnvelopeDepth::from(data[8]),
-            envelope: Envelope::from_bytes(data[9..].to_vec())?
+            envelope: Envelope::from_bytes(&data[9..])?
         })
     }
 

@@ -44,7 +44,7 @@ impl AdditiveKit {
 }
 
 impl SystemExclusiveData for AdditiveKit {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
         let checksum = data[offset];
         eprintln!("additive kit checksum = {:#02x}", checksum);
@@ -59,15 +59,15 @@ impl SystemExclusiveData for AdditiveKit {
 
         let mut envelopes: Vec::<HarmonicEnvelope> = vec![HarmonicEnvelope::new(); HARMONIC_COUNT];
         for _ in 0..HARMONIC_COUNT {
-            envelopes.push(HarmonicEnvelope::from_bytes(data[offset..offset + 8].to_vec())?);
+            envelopes.push(HarmonicEnvelope::from_bytes(&data[offset..offset + 8])?);
             offset += 8;
         }
 
         Ok(AdditiveKit {
-            common: HarmonicCommon::from_bytes(data[2..8].to_vec())?,
-            morf: MorfHarmonic::from_bytes(data[8..21].to_vec())?,
-            formant_filter: FormantFilter::from_bytes(data[21..38].to_vec())?,
-            levels: Levels::from_bytes(data[38..166].to_vec())?,
+            common: HarmonicCommon::from_bytes(&data[2..8])?,
+            morf: MorfHarmonic::from_bytes(&data[8..21])?,
+            formant_filter: FormantFilter::from_bytes(&data[21..38])?,
+            levels: Levels::from_bytes(&data[38..166])?,
             bands,
             envelopes,
         })

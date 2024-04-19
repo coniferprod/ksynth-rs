@@ -73,7 +73,7 @@ impl fmt::Display for Header {
 }
 
 impl SystemExclusiveData for Header {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Header {
             channel: MIDIChannel::new(data[0] + 1).unwrap(),
             function: Function::try_from(data[1]).unwrap(),
@@ -143,7 +143,7 @@ impl Dump {
         // Extract the SysEx header from the message payload:
 
         let header_data = &payload[0..Header::data_size() as usize];
-        let header = Header::from_bytes(header_data.to_vec());
+        let header = Header::from_bytes(header_data);
 
         // The raw data is everything in the payload after the header.
         let raw_data = &payload[Header::data_size() as usize..];

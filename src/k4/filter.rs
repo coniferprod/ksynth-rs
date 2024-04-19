@@ -6,9 +6,21 @@ use std::fmt;
 
 use bit::BitIndex;
 
-use crate::{SystemExclusiveData, ParseError};
-use crate::k4::{EnvelopeTime, FilterEnvelopeLevel, Cutoff, Resonance, ModulationDepth};
-use crate::k4::amp::{LevelModulation, TimeModulation};
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
+use crate::k4::{
+    EnvelopeTime, 
+    FilterEnvelopeLevel, 
+    Cutoff, 
+    Resonance, 
+    ModulationDepth
+};
+use crate::k4::amp::{
+    LevelModulation, 
+    TimeModulation
+};
 
 /// Filter envelope.
 #[derive(Copy, Clone)]
@@ -49,7 +61,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
             attack: EnvelopeTime::new(data[0]).unwrap(),
             decay: EnvelopeTime::new(data[1]).unwrap(),
@@ -120,7 +132,7 @@ impl fmt::Display for Filter {
 }
 
 impl SystemExclusiveData for Filter {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -140,8 +152,8 @@ impl SystemExclusiveData for Filter {
 
         start = offset;
         end = start + 3;
-        let cutoff_mod_bytes = data[start..end].to_vec();
-        let cutoff_mod = LevelModulation::from_bytes(cutoff_mod_bytes);
+        let cutoff_mod_bytes = &data[start..end];
+        let cutoff_mod = LevelModulation::from_bytes(&cutoff_mod_bytes);
 
         offset += 3;
         b = data[offset];
@@ -154,14 +166,14 @@ impl SystemExclusiveData for Filter {
 
         start = offset;
         end = start + 4;
-        let envelope_bytes = data[start..end].to_vec();
-        let envelope = Envelope::from_bytes(envelope_bytes);
+        let envelope_bytes = &data[start..end];
+        let envelope = Envelope::from_bytes(&envelope_bytes);
         offset += 4;
 
         start = offset;
         end = start + 3;
-        let time_mod_bytes = data[start..end].to_vec();
-        let time_mod = TimeModulation::from_bytes(time_mod_bytes);
+        let time_mod_bytes = &data[start..end];
+        let time_mod = TimeModulation::from_bytes(&time_mod_bytes);
 
         Ok(Filter {
             cutoff: Cutoff::new(cutoff).unwrap(),

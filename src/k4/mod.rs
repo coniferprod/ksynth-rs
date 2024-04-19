@@ -125,7 +125,7 @@ pub struct Resonance(u8);
 pub struct EffectNumber(u8);
 
 impl SystemExclusiveData for EffectNumber {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self::new(data[0] + 1).unwrap())  // adjust 0~31 to 1~32
     }
 
@@ -172,7 +172,7 @@ pub struct WaveNumber(u16);
 pub struct MIDIChannel(u8);
 
 impl SystemExclusiveData for MIDIChannel {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self::new(data[0] + 1).unwrap())
     }
 
@@ -205,7 +205,7 @@ pub struct PatchNumber(u8);
 pub struct Transpose(i8);
 
 impl SystemExclusiveData for Transpose {
-    fn from_bytes(data: Vec<u8>) -> Result<Self, ParseError> {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self::new(data[0] as i8 - 24).unwrap())
     }
 
