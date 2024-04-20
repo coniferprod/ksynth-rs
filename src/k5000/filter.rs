@@ -99,9 +99,12 @@ impl SystemExclusiveData for Envelope {
             self.release_time.into(),
         ]
     }
+
+    fn data_size(&self) -> usize { 6 }
 }
 
 /// Filter key scaling control.
+#[derive(Debug)]
 pub struct KeyScalingControl {
     pub attack_time: ControlTime,
     pub decay1_time: ControlTime,
@@ -116,11 +119,17 @@ impl Default for KeyScalingControl {
     }
 }
 
+impl fmt::Display for KeyScalingControl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Atk={} Dcy1={}", self.attack_time, self.decay1_time)
+    }
+}
+
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(KeyScalingControl {
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
+            attack_time: ControlTime::from(data[0]),
+            decay1_time: ControlTime::from(data[1]),
         })
     }
 
@@ -130,9 +139,12 @@ impl SystemExclusiveData for KeyScalingControl {
             self.decay1_time.into(),
         ]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// Filter velocity control.
+#[derive(Debug)]
 pub struct VelocityControl {
     pub depth: EnvelopeDepth,
     pub attack_time: ControlTime,
@@ -146,6 +158,13 @@ impl Default for VelocityControl {
             attack_time: ControlTime::new(0),
             decay1_time: ControlTime::new(0),
         }
+    }
+}
+
+impl fmt::Display for VelocityControl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Depth={} Atk={} Dcy1={}",
+            self.depth, self.attack_time, self.decay1_time)
     }
 }
 
@@ -165,13 +184,21 @@ impl SystemExclusiveData for VelocityControl {
             self.decay1_time.into(),
         ]
     }
+
+    fn data_size(&self) -> usize { 3 }
 }
 
 /// Modulation settings for the filter.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_to_env: VelocityControl,
+}
+
+impl fmt::Display for Modulation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "KS->Env={} Vel->Env={}", self.ks_to_env, self.vel_to_env)
+    }
 }
 
 impl SystemExclusiveData for Modulation {
@@ -190,6 +217,10 @@ impl SystemExclusiveData for Modulation {
 
         result
     }
+
+    fn data_size(&self) -> usize {
+        self.ks_to_env.data_size() + self.vel_to_env.data_size()
+    }
 }
 
 
@@ -197,15 +228,16 @@ impl SystemExclusiveData for Modulation {
 #[derive(Debug)]
 pub struct Filter {
     pub is_active: bool,
-    pub cutoff: Cutoff,
-    pub resonance: Resonance,
     pub mode: FilterMode,
     pub velocity_curve: VelocityCurve,
+    pub resonance: Resonance,
     pub level: Level,
+    pub cutoff: Cutoff,
     pub ks_to_cutoff: EnvelopeDepth,
     pub vel_to_cutoff: EnvelopeDepth,
     pub envelope_depth: EnvelopeDepth,
     pub envelope: Envelope,
+    pub modulation: Modulation,
 }
 
 impl Filter {
@@ -221,6 +253,7 @@ impl Filter {
             vel_to_cutoff: EnvelopeDepth::new(0),
             envelope_depth: EnvelopeDepth::new(0),
             envelope: Envelope::new(),
+            modulation: Modulation::default()
         }
     }
 }
@@ -233,11 +266,11 @@ impl Default for Filter {
 
 impl fmt::Display for Filter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Active={} Cutoff={} Resonance={} Mode={}\nVel Curve={} Level=0{}\nKS to Cutoff={} Vel. to Cutoff={} Env Depth={}\nEnvelope: {}",
+        write!(f, "Active={} Cutoff={} Resonance={} Mode={}\nVel Curve={} Level=0{}\nKS to Cutoff={} Vel. to Cutoff={} Env Depth={}\nEnvelope: {}\nModulation: {}",
             self.is_active, self.cutoff, self.resonance,
             self.mode, self.velocity_curve, self.level,
             self.ks_to_cutoff, self.vel_to_cutoff, self.envelope_depth,
-            self.envelope
+            self.envelope, self.modulation
         )
     }
 }
@@ -254,7 +287,8 @@ impl SystemExclusiveData for Filter {
             ks_to_cutoff: EnvelopeDepth::from(data[6]),
             vel_to_cutoff: EnvelopeDepth::from(data[7]),
             envelope_depth: EnvelopeDepth::from(data[8]),
-            envelope: Envelope::from_bytes(&data[9..])?
+            envelope: Envelope::from_bytes(&data[9..15])?,
+            modulation: Modulation::from_bytes(&data[15..20])?,
         })
     }
 
@@ -274,7 +308,14 @@ impl SystemExclusiveData for Filter {
         ];
         result.extend(bs);
         result.extend(self.envelope.to_bytes());
+        result.extend(self.modulation.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        9
+        + self.envelope.data_size()
+        + self.modulation.data_size()
     }
 }

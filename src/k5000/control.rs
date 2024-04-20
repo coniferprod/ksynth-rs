@@ -41,7 +41,7 @@ impl fmt::Display for VelocitySwitch {
 }
 
 /// Velocity switch settings.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct VelocitySwitchSettings {
     pub switch_type: VelocitySwitch,
     pub threshold: u8,
@@ -94,6 +94,8 @@ impl SystemExclusiveData for VelocitySwitchSettings {
         let value = t | ((self.switch_type as u8) << 5);
         vec![value]
     }
+
+    fn data_size(&self) -> usize { 1 }
 }
 
 /// Control source.
@@ -174,6 +176,7 @@ impl fmt::Display for ControlDestination {
 }
 
 /// Macro controller.
+#[derive(Debug)]
 pub struct MacroController {
     pub destination1: ControlDestination,
     pub depth1: MacroParameterDepth,
@@ -220,10 +223,12 @@ impl SystemExclusiveData for MacroController {
             self.depth2.into()
         ]
     }
+
+    fn data_size(&self) -> usize { 4 }
 }
 
 /// Assignable controller.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AssignableController {
     pub source: ControlSource,
     pub destination: ControlDestination,
@@ -242,10 +247,12 @@ impl SystemExclusiveData for AssignableController {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.source as u8, self.destination as u8, self.depth.into()]
     }
+
+    fn data_size(&self) -> usize { 3 }
 }
 
 /// Modulation settings.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ModulationSettings {
     pub pressure: MacroController,
     pub wheel: MacroController,
@@ -276,6 +283,11 @@ impl SystemExclusiveData for ModulationSettings {
 
         result
     }
+
+    fn data_size(&self) -> usize {
+        3 * self.pressure.data_size()
+        + 2 * self.assignable1.data_size()
+    }
 }
 
 /// Pan type.
@@ -302,6 +314,7 @@ impl fmt::Display for PanKind {
 }
 
 /// Pan settings.
+#[derive(Debug)]
 pub struct PanSettings {
     pub pan_type: PanKind,
     pub pan_value: Pan,
@@ -327,6 +340,8 @@ impl SystemExclusiveData for PanSettings {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.pan_type as u8, self.pan_value.into()]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// Switch kind.
@@ -400,6 +415,8 @@ impl SystemExclusiveData for SwitchControl {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.switch1 as u8, self.switch2 as u8, self.footswitch1 as u8, self.footswitch2 as u8]
     }
+
+    fn data_size(&self) -> usize { 4 }
 }
 
 /// Polyphony type.

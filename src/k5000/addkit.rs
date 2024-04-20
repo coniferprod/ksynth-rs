@@ -7,8 +7,10 @@ use crate::{
     Checksum
 };
 use crate::k5000::formant::FormantFilter;
-use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
-use crate::k5000::harmonic::Levels;
+use crate::k5000::harmonic::{
+    Envelope as HarmonicEnvelope,
+    Levels
+};
 use crate::k5000::morf::{
     HarmonicCommon, 
     MorfHarmonic
@@ -118,12 +120,29 @@ impl SystemExclusiveData for AdditiveKit {
 
         result
     }
+
+    fn data_size(&self) -> usize {
+        1  // checksum
+
+        // HC kit
+        + self.common.data_size()
+        + self.morf.data_size()
+        + self.formant_filter.data_size()
+
+        // HC code 1 & 2
+        + self.levels.data_size()
+
+        + BAND_COUNT
+
+        + HARMONIC_COUNT * self.envelopes[0].data_size()
+    }
 }
 
 impl Checksum for AdditiveKit {
     fn checksum(&self) -> u8 {
         // Additive kit checksum:
-        // {(HCKIT sum) + (HCcode1 sum) + (HCcode2 sum) + (FF sum) + (HCenv sum) + (loud sense select) + 0xA5} & 0x7F
+        // {(HCKIT sum) + (HCcode1 sum) + (HCcode2 sum) 
+        // + (FF sum) + (HCenv sum) + (loud sens select) + 0xA5} & 0x7F
         let mut total = 0;
 
         // HCKIT sum:

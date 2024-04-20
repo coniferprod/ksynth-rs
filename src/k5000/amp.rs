@@ -9,13 +9,83 @@ use crate::{
     ParseError
 };
 use crate::k5000::{
+    RangedInteger,
+    Parameter,
     EnvelopeTime, 
-    EnvelopeLevel, 
     ControlTime, 
     KeyScaling, 
     VelocityControlLevel
 };
 use crate::k5000::control::VelocityCurve;
+
+// Amplifier envelope level is different from the other
+// envelope levels; it goes from 0 to 127, while the
+// others are -63 to 63. So we define our own type in
+// this module, and *don't* import the normal level type.
+
+type EnvelopeLevelValue = RangedInteger::<0, 127>;
+
+/// Wrapper for envelope level parameter.
+#[derive(Debug, Copy, Clone)]
+pub struct EnvelopeLevel {
+    value: EnvelopeLevelValue,  // private field to prevent accidental range violations
+}
+
+impl EnvelopeLevel {
+    /// Makes a new `EnvelopeLevel` initialized with the specified value.
+    pub fn new(value: i32) -> Self {
+        Self { value: EnvelopeLevelValue::new(value) }
+    }
+
+    /// Gets the wrapped value.
+    pub fn value(&self) -> i32 {
+        self.value.value
+    }
+}
+
+impl Parameter for EnvelopeLevel {
+    fn name(&self) -> String {
+        "EnvelopeLevel".to_string()
+    }
+
+    fn minimum_value() -> i32 {
+        *EnvelopeLevelValue::range().start()
+    }
+
+    fn maximum_value() -> i32 {
+        *EnvelopeLevelValue::range().end()
+    }
+
+    fn default_value() -> i32 {
+        Self::default().value()
+    }
+
+    fn random_value() -> i32 {
+        EnvelopeLevelValue::random_value()
+    }
+}
+
+impl Default for EnvelopeLevel {
+    fn default() -> Self { Self::new(0) }
+}
+
+impl From<u8> for EnvelopeLevel {
+    fn from(value: u8) -> EnvelopeLevel {
+        EnvelopeLevel::new(value as i32)
+    }
+}
+
+impl From<EnvelopeLevel> for u8 {
+    fn from(val: EnvelopeLevel) -> Self {
+        val.value() as u8
+    }
+}
+
+impl fmt::Display for EnvelopeLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
 
 /// Amplifier envelope.
 #[derive(Debug)]
@@ -78,6 +148,8 @@ impl SystemExclusiveData for Envelope {
             self.release_time.into()
         ]
     }
+
+    fn data_size(&self) -> usize { 6 }
 }
 
 /// Amplifier key scaling control.
@@ -126,6 +198,8 @@ impl SystemExclusiveData for KeyScalingControl {
             self.release.into()
         ]
     }
+
+    fn data_size(&self) -> usize { 4 }
 }
 
 /// Amplifier velocity control.
@@ -174,6 +248,8 @@ impl SystemExclusiveData for VelocityControl {
             self.release.into()
         ]
     }
+
+    fn data_size(&self) -> usize { 4 }
 }
 
 /// Modulation settings for the amplifier section.
@@ -206,6 +282,11 @@ impl SystemExclusiveData for Modulation {
         result.extend(self.vel_sens.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        self.ks_to_env.data_size()
+        + self.vel_sens.data_size()
     }
 }
 
@@ -252,5 +333,11 @@ impl SystemExclusiveData for Amplifier {
         result.extend(self.modulation.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        1  // velocity curve
+        + self.envelope.data_size()
+        + self.modulation.data_size()
     }
 }

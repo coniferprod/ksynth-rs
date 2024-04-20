@@ -74,6 +74,8 @@ impl SystemExclusiveData for Control {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.depth.into(), self.key_scaling.into()]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// LFO settings.
@@ -152,4 +154,6 @@ impl SystemExclusiveData for Lfo {
 
         result
     }
+
+    fn data_size(&self) -> usize { 11 }
 }

@@ -14,6 +14,7 @@ use crate::k5000::{
 };
 
 /// Pitch envelope.
+#[derive(Debug)]
 pub struct Envelope {
     /// Envelope start level.
     pub start: PitchEnvelopeLevel,
@@ -84,4 +85,6 @@ impl SystemExclusiveData for Envelope {
             self.level_vel_sens.into()
         ]
     }
+
+    fn data_size(&self) -> usize { 6 }
 }

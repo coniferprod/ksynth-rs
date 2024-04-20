@@ -57,6 +57,7 @@ impl fmt::Display for Key {
 }
 
 /// Keyboard zone.
+#[derive(Debug)]
 pub struct Zone {
     /// Low key of the zone.
     pub low: Key,
@@ -82,9 +83,12 @@ impl SystemExclusiveData for Zone {
             self.high.note,
         ]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// Source control settings.
+#[derive(Debug)]
 pub struct SourceControl {
     pub zone: Zone,
     pub vel_sw: VelocitySwitchSettings,
@@ -153,10 +157,19 @@ impl SystemExclusiveData for SourceControl {
 
         result
     }
+
+    fn data_size(&self) -> usize {  // should be 28
+        self.zone.data_size()
+        + self.vel_sw.data_size()
+        + 4  // effect path, volume, bender pitch, bender cutoff
+        + self.modulation.data_size()
+        + 1  // key on delay
+        + self.pan.data_size()
+    }
 }
 
 /// Source.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Source {
     pub oscillator: Oscillator,
     pub filter: Filter,
@@ -202,7 +215,28 @@ impl fmt::Display for Source {
 
 impl SystemExclusiveData for Source {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        eprintln!("Source data ({} bytes): {:?}", data.len(), data);
+        //eprintln!("Source data ({} bytes): {:?}", data.len(), data);
+        eprintln!("Source data size = {} bytes", data.len());
+        eprintln!("Reported sizes:");
+        let source_control_size = SourceControl::default().data_size();
+        eprintln!("Source control = {} bytes", 
+            source_control_size);
+        let amplifier_size = Amplifier::default().data_size();
+        eprintln!("Amplifier data = {} bytes",
+            amplifier_size);
+        let oscillator_size = Oscillator::default().data_size();
+        eprintln!("Oscillator data = {} bytes",
+            oscillator_size);
+        let filter_size = Filter::default().data_size();
+        eprintln!("Filter data = {} bytes",
+            filter_size);
+        let lfo_size = Lfo::default().data_size();
+        eprintln!("LFO data = {} bytes",
+            lfo_size);
+        let total_size = source_control_size + amplifier_size + oscillator_size 
+            + filter_size + lfo_size;
+        eprintln!("Total = {} bytes", total_size);
+
         Ok(Source {
             control: SourceControl::from_bytes(&data[..28])?,
             oscillator: Oscillator::from_bytes(&data[28..40])?,
@@ -222,6 +256,14 @@ impl SystemExclusiveData for Source {
         result.extend(self.lfo.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        self.control.data_size()
+        + self.oscillator.data_size()
+        + self.filter.data_size()
+        + self.amplifier.data_size()
+        + self.lfo.data_size()
     }
 }
 

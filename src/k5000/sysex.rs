@@ -5,6 +5,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use bit::BitIndex;
 
 use crate::{
     SystemExclusiveData, 
@@ -64,6 +65,10 @@ impl SystemExclusiveData for Message {
 
         result
     }
+
+    fn data_size(&self) -> usize {
+        todo!("Compute K5000 message size")
+    }
 }
 
 
@@ -81,6 +86,15 @@ impl From<Cardinality> for u8 {
     }
 }
 
+impl fmt::Display for Cardinality {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Cardinality::One => "One",
+            Cardinality::Block => "Block"
+        })
+    }
+}
+
 /// K5000 bank identifier.
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[repr(u8)]
@@ -91,6 +105,18 @@ pub enum BankIdentifier {
     D = 0x02,  // only on K5000S/R
     E = 0x03,
     F = 0x04,
+}
+
+impl fmt::Display for BankIdentifier {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            BankIdentifier::A => "A",
+            BankIdentifier::B => "B",
+            BankIdentifier::D => "D",
+            BankIdentifier::E => "E",
+            BankIdentifier::F => "F"
+        })
+    }
 }
 
 impl From<BankIdentifier> for u8 {
@@ -130,6 +156,17 @@ impl From<PatchKind> for u8 {
     }
 }
 
+impl fmt::Display for PatchKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            PatchKind::Single => "Single",
+            PatchKind::Multi => "Multi/Combi",
+            PatchKind::DrumKit => "Drum Kit",
+            PatchKind::DrumInstrument => "Drum Instrument"
+        })
+    }
+}
+
 /// System Exclusive dump header.
 #[derive(Debug, PartialEq)]
 pub struct Header {
@@ -151,7 +188,7 @@ impl Header {
     /// * `buf` - a byte vector with the header data
     pub fn identify_vec(buf: &[u8]) -> Option<Header> {
         let channel = MIDIChannel::from(buf[0]);  // will be converted to 1...16
-        match &buf[1..] {
+        let result = match &buf[1..] {
             // One ADD Bank A (see 3.1.1b)
             [0x20, 0x00, 0x0A, 0x00, 0x00, sub1, ..] => {
                 Some(Header {
@@ -319,53 +356,51 @@ impl Header {
 
             // All others (must have this arm with slice patterns)
             _ => { None }
+        };
+
+        match result {
+            Some(mut header) => {
+                // If we have a tone map, cut any excess bytes
+                if header.sub_bytes.len() > 1 {
+                    header.sub_bytes.truncate(19);
+                }
+                Some(header)
+            },
+            None => None,
         }
 
     }
 
     // Returns the size of this dump command in bytes
     pub fn size(&self) -> usize {
-        1 + // channel     ("3rd" in K5000 MIDI spec)
-        1 + // cardinality ("4th" in K5000 MIDI spec)
-        1 + // 0x00 ("5th")
-        1 + // 0x0A ("6th")
-        1 + // kind ("7th")
-        self.sub_bytes.len()  // 0 to max 19 (if block tone map present)
+        let mut count =
+            1 // channel     ("3rd" in K5000 MIDI spec)
+            + 1 // cardinality ("4th" in K5000 MIDI spec)
+            + 1 // 0x00 ("5th")
+            + 1 // 0x0A ("6th")
+            + 1; // kind ("7th")
+
+        if self.kind == PatchKind::Single {
+                count += 1;  // for bank identifier
+        }
+
+        count += self.sub_bytes.len();  // 0 to max 19 (if block tone map present)
+        count
     }
 }
 
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(bank) = &self.bank_identifier {
-            write!(f, "{:?} {:?} for Bank {:?}, {}",
-                self.cardinality,
-                self.kind,
-                bank,
-                if self.cardinality == Cardinality::One {
-                    self.sub_bytes[0].to_string()
-                }
-                else {
-                    "N/A".to_string()
-                }
-            )
-        }
-        else {
-            write!(f, "{:?} {:?}, {}",
-                self.cardinality,
-                self.kind,
-                if self.cardinality == Cardinality::One {
-                    if self.kind != PatchKind::DrumKit {
-                        self.sub_bytes[0].to_string()
-                    }
-                    else {
-                        "N/A".to_string()
-                    }
-                }
-                else {
-                    "N/A".to_string()
-                }
-            )
-        }
+        write!(f, "{} {} {}, sub-bytes={:02X?}", 
+            self.cardinality,
+            self.kind,
+            if let Some(bank) = &self.bank_identifier {
+                bank.to_string()
+            } else {
+                String::from("N/A")
+            },
+            self.sub_bytes
+        )
     }
 }
 
@@ -413,6 +448,85 @@ impl SystemExclusiveData for Header {
         self.size() 
     }
 }
+
+pub const MAX_TONE_COUNT: u8 = 128;
+
+pub struct ToneMap {
+    included: [bool; MAX_TONE_COUNT as usize],
+}
+
+impl ToneMap {
+    pub fn new() -> Self {
+        ToneMap { included: [false; MAX_TONE_COUNT as usize] }
+    }
+
+    pub fn is_included(&self, tone_number: u8) -> bool {
+        self.included[tone_number as usize]
+    }
+
+    pub fn included_count(&self) -> usize {
+        self.included.into_iter().filter(|b| *b).count()
+    }
+}
+
+impl fmt::Display for ToneMap {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut output = String::from("");
+        for i in 0..MAX_TONE_COUNT {
+            if self.included[i as usize] {
+                output.push_str(&format!("{} ", i + 1));
+            }
+        }
+        write!(f, "{}", output)
+    }
+}
+
+impl SystemExclusiveData for ToneMap {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let mut included = [false; MAX_TONE_COUNT as usize];
+
+        let mut i = 0;
+        let mut tone_number = 0;
+        while tone_number < MAX_TONE_COUNT {
+            for n in 0..7 {
+                //eprintln!("data[{}].bit({}) = {}  tone_number={}", 
+                //    i, n, data[i].bit(n), tone_number);
+                included[tone_number as usize] = data[i].bit(n);
+                tone_number += 1;
+                if tone_number == MAX_TONE_COUNT {
+                    break;
+                }
+            }
+            i += 1;
+        }
+
+        Ok(ToneMap { included })
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut result = Vec::<u8>::new();
+
+        // First, chunk the included bits into groups of seven.
+        // This will result in 19 chunks, with two values in the last one.
+        // Then distribute them evenly into bytes, six in each, starting
+        // from the least significant bit. Start with a zero byte so that
+        // the most significant bit is initialized to zero. For the last
+        // byte, only the two least significant bits can ever be set.
+
+        let chunks = self.included.chunks(7);
+        for chunk in chunks {
+            let mut byte = 0u8;  // all bits are initially zero
+            for (n, bit) in chunk.iter().enumerate() {
+                byte.set_bit(n, *bit);
+            }
+        }
+
+        result
+    }
+
+    fn data_size(&self) -> usize { 19 }
+}
+
 
 #[cfg(test)]
 mod tests {

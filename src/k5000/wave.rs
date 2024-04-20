@@ -496,7 +496,7 @@ static WAVE_NAMES: &[&str] = &[
     /* 464 */ "Omnibus Loop 8"
 ];
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Wave {
     pub number: u16,  // 1~512
 }

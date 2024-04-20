@@ -92,6 +92,8 @@ impl SystemExclusiveData for Header {
             self.substatus2,
         ]
     }
+
+    fn data_size(&self) -> usize { 6 }
 }
 
 pub enum Locality {

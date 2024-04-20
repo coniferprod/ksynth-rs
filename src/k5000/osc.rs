@@ -20,6 +20,7 @@ use crate::k5000::wave::Wave;
 use crate::k5000::source::Key;
 
 /// Fixed key for oscillator.
+#[derive(Debug)]
 pub enum FixedKey {
     Off,
     On(Key)
@@ -51,9 +52,12 @@ impl SystemExclusiveData for FixedKey {
             FixedKey::On(key) => vec![key.note + 21],
         }
     }
+
+    fn data_size(&self) -> usize { 1 }
 }
 
 /// PCM oscillator.
+#[derive(Debug)]
 pub struct Oscillator {
     pub wave: Wave,
     pub coarse: Coarse,
@@ -126,6 +130,12 @@ impl SystemExclusiveData for Oscillator {
         result.extend(self.pitch_envelope.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize { 
+        self.wave.data_size() 
+        + 4 
+        + self.pitch_envelope.data_size()
     }
 }
 

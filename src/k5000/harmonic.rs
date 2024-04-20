@@ -89,6 +89,8 @@ impl SystemExclusiveData for EnvelopeSegment {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.rate.into(), self.level.into()]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// Harmonic envelope with four segments and loop type.
@@ -200,4 +202,6 @@ impl SystemExclusiveData for Envelope {
 
         result
     }
+
+    fn data_size(&self) -> usize { 8 }
 }

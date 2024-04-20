@@ -34,6 +34,7 @@ use crate::k5000::{
 };
 
 /// Portamento setting.
+#[derive(Debug)]
 pub enum Portamento {
     Off,
     On(PortamentoLevel)
@@ -49,6 +50,7 @@ impl fmt::Display for Portamento {
 }
 
 /// Single patch common data.
+#[derive(Debug)]
 pub struct Common {
     pub effects: EffectSettings,
     pub name: String,
@@ -102,10 +104,10 @@ fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
 
 impl SystemExclusiveData for Common {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        eprintln!("Common data ({} bytes): {:?}", data.len(), data);
+        eprintln!("Common data ({} bytes): {:02X?}", data.len(), data);
 
         let mut offset = 0;
-        let mut size = 31;
+        let mut size = EffectSettings::default().data_size();
         let mut start = offset;
         let mut end = offset + size;
         let effects_data = &data[start..end];
@@ -291,6 +293,8 @@ impl SystemExclusiveData for Common {
 
         result
     }
+
+    fn data_size(&self) -> usize { 81 }
 }
 
 /// Single patch.
@@ -301,7 +305,7 @@ pub struct SinglePatch {
 }
 
 impl SinglePatch {
-    /// Returns a single patch with he given number of default PCM and ADD sources.
+    /// Returns a single patch with the given number of default PCM and ADD sources.
     ///
     /// # Arguments
     /// * `pcm_count` - The number of PCM sources
@@ -404,22 +408,28 @@ impl SystemExclusiveData for SinglePatch {
         eprintln!("single patch checksum = {:#02x}", checksum);
         offset += 1;
 
-        size = 81;
+        size = Common::default().data_size();
         start = offset;
         end = start + size;
         let common_data = &data[start..end];
         let common = Common::from_bytes(common_data);
+        if common.is_err() {
+            return Err(common.unwrap_err());
+        }
         offset += size;
 
-        eprintln!("Starting to parse {} sources, offset = {}", common.as_ref().unwrap().source_count, offset);
+        eprintln!("{:#04X}: starting to parse {} sources",
+            offset, common.as_ref().unwrap().source_count);
 
-        size = 86;
+        size = Source::default().data_size();
+        eprintln!("source data size is reported as {} bytes", size);
         let mut sources = Vec::<Source>::new();
         for i in 0..common.as_ref().unwrap().source_count {
             start = offset;
             end = start + size;
             let source_data = &data[start..end];
-            eprintln!("Parsing source {}...", i + 1);
+            eprintln!("{:#04X}: parsing source {}, data start={} end={}", 
+                offset, i + 1, start, end);
             let source = Source::from_bytes(source_data);
             sources.push(source?);
             offset += size;
@@ -430,7 +440,7 @@ impl SystemExclusiveData for SinglePatch {
         // How many additive kits should we expect then?
         let kit_count = sources.iter().filter(|s| s.oscillator.wave.is_additive()).count();
         let mut kit_index = 0;
-        size = 806;
+        size = AdditiveKit::default().data_size();
         while kit_index < kit_count {
             start = offset;
             end = start + size;
@@ -481,6 +491,10 @@ impl SystemExclusiveData for SinglePatch {
         eprintln!("total {} bytes", total);
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        todo!("Compute single patch size")        
     }
 }
 

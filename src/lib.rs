@@ -31,7 +31,7 @@ impl fmt::Display for ParseError {
 pub trait SystemExclusiveData: Sized {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError>;
     fn to_bytes(&self) -> Vec<u8>;
-    fn data_size(&self) -> usize { 0 }
+    fn data_size(&self) -> usize;
 }
 
 /// Checksum for a patch.

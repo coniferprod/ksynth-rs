@@ -208,6 +208,7 @@ impl fmt::Display for EffectAlgorithm {
 }
 
 /// Effect definition.
+#[derive(Debug)]
 pub struct EffectDefinition {
     pub effect: Effect,  // reverb = 0~10, others = 11~47
     pub depth: Depth,  // 0~100
@@ -268,9 +269,12 @@ impl SystemExclusiveData for EffectDefinition {
             self.parameter4.into()
         ]
     }
+
+    fn data_size(&self) -> usize { 6 }
 }
 
 /// Effect settings.
+#[derive(Debug)]
 pub struct EffectSettings {
     pub algorithm: EffectAlgorithm,  // 0~3
     pub reverb: EffectDefinition,
@@ -366,6 +370,8 @@ impl SystemExclusiveData for ControlSource {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.source as u8, self.destination as u8, self.depth.into()]
     }
+
+    fn data_size(&self) -> usize { 3 }
 }
 
 /// Effect control with two sources.
@@ -389,6 +395,8 @@ impl SystemExclusiveData for EffectControl {
         result.extend(self.source2.to_bytes());
         result
     }
+
+    fn data_size(&self) -> usize { 6 }
 }
 
 #[cfg(test)]
