@@ -2,6 +2,7 @@
 //!
 
 use std::convert::TryFrom;
+use std::fmt;
 
 use num_enum::TryFromPrimitive;
 
@@ -24,6 +25,12 @@ pub enum HarmonicGroup {
     Low,
 
     High
+}
+
+impl fmt::Display for HarmonicGroup {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", if *self == HarmonicGroup::Low { "LO" } else { "HI" })
+    }
 }
 
 /// Harmonic common settings.
@@ -49,6 +56,14 @@ impl Default for HarmonicCommon {
     }
 }
 
+impl fmt::Display for HarmonicCommon {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "MORF enabled={} Total gain={} Group={} KStoGain={} VelCurve={} VelDepth={}",
+            self.morf_enabled, self.total_gain, self.group,
+            self.ks_to_gain, self.velocity_curve, self.velocity_depth)
+    }
+}
+
 impl SystemExclusiveData for HarmonicCommon {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(HarmonicCommon {
@@ -71,6 +86,8 @@ impl SystemExclusiveData for HarmonicCommon {
             self.velocity_depth.into(),
         ]
     }
+
+    fn data_size(&self) -> usize { 6 }
 }
 
 /// MORF harmonic copy parameters.
@@ -78,6 +95,13 @@ impl SystemExclusiveData for HarmonicCommon {
 pub struct MorfHarmonicCopyParameters {
     pub patch_number: u8,
     pub source_number: u8,
+}
+
+impl fmt::Display for MorfHarmonicCopyParameters {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "PatchNo={} SourceNo={}",
+            self.patch_number, self.source_number)
+    }
 }
 
 impl SystemExclusiveData for MorfHarmonicCopyParameters {
@@ -91,6 +115,8 @@ impl SystemExclusiveData for MorfHarmonicCopyParameters {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.patch_number, self.source_number]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// MORF harmonic envelope loop type.
@@ -102,6 +128,16 @@ pub enum Loop {
 
     Loop1,
     Loop2,
+}
+
+impl fmt::Display for Loop {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Loop::Off => "Off",
+            Loop::Loop1 => "Loop1",
+            Loop::Loop2 => "Loop2",
+        })
+    }
 }
 
 /// MORF harmonic envelope.
@@ -125,6 +161,14 @@ impl Default for MorfHarmonicEnvelope {
     }
 }
 
+impl fmt::Display for MorfHarmonicEnvelope {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Time1={} Time2={} Time3={} Time4={} Loop={}",
+            self.time1, self.time2, self.time3, self.time4,
+            self.loop_type)
+    }
+}
+
 impl SystemExclusiveData for MorfHarmonicEnvelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(MorfHarmonicEnvelope {
@@ -145,6 +189,8 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
             self.loop_type as u8,
         ]
     }
+
+    fn data_size(&self) -> usize { 5 }
 }
 
 /// MORF harmonic settings.
@@ -155,6 +201,14 @@ pub struct MorfHarmonic {
     pub copy3: MorfHarmonicCopyParameters,
     pub copy4: MorfHarmonicCopyParameters,
     pub envelope: MorfHarmonicEnvelope,
+}
+
+impl fmt::Display for MorfHarmonic {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Copy1={} Copy2={} Copy3={} Copy4={} Envelope={}",
+            self.copy1, self.copy2, self.copy3, self.copy4,
+            self.envelope)
+    }
 }
 
 impl SystemExclusiveData for MorfHarmonic {
@@ -178,5 +232,9 @@ impl SystemExclusiveData for MorfHarmonic {
         result.extend(self.envelope.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        4 * self.copy1.data_size() + self.envelope.data_size()
     }
 }

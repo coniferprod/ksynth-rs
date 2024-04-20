@@ -2,10 +2,23 @@
 //!
 
 use std::convert::TryFrom;
+use std::fmt;
+
 use num_enum::TryFromPrimitive;
-use crate::{SystemExclusiveData, ParseError};
+
+use crate::{
+    SystemExclusiveData, 
+    ParseError
+};
 use crate::k5000::morf::Loop;
-use crate::k5000::{EnvelopeRate, EnvelopeLevel, EnvelopeDepth, Bias, LFODepth, LFOSpeed};
+use crate::k5000::{
+    EnvelopeRate, 
+    EnvelopeLevel, 
+    EnvelopeDepth, 
+    Bias, 
+    LFODepth, 
+    LFOSpeed
+};
 
 /// Formant filter envelope mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
@@ -18,6 +31,7 @@ pub enum Mode {
 }
 
 /// Envelope segment.
+#[derive(Debug)]
 pub struct EnvelopeSegment {
     pub rate: EnvelopeRate,  // 0~127
     pub level: EnvelopeLevel, // -63(1)~+63(127)
@@ -43,9 +57,12 @@ impl SystemExclusiveData for EnvelopeSegment {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.rate.into(), self.level.into()]
     }
+
+    fn data_size(&self) -> usize { 2 }
 }
 
 /// Formant filter envelope.
+#[derive(Debug)]
 pub struct Envelope {
     pub attack: EnvelopeSegment,
     pub decay1: EnvelopeSegment,
@@ -100,6 +117,11 @@ impl SystemExclusiveData for Envelope {
 
         result
     }
+
+    fn data_size(&self) -> usize {
+        4 * self.attack.data_size()
+        + 3
+    }
 }
 
 /// Formant filter LFO shape.
@@ -114,6 +136,7 @@ pub enum LFOShape {
 }
 
 /// Formant filter LFO.
+#[derive(Debug)]
 pub struct Lfo {
     pub speed: LFOSpeed,
     pub shape: LFOShape,
@@ -142,6 +165,8 @@ impl SystemExclusiveData for Lfo {
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.speed.into(), self.shape as u8, self.depth.into()]
     }
+
+    fn data_size(&self) -> usize { 3 }
 }
 
 /// Formant filter settings.
@@ -162,6 +187,14 @@ impl Default for FormantFilter {
             envelope: Default::default(),
             lfo: Default::default(),
         }
+    }
+}
+
+impl fmt::Display for FormantFilter {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Bias={} Mode={:?} Env.Depth={} Envelope={:?} LFO={:?}",
+            self.bias, self.mode, self.envelope_depth, 
+            self.envelope, self.lfo)
     }
 }
 
@@ -190,5 +223,9 @@ impl SystemExclusiveData for FormantFilter {
         result.extend(self.lfo.to_bytes());
 
         result
+    }
+
+    fn data_size(&self) -> usize {
+        3 + self.envelope.data_size() + self.lfo.data_size()
     }
 }

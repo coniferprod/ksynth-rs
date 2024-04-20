@@ -1,11 +1,18 @@
 //! Data model for the "additive kit" used by an ADD source.
 //!
 
-use crate::{SystemExclusiveData, ParseError, Checksum};
+use crate::{
+    SystemExclusiveData, 
+    ParseError, 
+    Checksum
+};
 use crate::k5000::formant::FormantFilter;
 use crate::k5000::harmonic::Envelope as HarmonicEnvelope;
 use crate::k5000::harmonic::Levels;
-use crate::k5000::morf::{HarmonicCommon, MorfHarmonic};
+use crate::k5000::morf::{
+    HarmonicCommon, 
+    MorfHarmonic
+};
 
 /// Number of harmonics.
 pub const HARMONIC_COUNT: usize = 64;
@@ -47,16 +54,36 @@ impl SystemExclusiveData for AdditiveKit {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
         let checksum = data[offset];
-        eprintln!("additive kit checksum = {:#02x}", checksum);
+        eprintln!("{:#04X}: additive kit checksum = {:#02x}", offset, checksum);
+        offset += 1;
 
-        offset = 166; // FF bands should start here
+        let hc_data = &data[1..7];
+        let common = HarmonicCommon::from_bytes(hc_data)?;
+        eprintln!("{:#04X}: harmonic common = {}", offset, common);
+        offset += common.data_size();
 
+        let morf_data = &data[7..20];
+        let morf = MorfHarmonic::from_bytes(morf_data)?;
+        eprintln!("{:#04X}: MORF harmonic = {}", offset, morf);
+        offset += morf.data_size();
+
+        let ff_data = &data[20..37];
+        let formant_filter = FormantFilter::from_bytes(ff_data)?;
+        eprintln!("{:#04X}: FF = {}", offset, formant_filter);
+        offset += formant_filter.data_size();
+
+        let levels_data = &data[37..165];
+        let levels = Levels::from_bytes(levels_data)?;
+        offset += levels.data_size();
+
+        eprintln!("{:#04X}: FF bands start here", offset);
         let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
         for i in 0..BAND_COUNT {
             bands[i] = data[offset];
             offset += 1;
         }
 
+        eprintln!("{:#04X}: Harmonic envelopes start here", offset);
         let mut envelopes: Vec::<HarmonicEnvelope> = vec![HarmonicEnvelope::new(); HARMONIC_COUNT];
         for _ in 0..HARMONIC_COUNT {
             envelopes.push(HarmonicEnvelope::from_bytes(&data[offset..offset + 8])?);
@@ -64,10 +91,10 @@ impl SystemExclusiveData for AdditiveKit {
         }
 
         Ok(AdditiveKit {
-            common: HarmonicCommon::from_bytes(&data[2..8])?,
-            morf: MorfHarmonic::from_bytes(&data[8..21])?,
-            formant_filter: FormantFilter::from_bytes(&data[21..38])?,
-            levels: Levels::from_bytes(&data[38..166])?,
+            common,
+            morf,
+            formant_filter,
+            levels,
             bands,
             envelopes,
         })

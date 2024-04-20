@@ -302,7 +302,7 @@ impl Default for EffectSettings {
 
 impl SystemExclusiveData for EffectSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        eprintln!("EffectSettings");
+        eprintln!("EffectSettings, data = {:02X?}", data);
         Ok(EffectSettings {
             algorithm: EffectAlgorithm::try_from(data[0]).unwrap(),  // 0~3 to enum
             reverb: EffectDefinition::from_bytes(&data[1..7])?,

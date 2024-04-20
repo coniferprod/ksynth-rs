@@ -56,6 +56,10 @@ impl SystemExclusiveData for Levels {
         result.extend(self.loud.to_vec());
         result
     }
+
+    fn data_size(&self) -> usize {
+        2 * HARMONIC_COUNT
+    }
 }
 
 /// Harmonic envelope segment.
@@ -128,7 +132,7 @@ impl SystemExclusiveData for Envelope {
         segment2_level_byte.set_bit(6, false);
         let segment2_level = HarmonicEnvelopeLevel::from(segment2_level_byte & 0b0011_1111);
         let segment3_rate = EnvelopeRate::from(data[6]);
-        let segment3_level = HarmonicEnvelopeLevel::from(data[7]);
+        let segment3_level = HarmonicEnvelopeLevel::from(data[7] & 0b0011_1111);
 
         Ok(Envelope {
             attack: EnvelopeSegment {
