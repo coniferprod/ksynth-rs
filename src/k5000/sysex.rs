@@ -6,9 +6,10 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
+use strum_macros;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::MIDIChannel;
@@ -73,7 +74,7 @@ impl SystemExclusiveData for Message {
 
 
 /// Cardinality of SysEx message (one patch or block of patches).
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, strum_macros::Display)]
 #[repr(u8)]
 pub enum Cardinality {
     One = 0x20,
@@ -81,22 +82,18 @@ pub enum Cardinality {
 }
 
 impl From<Cardinality> for u8 {
-    fn from(c: Cardinality) -> u8 {
+    fn from(c: Cardinality) -> Self {
         c as u8
     }
 }
 
-impl fmt::Display for Cardinality {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            Cardinality::One => "One",
-            Cardinality::Block => "Block"
-        })
-    }
-}
-
 /// K5000 bank identifier.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(
+    Debug,
+    Eq, PartialEq,
+    Clone, Copy,
+    strum_macros::Display, strum_macros::EnumString
+)]
 #[repr(u8)]
 pub enum BankIdentifier {
     A = 0x00,
@@ -107,20 +104,8 @@ pub enum BankIdentifier {
     F = 0x04,
 }
 
-impl fmt::Display for BankIdentifier {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            BankIdentifier::A => "A",
-            BankIdentifier::B => "B",
-            BankIdentifier::D => "D",
-            BankIdentifier::E => "E",
-            BankIdentifier::F => "F"
-        })
-    }
-}
-
 impl From<BankIdentifier> for u8 {
-    fn from(b: BankIdentifier) -> u8 {
+    fn from(b: BankIdentifier) -> Self {
         b as u8
     }
 }
@@ -391,7 +376,7 @@ impl Header {
 
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {} {}, sub-bytes={:02X?}", 
+        write!(f, "{} {} {}, sub-bytes={:02X?}",
             self.cardinality,
             self.kind,
             if let Some(bank) = &self.bank_identifier {
@@ -444,8 +429,8 @@ impl SystemExclusiveData for Header {
         result
     }
 
-    fn data_size(&self) -> usize { 
-        self.size() 
+    fn data_size(&self) -> usize {
+        self.size()
     }
 }
 
@@ -489,7 +474,7 @@ impl SystemExclusiveData for ToneMap {
         let mut tone_number = 0;
         while tone_number < MAX_TONE_COUNT {
             for n in 0..7 {
-                //eprintln!("data[{}].bit({}) = {}  tone_number={}", 
+                //eprintln!("data[{}].bit({}) = {}  tone_number={}",
                 //    i, n, data[i].bit(n), tone_number);
                 included[tone_number as usize] = data[i].bit(n);
                 tone_number += 1;
@@ -519,7 +504,10 @@ impl SystemExclusiveData for ToneMap {
             for (n, bit) in chunk.iter().enumerate() {
                 byte.set_bit(n, *bit);
             }
+            result.push(byte);
         }
+
+        assert_eq!(result.len(), self.data_size());
 
         result
     }

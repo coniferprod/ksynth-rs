@@ -6,19 +6,20 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
+use strum_macros;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    MacroParameterDepth, 
-    Pan, 
+    MacroParameterDepth,
+    Pan,
     ControlDepth
 };
 
 /// Velocity switch settings.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default, strum_macros::Display)]
 #[repr(u8)]
 pub enum VelocitySwitch {
     #[default]
@@ -27,17 +28,6 @@ pub enum VelocitySwitch {
     Loud,
     Soft,
     Unknown,
-}
-
-impl fmt::Display for VelocitySwitch {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            VelocitySwitch::Off => String::from("Off"),
-            VelocitySwitch::Loud => String::from("Loud"),
-            VelocitySwitch::Soft => String::from("Soft"),
-            VelocitySwitch::Unknown => String::from("Unknown"),
-        })
-    }
 }
 
 /// Velocity switch settings.
@@ -99,80 +89,130 @@ impl SystemExclusiveData for VelocitySwitchSettings {
 }
 
 /// Control source.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug,
+    Eq, PartialEq,
+    Copy, Clone,
+    TryFromPrimitive,
+    Default,
+    strum_macros::Display
+)]
 #[repr(u8)]
 pub enum ControlSource {
     #[default]
+    #[strum(to_string = "Bender")]
     Bender,
 
+    #[strum(to_string = "Channel pressure")]
     ChannelPressure,
+
+    #[strum(to_string = "Wheel")]
     Wheel,
+
+    #[strum(to_string = "Expression")]
     Expression,
+
+    #[strum(to_string = "MIDI volume")]
     MidiVolume,
+
+    #[strum(to_string = "Pan pot")]
     PanPot,
+
+    #[strum(to_string = "General controller 1")]
     GeneralController1,
+
+    #[strum(to_string = "General controller 2")]
     GeneralController2,
+
+    #[strum(to_string = "General controller 3")]
     GeneralController3,
+
+    #[strum(to_string = "General controller 4")]
     GeneralController4,
+
+    #[strum(to_string = "General controller 5")]
     GeneralController5,
+
+    #[strum(to_string = "General controller 6")]
     GeneralController6,
+
+    #[strum(to_string = "General controller 7")]
     GeneralController7,
+
+    #[strum(to_string = "General controller 8")]
     GeneralController8,
 }
 
 /// Control destination.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug, Eq, PartialEq,
+    Copy, Clone,
+    TryFromPrimitive,
+    Default,
+    strum_macros::Display
+)]
 #[repr(u8)]
 pub enum ControlDestination {
     #[default]
+    #[strum(to_string = "Pitch offset")]
     PitchOffset,
 
+    #[strum(to_string = "Cutoff offset")]
     CutoffOffset,
-    Level,
-    VibratoDepthOffset,
-    GrowlDepthOffset,
-    TremoloDepthOffset,
-    LfoSpeedOffset,
-    AttackTimeOffset,
-    Decay1TimeOffset,
-    ReleaseTimeOffset,
-    VelocityOffset,
-    ResonanceOffset,
-    PanPotOffset,
-    FormantFilterBiasOffset,
-    FormantFilterEnvelopeLfoDepthOffset,
-    FormantFilterEnvelopeLfoSpeedOffset,
-    HarmonicLowOffset,
-    HarmonicHighOffset,
-    HarmonicEvenOffset,
-    HarmonicOddOffset,
-}
 
-impl fmt::Display for ControlDestination {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            ControlDestination::PitchOffset => String::from("Pitch offset"),
-            ControlDestination::CutoffOffset => String::from("Cutoff offset"),
-            ControlDestination::Level => String::from("Level"),
-            ControlDestination::VibratoDepthOffset => String::from("Vibrato depth offset"),
-            ControlDestination::GrowlDepthOffset => String::from("Growl depth offset"),
-            ControlDestination::TremoloDepthOffset => String::from("Tremolo depth offset"),
-            ControlDestination::LfoSpeedOffset => String::from("LFO speed offset"),
-            ControlDestination::AttackTimeOffset => String::from("Attack time offset"),
-            ControlDestination::Decay1TimeOffset => String::from("Decay 1 time offset"),
-            ControlDestination::ReleaseTimeOffset => String::from("Release time offset"),
-            ControlDestination::VelocityOffset => String::from("Velocity offset"),
-            ControlDestination::ResonanceOffset => String::from("Resonance offset"),
-            ControlDestination::PanPotOffset => String::from("Pan pot offset"),
-            ControlDestination::FormantFilterBiasOffset => String::from("Formant filter bias offset"),
-            ControlDestination::FormantFilterEnvelopeLfoDepthOffset => String::from("Formant filter envelope LFO depth offset"),
-            ControlDestination::FormantFilterEnvelopeLfoSpeedOffset => String::from("Formant filter envelope LFO speed offset"),
-            ControlDestination::HarmonicLowOffset => String::from("Harmonic low offset"),
-            ControlDestination::HarmonicHighOffset => String::from("Harmonic high offset"),
-            ControlDestination::HarmonicEvenOffset => String::from("Harmonic even offset"),
-            ControlDestination::HarmonicOddOffset => String::from("Harmonic odd offset"),
-        })
-    }
+    #[strum(to_string = "Level")]
+    Level,
+
+    #[strum(to_string = "Vibrato depth offset")]
+    VibratoDepthOffset,
+
+    #[strum(to_string = "Growl depth offset")]
+    GrowlDepthOffset,
+
+    #[strum(to_string = "Tremolo depth offset")]
+    TremoloDepthOffset,
+
+    #[strum(to_string = "LFO speed offset")]
+    LfoSpeedOffset,
+
+    #[strum(to_string = "Attack time offset")]
+    AttackTimeOffset,
+
+    #[strum(to_string = "Decay 1 time offset")]
+    Decay1TimeOffset,
+
+    #[strum(to_string = "Release time offset")]
+    ReleaseTimeOffset,
+
+    #[strum(to_string = "Velocity offset")]
+    VelocityOffset,
+
+    #[strum(to_string = "Resonance offset")]
+    ResonanceOffset,
+
+    #[strum(to_string = "Pan pot offset")]
+    PanPotOffset,
+
+    #[strum(to_string = "Formant filter bias offset")]
+    FormantFilterBiasOffset,
+
+    #[strum(to_string = "Formant filter envelope LFO depth offset")]
+    FormantFilterEnvelopeLfoDepthOffset,
+
+    #[strum(to_string = "Formant filter envelope LFO speed offset")]
+    FormantFilterEnvelopeLfoSpeedOffset,
+
+    #[strum(to_string = "Harmonic low offset")]
+    HarmonicLowOffset,
+
+    #[strum(to_string = "Harmonic high offset")]
+    HarmonicHighOffset,
+
+    #[strum(to_string = "Harmonic even offset")]
+    HarmonicEvenOffset,
+
+    #[strum(to_string = "Harmonic odd offset")]
+    HarmonicOddOffset,
 }
 
 /// Macro controller.
@@ -291,26 +331,26 @@ impl SystemExclusiveData for ModulationSettings {
 }
 
 /// Pan type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug,
+    Eq, PartialEq,
+    Copy, Clone,
+    TryFromPrimitive,
+    Default,
+    strum_macros::Display
+)]
 #[repr(u8)]
 pub enum PanKind {
     #[default]
     Normal,
 
     Random,
-    KeyScale,
-    NegativeKeyScale,
-}
 
-impl fmt::Display for PanKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            PanKind::Normal => String::from("Normal"),
-            PanKind::Random => String::from("Random"),
-            PanKind::KeyScale => String::from("Key scale"),
-            PanKind::NegativeKeyScale => String::from("Negative key scale"),
-        })
-    }
+    #[strum(to_string = "Key scale")]
+    KeyScale,
+
+    #[strum(to_string = "Negative key scale")]
+    NegativeKeyScale,
 }
 
 /// Pan settings.
@@ -511,6 +551,25 @@ mod tests {
         let data = vec![0x01, 0x4f, 0x03, 0x40];
         let mac = MacroController::from_bytes(&data);
         assert_eq!(mac.unwrap().destination1, ControlDestination::CutoffOffset);
+    }
+
+    #[test]
+    fn test_velocity_switch_strum_display() {
+        let vs = VelocitySwitch::Loud;
+        assert_eq!(String::from("Loud"), format!("{}", vs));
+    }
+
+    #[test]
+    fn test_control_destination_strum_display() {
+        let cd = ControlDestination::VelocityOffset;
+        assert_eq!(String::from("Velocity offset"), format!("{}", cd));
+    }
+
+    #[test]
+    fn test_pan_kind_strum_display() {
+        let p = PanKind::Normal;
+        assert_eq!(String::from("Normal"), format!("{}", p));
+
     }
 
     /*
