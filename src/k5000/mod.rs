@@ -2,6 +2,8 @@ use std::fmt;
 use rand::Rng;
 use std::ops::RangeInclusive;
 
+use crate::MIDIChannel;
+
 pub mod filter;
 pub mod amp;
 pub mod osc;
@@ -2078,70 +2080,6 @@ use nutype::nutype;
 pub struct PatchName(String);
 
 
-type MIDIChannelValue = RangedInteger::<1, 16>;
-
-/// MIDI channel.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct MIDIChannel {
-    value: MIDIChannelValue,  // private field to prevent accidental range violations
-}
-
-impl MIDIChannel {
-    /// Makes a new MIDIChannel initialized with the specified value.
-    pub fn new(value: i32) -> Self {
-        Self { value: MIDIChannelValue::new(value) }
-    }
-
-    /// Gets the wrapped value.
-    pub fn value(&self) -> i32 {
-        self.value.value
-    }
-}
-
-impl Parameter for MIDIChannel {
-    fn name(&self) -> String {
-        "MIDIChannel".to_string()
-    }
-
-    fn minimum_value() -> i32 {
-        *MIDIChannelValue::range().start()
-    }
-
-    fn maximum_value() -> i32 {
-        *MIDIChannelValue::range().end()
-    }
-
-    fn default_value() -> i32 {
-        Self::default().value()
-    }
-
-    fn random_value() -> i32 {
-        MIDIChannelValue::random_value()
-    }
-}
-
-impl Default for MIDIChannel {
-    fn default() -> Self { Self::new(0) }
-}
-
-impl From<u8> for MIDIChannel {
-    fn from(value: u8) -> MIDIChannel {
-        MIDIChannel::new((value as i32) + 1)  // 0~15 to 1~16
-    }
-}
-
-impl From<MIDIChannel> for u8 {
-    fn from(val: MIDIChannel) -> Self {
-        (val.value() as u8) - 1  // 1~16 to 0~15
-    }
-}
-
-impl fmt::Display for MIDIChannel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{*};
@@ -2160,18 +2098,5 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_midi_channel_from_byte() {
-        let ch = MIDIChannel::from(0x00);
-        let value = ch.value();
-        assert_eq!(value, 1);  // 0x00 goes in, channel should be 1
-    }
-
-    #[test]
-    fn test_byte_from_midi_channel() {
-        let ch = MIDIChannel::new(16);  // channel 16
-        let b: u8 = ch.into();
-        assert_eq!(b, 0x0F);
-    }
 
 }

@@ -34,6 +34,7 @@ pub trait SystemExclusiveData: Sized {
     fn data_size() -> usize;
 }
 
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct ValueError(i32, i32, i32);  // expected low, expected high, actual
 
 impl fmt::Display for ValueError {
@@ -42,6 +43,7 @@ impl fmt::Display for ValueError {
     }
 }
 
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct MIDIChannel(i32);
 
 impl MIDIChannel {
@@ -76,6 +78,16 @@ impl SystemExclusiveData for MIDIChannel {
 
     fn data_size() -> usize { 1 }
 }
+
+use nutype::nutype;
+
+/// MIDI note (0...127)
+#[nutype(
+    validate(greater_or_equal = 0, less_or_equal = 127),
+    derive(Debug, Copy, Clone, PartialEq, Eq)
+)]
+pub struct MIDINote(u8);
+
 
 /// Checksum for a patch.
 pub trait Checksum {
@@ -121,5 +133,16 @@ mod tests {
     fn test_channel() {
         let ch = MIDIChannel::try_new(1);
         assert!(ch.is_ok());
+        //let value = ch.value();
+        //assert_eq!(value, 1);  // 0x00 goes in, channel should be 1
     }
+
+    /*
+    #[test]
+    fn test_byte_from_midi_channel() {
+        let ch = MIDIChannel::try_new(16);  // channel 16
+        let b: u8 = ch.value();
+        assert_eq!(b, 0x0F);
+    }
+     */
 }

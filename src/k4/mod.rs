@@ -164,32 +164,6 @@ pub struct Fine(i8);
 )]
 pub struct WaveNumber(u16);
 
-/// MIDI channel
-#[nutype(
-    validate(greater_or_equal = 1, less_or_equal = 16),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct MIDIChannel(u8);
-
-impl SystemExclusiveData for MIDIChannel {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self::try_new(data[0] + 1).unwrap())
-    }
-
-    fn to_bytes(&self) -> Vec<u8> {
-        vec![self.into_inner() - 1]
-    }
-
-    fn data_size() -> usize { 1 }
-}
-
-/// MIDI note (0...127)
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 127),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct MIDINote(u8);
-
 /// Patch number 0...63 (can be converted to A-1...D-16)
 #[nutype(
     validate(greater_or_equal = 0, less_or_equal = 63),

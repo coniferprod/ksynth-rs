@@ -4,8 +4,11 @@
 use std::convert::TryFrom;
 use std::fmt;
 use num_enum::TryFromPrimitive;
-use crate::{SystemExclusiveData, ParseError};
-use crate::k4::MIDIChannel;
+use crate::{
+    SystemExclusiveData,
+    ParseError,
+    MIDIChannel
+};
 
 const GROUP: u8 = 0x00;      // synth group
 const MACHINE_ID: u8 = 0x04; // K4/K4r ID
@@ -65,7 +68,7 @@ impl Header {
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Ch: {}  Fn: {}, Sub1: {}, Sub2: {}",
-            self.channel.into_inner(),
+            self.channel.value(),
             self.function,
             self.substatus1,
             self.substatus2)
@@ -75,7 +78,7 @@ impl fmt::Display for Header {
 impl SystemExclusiveData for Header {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Header {
-            channel: MIDIChannel::try_new(data[0] + 1).unwrap(),
+            channel: MIDIChannel::try_new(data[0] as i32 + 1).unwrap(),
             function: Function::try_from(data[1]).unwrap(),
             substatus1: data[4],
             substatus2: data[5],
@@ -83,8 +86,9 @@ impl SystemExclusiveData for Header {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let ch = self.channel.to_bytes()[0]; // 1...16 to 0...15
         vec![
-            self.channel.into_inner() - 1,  // 1...16 to 0...15
+            ch,
             self.function as u8,
             GROUP,
             MACHINE_ID,

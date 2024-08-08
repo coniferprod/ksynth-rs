@@ -10,13 +10,13 @@ use num_enum::TryFromPrimitive;
 use crate::{
     SystemExclusiveData,
     Checksum,
-    ParseError
+    ParseError,
+    MIDIChannel
 };
 use crate::k4;
 use crate::k4::{
     get_note_name,
     Level,
-    MIDIChannel,
     PatchNumber,
     EffectNumber,
     Transpose
