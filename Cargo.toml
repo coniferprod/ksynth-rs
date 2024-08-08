@@ -1,6 +1,6 @@
 [package]
 name = "ksynth"
-version = "0.18.0"
+version = "0.19.0"
 authors = ["Jere Käpyaho <2261936+jerekapyaho@users.noreply.github.com>"]
 edition = "2021"
 license = "MIT"
@@ -10,13 +10,13 @@ Patch manipulation for Kawai digital synths
 """
 
 [dependencies]
-num_enum = "0.7.2"  # https://crates.io/crates/num_enum
+num_enum = "0.7.3"  # https://crates.io/crates/num_enum
 bit = "0.1.1"  # https://crates.io/crates/bit
-lazy_static = "1.4.0"  # https://crates.io/crates/lazy_static
-log = "0.4.21"  # https://crates.io/crates/log
+lazy_static = "1.5.0"  # https://crates.io/crates/lazy_static
+log = "0.4.22"  # https://crates.io/crates/log
 rand = "0.8.5"  # https://crates.io/crates/rand
-syxpack = "0.14.0"  # https://crates.io/crates/syxpack
+syxpack = "0.16.0"  # https://crates.io/crates/syxpack
 pretty-hex = "0.4.1"  # https://crates.io/crates/pretty-hex
-nutype = "0.4.2"  # https://crates.io/crates/nutype
+nutype = "0.4.3"  # https://crates.io/crates/nutype
 strum = "0.26"  # https://crates.io/crates/strum
 strum_macros = "0.26"  # https://crates.io/crates/strum_macros
