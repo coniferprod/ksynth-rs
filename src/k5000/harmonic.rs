@@ -4,7 +4,7 @@
 use bit::BitIndex;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::morf::Loop;
@@ -57,7 +57,7 @@ impl SystemExclusiveData for Levels {
         result
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         2 * HARMONIC_COUNT
     }
 }
@@ -90,7 +90,7 @@ impl SystemExclusiveData for EnvelopeSegment {
         vec![self.rate.into(), self.level.into()]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// Harmonic envelope with four segments and loop type.
@@ -203,5 +203,5 @@ impl SystemExclusiveData for Envelope {
         result
     }
 
-    fn data_size(&self) -> usize { 8 }
+    fn data_size() -> usize { 8 }
 }

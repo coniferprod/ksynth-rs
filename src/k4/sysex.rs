@@ -75,7 +75,7 @@ impl fmt::Display for Header {
 impl SystemExclusiveData for Header {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Header {
-            channel: MIDIChannel::new(data[0] + 1).unwrap(),
+            channel: MIDIChannel::try_new(data[0] + 1).unwrap(),
             function: Function::try_from(data[1]).unwrap(),
             substatus1: data[4],
             substatus2: data[5],
@@ -93,7 +93,7 @@ impl SystemExclusiveData for Header {
         ]
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }
 
 pub enum Locality {
@@ -197,7 +197,7 @@ mod tests {
     #[test]
     fn test_dump_identify_all() {
         let data: [u8; 15123] = include!("a401.in");
-        match Message::new(&data.to_vec()) {
+        match Message::from_bytes(&data.to_vec()) {
             Ok(Message::ManufacturerSpecific { manufacturer: _, payload }) => {
                 match Dump::identify(payload) {
                     Ok(dump) => {

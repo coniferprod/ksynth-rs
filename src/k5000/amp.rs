@@ -5,15 +5,15 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
     RangedInteger,
     Parameter,
-    EnvelopeTime, 
-    ControlTime, 
-    KeyScaling, 
+    EnvelopeTime,
+    ControlTime,
+    KeyScaling,
     VelocityControlLevel
 };
 use crate::k5000::control::VelocityCurve;
@@ -149,7 +149,7 @@ impl SystemExclusiveData for Envelope {
         ]
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }
 
 /// Amplifier key scaling control.
@@ -199,7 +199,7 @@ impl SystemExclusiveData for KeyScalingControl {
         ]
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }
 
 /// Amplifier velocity control.
@@ -249,7 +249,7 @@ impl SystemExclusiveData for VelocityControl {
         ]
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }
 
 /// Modulation settings for the amplifier section.
@@ -284,9 +284,9 @@ impl SystemExclusiveData for Modulation {
         result
     }
 
-    fn data_size(&self) -> usize {
-        self.ks_to_env.data_size()
-        + self.vel_sens.data_size()
+    fn data_size() -> usize {
+        KeyScalingControl::data_size()
+        + VelocityControl::data_size()
     }
 }
 
@@ -335,9 +335,9 @@ impl SystemExclusiveData for Amplifier {
         result
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         1  // velocity curve
-        + self.envelope.data_size()
-        + self.modulation.data_size()
+        + Envelope::data_size()
+        + Modulation::data_size()
     }
 }

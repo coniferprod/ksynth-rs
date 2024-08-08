@@ -8,12 +8,12 @@ use num_enum::TryFromPrimitive;
 use pretty_hex::*;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 use crate::k5000::{
-    Coarse, 
+    Coarse,
     Fine
 };
 use crate::k5000::wave::Wave;
@@ -53,7 +53,7 @@ impl SystemExclusiveData for FixedKey {
         }
     }
 
-    fn data_size(&self) -> usize { 1 }
+    fn data_size() -> usize { 1 }
 }
 
 /// PCM oscillator.
@@ -132,10 +132,10 @@ impl SystemExclusiveData for Oscillator {
         result
     }
 
-    fn data_size(&self) -> usize { 
-        self.wave.data_size() 
-        + 4 
-        + self.pitch_envelope.data_size()
+    fn data_size() -> usize {
+        Wave::data_size()
+        + 4
+        + PitchEnvelope::data_size()
     }
 }
 

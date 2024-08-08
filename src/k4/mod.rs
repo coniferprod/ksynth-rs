@@ -126,14 +126,14 @@ pub struct EffectNumber(u8);
 
 impl SystemExclusiveData for EffectNumber {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self::new(data[0] + 1).unwrap())  // adjust 0~31 to 1~32
+        Ok(Self::try_new(data[0] + 1).unwrap())  // adjust 0~31 to 1~32
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.into_inner() - 1]
     }
 
-    fn data_size(&self) -> usize { 1 }
+    fn data_size() -> usize { 1 }
 }
 
 /// Velocity or Key Scaling curve 1~8
@@ -173,14 +173,14 @@ pub struct MIDIChannel(u8);
 
 impl SystemExclusiveData for MIDIChannel {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self::new(data[0] + 1).unwrap())
+        Ok(Self::try_new(data[0] + 1).unwrap())
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![self.into_inner() - 1]
     }
 
-    fn data_size(&self) -> usize { 1 }
+    fn data_size() -> usize { 1 }
 }
 
 /// MIDI note (0...127)
@@ -201,17 +201,17 @@ pub struct PatchNumber(u8);
 #[nutype(
     validate(greater_or_equal = -24, less_or_equal = 24), // +-24 (in SysEx 0~48)
     derive(Debug, Copy, Clone, PartialEq, Eq)
-)]  
+)]
 pub struct Transpose(i8);
 
 impl SystemExclusiveData for Transpose {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self::new(data[0] as i8 - 24).unwrap())
+        Ok(Self::try_new(data[0] as i8 - 24).unwrap())
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![(self.into_inner() + 24) as u8]
     }
 
-    fn data_size(&self) -> usize { 1 }
+    fn data_size() -> usize { 1 }
 }

@@ -7,12 +7,12 @@ use std::convert::TryFrom;
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    LFOSpeed, 
-    Depth, 
+    LFOSpeed,
+    Depth,
     KeyScaling
 };
 
@@ -75,7 +75,7 @@ impl SystemExclusiveData for Control {
         vec![self.depth.into(), self.key_scaling.into()]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// LFO settings.
@@ -155,5 +155,5 @@ impl SystemExclusiveData for Lfo {
         result
     }
 
-    fn data_size(&self) -> usize { 11 }
+    fn data_size() -> usize { 11 }
 }

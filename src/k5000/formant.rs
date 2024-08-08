@@ -7,16 +7,16 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::{
-    EnvelopeRate, 
-    EnvelopeLevel, 
-    EnvelopeDepth, 
-    Bias, 
-    LFODepth, 
+    EnvelopeRate,
+    EnvelopeLevel,
+    EnvelopeDepth,
+    Bias,
+    LFODepth,
     LFOSpeed
 };
 
@@ -58,7 +58,7 @@ impl SystemExclusiveData for EnvelopeSegment {
         vec![self.rate.into(), self.level.into()]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// Formant filter envelope.
@@ -118,8 +118,8 @@ impl SystemExclusiveData for Envelope {
         result
     }
 
-    fn data_size(&self) -> usize {
-        4 * self.attack.data_size()
+    fn data_size() -> usize {
+        4 * EnvelopeSegment::data_size()
         + 3
     }
 }
@@ -166,7 +166,7 @@ impl SystemExclusiveData for Lfo {
         vec![self.speed.into(), self.shape as u8, self.depth.into()]
     }
 
-    fn data_size(&self) -> usize { 3 }
+    fn data_size() -> usize { 3 }
 }
 
 /// Formant filter settings.
@@ -193,7 +193,7 @@ impl Default for FormantFilter {
 impl fmt::Display for FormantFilter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Bias={} Mode={:?} Env.Depth={} Envelope={:?} LFO={:?}",
-            self.bias, self.mode, self.envelope_depth, 
+            self.bias, self.mode, self.envelope_depth,
             self.envelope, self.lfo)
     }
 }
@@ -225,7 +225,7 @@ impl SystemExclusiveData for FormantFilter {
         result
     }
 
-    fn data_size(&self) -> usize {
-        3 + self.envelope.data_size() + self.lfo.data_size()
+    fn data_size() -> usize {
+        3 + Envelope::data_size() + Lfo::data_size()
     }
 }

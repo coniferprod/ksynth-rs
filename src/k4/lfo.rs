@@ -8,11 +8,11 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k4::{
-    Level, 
+    Level,
     ModulationDepth
 };
 
@@ -54,10 +54,10 @@ impl Lfo {
     pub fn new() -> Lfo {
         Lfo {
             shape: Shape::Triangle,
-            speed: Level::new(0).unwrap(),
-            delay: Level::new(0).unwrap(),
-            depth: ModulationDepth::new(0).unwrap(),
-            pressure_depth: ModulationDepth::new(0).unwrap(),
+            speed: Level::try_new(0).unwrap(),
+            delay: Level::try_new(0).unwrap(),
+            depth: ModulationDepth::try_new(0).unwrap(),
+            pressure_depth: ModulationDepth::try_new(0).unwrap(),
         }
     }
 }
@@ -85,10 +85,10 @@ impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Lfo {
             shape: Shape::try_from(data[0] & 0x03).unwrap(),
-            speed: Level::new(data[1] & 0x7f).unwrap(),
-            delay: Level::new(data[2] & 0x7f).unwrap(),
-            depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-            pressure_depth: ModulationDepth::new(((data[4] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            speed: Level::try_new(data[1] & 0x7f).unwrap(),
+            delay: Level::try_new(data[2] & 0x7f).unwrap(),
+            depth: ModulationDepth::try_new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            pressure_depth: ModulationDepth::try_new(((data[4] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
         })
     }
 
@@ -107,7 +107,7 @@ impl SystemExclusiveData for Lfo {
         buf
     }
 
-    fn data_size(&self) -> usize { 5 }
+    fn data_size() -> usize { 5 }
 }
 
 /// Vibrato settings.
@@ -123,9 +123,9 @@ impl Vibrato {
     pub fn new() -> Vibrato {
         Vibrato {
             shape: Shape::Triangle,
-            speed: Level::new(0).unwrap(),
-            pressure: ModulationDepth::new(0).unwrap(),
-            depth: ModulationDepth::new(0).unwrap(),
+            speed: Level::try_new(0).unwrap(),
+            pressure: ModulationDepth::try_new(0).unwrap(),
+            depth: ModulationDepth::try_new(0).unwrap(),
         }
     }
 }
@@ -152,9 +152,9 @@ impl SystemExclusiveData for Vibrato {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Vibrato {
             shape: Shape::try_from((data[0] >> 4) & 0x03).unwrap(),
-            speed: Level::new(data[1] & 0x7f).unwrap(),
-            pressure: ModulationDepth::new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-            depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            speed: Level::try_new(data[1] & 0x7f).unwrap(),
+            pressure: ModulationDepth::try_new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            depth: ModulationDepth::try_new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
         })
     }
 
@@ -172,5 +172,5 @@ impl SystemExclusiveData for Vibrato {
         buf
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }

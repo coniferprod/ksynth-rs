@@ -2,8 +2,8 @@
 //!
 
 use crate::{
-    SystemExclusiveData, 
-    ParseError, 
+    SystemExclusiveData,
+    ParseError,
     Checksum
 };
 use crate::k5000::formant::FormantFilter;
@@ -12,7 +12,7 @@ use crate::k5000::harmonic::{
     Levels
 };
 use crate::k5000::morf::{
-    HarmonicCommon, 
+    HarmonicCommon,
     MorfHarmonic
 };
 
@@ -62,21 +62,21 @@ impl SystemExclusiveData for AdditiveKit {
         let hc_data = &data[1..7];
         let common = HarmonicCommon::from_bytes(hc_data)?;
         eprintln!("{:#04X}: harmonic common = {}", offset, common);
-        offset += common.data_size();
+        offset += HarmonicCommon::data_size();
 
         let morf_data = &data[7..20];
         let morf = MorfHarmonic::from_bytes(morf_data)?;
         eprintln!("{:#04X}: MORF harmonic = {}", offset, morf);
-        offset += morf.data_size();
+        offset += MorfHarmonic::data_size();
 
         let ff_data = &data[20..37];
         let formant_filter = FormantFilter::from_bytes(ff_data)?;
         eprintln!("{:#04X}: FF = {}", offset, formant_filter);
-        offset += formant_filter.data_size();
+        offset += FormantFilter::data_size();
 
         let levels_data = &data[37..165];
         let levels = Levels::from_bytes(levels_data)?;
-        offset += levels.data_size();
+        offset += Levels::data_size();
 
         eprintln!("{:#04X}: FF bands start here", offset);
         let mut bands: [u8; BAND_COUNT] = [0; BAND_COUNT];
@@ -121,27 +121,27 @@ impl SystemExclusiveData for AdditiveKit {
         result
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         1  // checksum
 
         // HC kit
-        + self.common.data_size()
-        + self.morf.data_size()
-        + self.formant_filter.data_size()
+        + HarmonicCommon::data_size()
+        + MorfHarmonic::data_size()
+        + FormantFilter::data_size()
 
         // HC code 1 & 2
-        + self.levels.data_size()
+        + Levels::data_size()
 
         + BAND_COUNT
 
-        + HARMONIC_COUNT * self.envelopes[0].data_size()
+        + HARMONIC_COUNT * HarmonicEnvelope::data_size()
     }
 }
 
 impl Checksum for AdditiveKit {
     fn checksum(&self) -> u8 {
         // Additive kit checksum:
-        // {(HCKIT sum) + (HCcode1 sum) + (HCcode2 sum) 
+        // {(HCKIT sum) + (HCcode1 sum) + (HCcode2 sum)
         // + (FF sum) + (HCenv sum) + (loud sens select) + 0xA5} & 0x7F
         let mut total = 0;
 

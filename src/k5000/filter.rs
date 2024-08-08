@@ -7,16 +7,16 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    EnvelopeTime, 
-    EnvelopeLevel, 
-    ControlTime, 
-    EnvelopeDepth, 
-    Cutoff, 
-    Resonance, 
+    EnvelopeTime,
+    EnvelopeLevel,
+    ControlTime,
+    EnvelopeDepth,
+    Cutoff,
+    Resonance,
     Level
 };
 use crate::k5000::control::VelocityCurve;
@@ -100,7 +100,7 @@ impl SystemExclusiveData for Envelope {
         ]
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }
 
 /// Filter key scaling control.
@@ -140,7 +140,7 @@ impl SystemExclusiveData for KeyScalingControl {
         ]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// Filter velocity control.
@@ -185,7 +185,7 @@ impl SystemExclusiveData for VelocityControl {
         ]
     }
 
-    fn data_size(&self) -> usize { 3 }
+    fn data_size() -> usize { 3 }
 }
 
 /// Modulation settings for the filter.
@@ -218,8 +218,8 @@ impl SystemExclusiveData for Modulation {
         result
     }
 
-    fn data_size(&self) -> usize {
-        self.ks_to_env.data_size() + self.vel_to_env.data_size()
+    fn data_size() -> usize {
+        KeyScalingControl::data_size() + VelocityControl::data_size()
     }
 }
 
@@ -313,9 +313,9 @@ impl SystemExclusiveData for Filter {
         result
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         9
-        + self.envelope.data_size()
-        + self.modulation.data_size()
+        + Envelope::data_size()
+        + Modulation::data_size()
     }
 }

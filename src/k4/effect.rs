@@ -10,14 +10,14 @@ use lazy_static::lazy_static;
 use num_enum::TryFromPrimitive;
 
 use crate::k4::{
-    Level, 
-    SUBMIX_COUNT, 
-    SmallEffectParameter, 
+    Level,
+    SUBMIX_COUNT,
+    SmallEffectParameter,
     BigEffectParameter
 };
 use crate::{
-    SystemExclusiveData, 
-    ParseError, 
+    SystemExclusiveData,
+    ParseError,
     Checksum
 };
 
@@ -105,9 +105,9 @@ impl Default for EffectPatch {
     fn default() -> Self {
         EffectPatch {
             effect: Effect::Reverb1,
-            param1: SmallEffectParameter::new(0).unwrap(),
-            param2: SmallEffectParameter::new(0).unwrap(),
-            param3: BigEffectParameter::new(0).unwrap(),
+            param1: SmallEffectParameter::try_new(0).unwrap(),
+            param2: SmallEffectParameter::try_new(0).unwrap(),
+            param3: BigEffectParameter::try_new(0).unwrap(),
             submixes: [Default::default(); SUBMIX_COUNT],
         }
     }
@@ -164,8 +164,8 @@ impl SystemExclusiveData for EffectPatch {
         while i < SUBMIX_COUNT {
             submixes[i] = SubmixSettings {
                 pan: data[offset] as i32 - 7,
-                send1: Level::new(data[offset + 1]).unwrap(),
-                send2: Level::new(data[offset + 2]).unwrap(),
+                send1: Level::try_new(data[offset + 1]).unwrap(),
+                send2: Level::try_new(data[offset + 2]).unwrap(),
             };
             offset += 3;
             i += 1;
@@ -173,9 +173,9 @@ impl SystemExclusiveData for EffectPatch {
 
         Ok(EffectPatch {
             effect: Effect::try_from(data[0] + 1).unwrap(),
-            param1: SmallEffectParameter::new((data[1] as i8) - 7).unwrap(),
-            param2: SmallEffectParameter::new((data[2] as i8) - 7).unwrap(),
-            param3: BigEffectParameter::new(data[3]).unwrap(),
+            param1: SmallEffectParameter::try_new((data[1] as i8) - 7).unwrap(),
+            param2: SmallEffectParameter::try_new((data[2] as i8) - 7).unwrap(),
+            param3: BigEffectParameter::try_new(data[3]).unwrap(),
             submixes,
         })
     }
@@ -188,7 +188,7 @@ impl SystemExclusiveData for EffectPatch {
         buf
     }
 
-    fn data_size(&self) -> usize { 35 }
+    fn data_size() -> usize { 35 }
 }
 
 impl Checksum for EffectPatch {
@@ -215,8 +215,8 @@ impl Default for SubmixSettings {
     fn default() -> Self {
         SubmixSettings {
             pan: 0,
-            send1: Level::new(0).unwrap(),
-            send2: Level::new(0).unwrap(),
+            send1: Level::try_new(0).unwrap(),
+            send2: Level::try_new(0).unwrap(),
         }
     }
 }
@@ -225,8 +225,8 @@ impl SystemExclusiveData for SubmixSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(SubmixSettings {
             pan: data[0] as i32 - 7,
-            send1: Level::new(data[1]).unwrap(),
-            send2: Level::new(data[2]).unwrap(),
+            send1: Level::try_new(data[1]).unwrap(),
+            send2: Level::try_new(data[2]).unwrap(),
         })
     }
 
@@ -238,7 +238,7 @@ impl SystemExclusiveData for SubmixSettings {
         ]
     }
 
-    fn data_size(&self) -> usize { 3 }
+    fn data_size() -> usize { 3 }
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -298,9 +298,9 @@ mod tests {
     fn test_effect_parameter_names() {
         let effect = EffectPatch {
             effect: Effect::Reverb1,
-            param1: SmallEffectParameter::new(7).unwrap(),
-            param2: SmallEffectParameter::new(5).unwrap(),
-            param3: BigEffectParameter::new(31).unwrap(),
+            param1: SmallEffectParameter::try_new(7).unwrap(),
+            param2: SmallEffectParameter::try_new(5).unwrap(),
+            param3: BigEffectParameter::try_new(31).unwrap(),
             submixes: [Default::default(); SUBMIX_COUNT],
         };
 
@@ -316,9 +316,9 @@ mod tests {
     fn test_effect_get_parameter_names() {
         let effect = EffectPatch {
             effect: Effect::Reverb1,
-            param1: SmallEffectParameter::new(7).unwrap(),
-            param2: SmallEffectParameter::new(5).unwrap(),
-            param3: BigEffectParameter::new(31).unwrap(),
+            param1: SmallEffectParameter::try_new(7).unwrap(),
+            param2: SmallEffectParameter::try_new(5).unwrap(),
+            param3: BigEffectParameter::try_new(31).unwrap(),
             submixes: [Default::default(); SUBMIX_COUNT],
         };
 

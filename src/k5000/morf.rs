@@ -7,12 +7,12 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    VelocityDepth, 
-    EnvelopeTime, 
+    VelocityDepth,
+    EnvelopeTime,
     KeyScalingToGain
 };
 use crate::k5000::control::VelocityCurve;
@@ -87,7 +87,7 @@ impl SystemExclusiveData for HarmonicCommon {
         ]
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }
 
 /// MORF harmonic copy parameters.
@@ -116,7 +116,7 @@ impl SystemExclusiveData for MorfHarmonicCopyParameters {
         vec![self.patch_number, self.source_number]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// MORF harmonic envelope loop type.
@@ -190,7 +190,7 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
         ]
     }
 
-    fn data_size(&self) -> usize { 5 }
+    fn data_size() -> usize { 5 }
 }
 
 /// MORF harmonic settings.
@@ -234,7 +234,7 @@ impl SystemExclusiveData for MorfHarmonic {
         result
     }
 
-    fn data_size(&self) -> usize {
-        4 * self.copy1.data_size() + self.envelope.data_size()
+    fn data_size() -> usize {
+        4 * MorfHarmonicCopyParameters::data_size() + MorfHarmonicEnvelope::data_size()
     }
 }

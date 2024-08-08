@@ -4,12 +4,12 @@
 use std::fmt;
 
 use crate::k5000::control::{
-    VelocitySwitchSettings, 
-    ModulationSettings, 
+    VelocitySwitchSettings,
+    ModulationSettings,
     PanSettings
 };
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::osc::*;
@@ -17,9 +17,9 @@ use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
 use crate::k5000::{
-    Volume, 
-    BenderPitch, 
-    BenderCutoff, 
+    Volume,
+    BenderPitch,
+    BenderCutoff,
     KeyOnDelay
 };
 
@@ -84,7 +84,7 @@ impl SystemExclusiveData for Zone {
         ]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// Source control settings.
@@ -158,13 +158,13 @@ impl SystemExclusiveData for SourceControl {
         result
     }
 
-    fn data_size(&self) -> usize {  // should be 28
-        self.zone.data_size()
-        + self.vel_sw.data_size()
+    fn data_size() -> usize {  // should be 28
+        Zone::data_size()
+        + VelocitySwitchSettings::data_size()
         + 4  // effect path, volume, bender pitch, bender cutoff
-        + self.modulation.data_size()
+        + ModulationSettings::data_size()
         + 1  // key on delay
-        + self.pan.data_size()
+        + PanSettings::data_size()
     }
 }
 
@@ -218,22 +218,22 @@ impl SystemExclusiveData for Source {
         //eprintln!("Source data ({} bytes): {:?}", data.len(), data);
         eprintln!("Source data size = {} bytes", data.len());
         eprintln!("Reported sizes:");
-        let source_control_size = SourceControl::default().data_size();
-        eprintln!("Source control = {} bytes", 
+        let source_control_size = SourceControl::data_size();
+        eprintln!("Source control = {} bytes",
             source_control_size);
-        let amplifier_size = Amplifier::default().data_size();
+        let amplifier_size = Amplifier::data_size();
         eprintln!("Amplifier data = {} bytes",
             amplifier_size);
-        let oscillator_size = Oscillator::default().data_size();
+        let oscillator_size = Oscillator::data_size();
         eprintln!("Oscillator data = {} bytes",
             oscillator_size);
-        let filter_size = Filter::default().data_size();
+        let filter_size = Filter::data_size();
         eprintln!("Filter data = {} bytes",
             filter_size);
-        let lfo_size = Lfo::default().data_size();
+        let lfo_size = Lfo::data_size();
         eprintln!("LFO data = {} bytes",
             lfo_size);
-        let total_size = source_control_size + amplifier_size + oscillator_size 
+        let total_size = source_control_size + amplifier_size + oscillator_size
             + filter_size + lfo_size;
         eprintln!("Total = {} bytes", total_size);
 
@@ -258,12 +258,12 @@ impl SystemExclusiveData for Source {
         result
     }
 
-    fn data_size(&self) -> usize {
-        self.control.data_size()
-        + self.oscillator.data_size()
-        + self.filter.data_size()
-        + self.amplifier.data_size()
-        + self.lfo.data_size()
+    fn data_size() -> usize {
+        SourceControl::data_size()
+        + Oscillator::data_size()
+        + Filter::data_size()
+        + Amplifier::data_size()
+        + Lfo::data_size()
     }
 }
 

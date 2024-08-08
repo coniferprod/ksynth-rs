@@ -4,12 +4,12 @@
 use std::fmt;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    PitchEnvelopeLevel, 
-    PitchEnvelopeTime, 
+    PitchEnvelopeLevel,
+    PitchEnvelopeTime,
     VelocitySensitivity
 };
 
@@ -86,5 +86,5 @@ impl SystemExclusiveData for Envelope {
         ]
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }

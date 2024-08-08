@@ -8,11 +8,11 @@ pub mod k4;
 use std::fmt;
 
 /// Error type for parsing data from MIDI System Exclusive bytes.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ParseError {
-    InvalidLength(u32, u32),  // actual, expected
+    InvalidLength(usize, usize),  // actual, expected
     InvalidChecksum(u8, u8),  // actual, expected
-    InvalidData(u32),  // offset in data
+    InvalidData(u32, String),  // offset in data, explanation
     Unidentified,  // can't identify this kind
 }
 
@@ -21,7 +21,7 @@ impl fmt::Display for ParseError {
         write!(f, "{}", match self {
             ParseError::InvalidLength(actual, expected) => format!("Got {} bytes of data, expected {} bytes.", actual, expected),
             ParseError::InvalidChecksum(actual, expected) => format!("Computed checksum was {}H, expected {}H.", actual, expected),
-            ParseError::InvalidData(offset) => format!("Invalid data at offset {}.", offset),
+            ParseError::InvalidData(offset, message) => format!("Invalid data at offset {}. Reason: {}", offset, message),
             ParseError::Unidentified => String::from("Unable to identify this System Exclusive file."),
         })
     }
@@ -31,7 +31,50 @@ impl fmt::Display for ParseError {
 pub trait SystemExclusiveData: Sized {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError>;
     fn to_bytes(&self) -> Vec<u8>;
-    fn data_size(&self) -> usize;
+    fn data_size() -> usize;
+}
+
+pub struct ValueError(i32, i32, i32);  // expected low, expected high, actual
+
+impl fmt::Display for ValueError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "expected {}...{}, got {}", self.0, self.1, self.2)
+    }
+}
+
+pub struct MIDIChannel(i32);
+
+impl MIDIChannel {
+    pub fn try_new(value: i32) -> Result<Self, ValueError> {
+        if let 1..=16 = value {
+            Ok(Self(value))
+        } else {
+            Err(ValueError(1, 16, value))
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
+    }
+}
+
+impl SystemExclusiveData for MIDIChannel {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        if data.len() < 1 {
+            Err(ParseError::InvalidLength(data.len(), 1))
+        } else {
+            match MIDIChannel::try_new(data[0].into()) {
+                Ok(ch) => Ok(ch),
+                Err(e) => Err(ParseError::InvalidData(0, format!("invalid value {}", e)))
+            }
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![self.0 as u8 - 1]  // bring into range 0...15 for SysEx
+    }
+
+    fn data_size() -> usize { 1 }
 }
 
 /// Checksum for a patch.
@@ -74,4 +117,9 @@ mod tests {
         assert_eq!(every_nth_byte(&data2, 4, 1), vec![2, 6, 10]);
     }
 
+    #[test]
+    fn test_channel() {
+        let ch = MIDIChannel::try_new(1);
+        assert!(ch.is_ok());
+    }
 }

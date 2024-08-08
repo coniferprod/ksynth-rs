@@ -7,18 +7,18 @@ use std::fmt;
 use bit::BitIndex;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k4::{
-    EnvelopeTime, 
-    FilterEnvelopeLevel, 
-    Cutoff, 
-    Resonance, 
+    EnvelopeTime,
+    FilterEnvelopeLevel,
+    Cutoff,
+    Resonance,
     ModulationDepth
 };
 use crate::k4::amp::{
-    LevelModulation, 
+    LevelModulation,
     TimeModulation
 };
 
@@ -34,10 +34,10 @@ pub struct Envelope {
 impl Default for Envelope {
     fn default() -> Self {
         Envelope {
-            attack: EnvelopeTime::new(0).unwrap(),
-            decay: EnvelopeTime::new(50).unwrap(),
-            sustain: FilterEnvelopeLevel::new(25).unwrap(),
-            release: EnvelopeTime::new(25).unwrap(),
+            attack: EnvelopeTime::try_new(0).unwrap(),
+            decay: EnvelopeTime::try_new(50).unwrap(),
+            sustain: FilterEnvelopeLevel::try_new(25).unwrap(),
+            release: EnvelopeTime::try_new(25).unwrap(),
         }
     }
 }
@@ -63,10 +63,10 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
-            attack: EnvelopeTime::new(data[0]).unwrap(),
-            decay: EnvelopeTime::new(data[1]).unwrap(),
-            sustain: FilterEnvelopeLevel::new((data[2] as i8) - 50).unwrap(),
-            release: EnvelopeTime::new(data[3]).unwrap(),
+            attack: EnvelopeTime::try_new(data[0]).unwrap(),
+            decay: EnvelopeTime::try_new(data[1]).unwrap(),
+            sustain: FilterEnvelopeLevel::try_new((data[2] as i8) - 50).unwrap(),
+            release: EnvelopeTime::try_new(data[3]).unwrap(),
         })
     }
 
@@ -79,7 +79,7 @@ impl SystemExclusiveData for Envelope {
         ]
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }
 
 /// Filter (DCF).
@@ -98,12 +98,12 @@ pub struct Filter {
 impl Default for Filter {
     fn default() -> Self {
         Filter {
-            cutoff: Cutoff::new(49).unwrap(),
-            resonance: Resonance::new(2).unwrap(),
+            cutoff: Cutoff::try_new(49).unwrap(),
+            resonance: Resonance::try_new(2).unwrap(),
             cutoff_mod: Default::default(),
             lfo_modulates_cutoff: false,
-            env_depth: ModulationDepth::new(0).unwrap(),
-            env_vel_depth: ModulationDepth::new(0).unwrap(),
+            env_depth: ModulationDepth::try_new(0).unwrap(),
+            env_vel_depth: ModulationDepth::try_new(0).unwrap(),
             envelope: Default::default(),
             time_mod: Default::default(),
         }
@@ -176,12 +176,12 @@ impl SystemExclusiveData for Filter {
         let time_mod = TimeModulation::from_bytes(&time_mod_bytes);
 
         Ok(Filter {
-            cutoff: Cutoff::new(cutoff).unwrap(),
-            resonance: Resonance::new(resonance).unwrap(),
+            cutoff: Cutoff::try_new(cutoff).unwrap(),
+            resonance: Resonance::try_new(resonance).unwrap(),
             cutoff_mod: cutoff_mod?,
             lfo_modulates_cutoff,
-            env_depth: ModulationDepth::new(env_depth).unwrap(),
-            env_vel_depth: ModulationDepth::new(env_vel_depth).unwrap(),
+            env_depth: ModulationDepth::try_new(env_depth).unwrap(),
+            env_vel_depth: ModulationDepth::try_new(env_vel_depth).unwrap(),
             envelope: envelope?,
             time_mod: time_mod?,
         })
@@ -206,11 +206,11 @@ impl SystemExclusiveData for Filter {
         buf
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         2
-            + self.cutoff_mod.data_size()
-            + 2
-            + self.envelope.data_size()
-            + self.time_mod.data_size()
+        + LevelModulation::data_size()
+        + 2
+        + Envelope::data_size()
+        + TimeModulation::data_size()
     }
 }

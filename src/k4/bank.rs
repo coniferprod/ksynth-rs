@@ -5,7 +5,7 @@ use std::fmt;
 use log::debug;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k4::single::SinglePatch;
@@ -59,12 +59,12 @@ impl SystemExclusiveData for Bank {
         for i in 0..SINGLE_PATCH_COUNT {
             let single = SinglePatch::from_bytes(&data[offset..]);
             debug!("{}: {}", i, single.as_ref().unwrap().name);
-            offset += single.as_ref().unwrap().data_size();
+            offset += SinglePatch::data_size();
             singles.push(single?);
         }
 
         let mut total = 0;
-        let mut block_size = singles[0].data_size() * SINGLE_PATCH_COUNT;
+        let mut block_size = SinglePatch::data_size() * SINGLE_PATCH_COUNT;
         total += block_size;
 
         assert_eq!(offset, total);
@@ -75,20 +75,20 @@ impl SystemExclusiveData for Bank {
         for i in 0..MULTI_PATCH_COUNT {
             let multi = MultiPatch::from_bytes(&data[offset..]);
             debug!("{}: {}", i, multi.as_ref().unwrap().name);
-            offset += multi.as_ref().unwrap().data_size();
+            offset += MultiPatch::data_size();
             multis.push(multi?);
         }
 
-        block_size = multis[0].data_size() * MULTI_PATCH_COUNT;
+        block_size = MultiPatch::data_size() * MULTI_PATCH_COUNT;
         total += block_size;
         assert_eq!(offset, total);
 
         debug!("Parsing drum patches, offset = {}", offset);
 
         let drum = DrumPatch::from_bytes(&data[offset..]);
-        offset += drum.as_ref().unwrap().data_size();
+        offset += DrumPatch::data_size();
 
-        block_size = drum.as_ref().unwrap().data_size();
+        block_size = DrumPatch::data_size();
         total += block_size;
         assert_eq!(offset, total);
 
@@ -98,11 +98,11 @@ impl SystemExclusiveData for Bank {
         for i in 0..EFFECT_PATCH_COUNT {
             let effect = EffectPatch::from_bytes(&data[offset..]);
             debug!("{}: {}", i, effect.as_ref().unwrap().effect);
-            offset += effect.as_ref().unwrap().data_size();
+            offset += EffectPatch::data_size();
             effects.push(effect?);
         }
 
-        block_size = effects[0].data_size() * EFFECT_PATCH_COUNT;
+        block_size = EffectPatch::data_size() * EFFECT_PATCH_COUNT;
         total += block_size;
         assert_eq!(offset, total);
 
@@ -132,16 +132,16 @@ impl SystemExclusiveData for Bank {
         }
 
         // full bank minus SysEx header and terminator
-        assert_eq!(buf.len(), 15123 - 8 - 1);  
+        assert_eq!(buf.len(), 15123 - 8 - 1);
 
         buf
     }
 
-    fn data_size(&self) -> usize {
-        self.singles[0].data_size() * SINGLE_PATCH_COUNT
-        + self.multis[0].data_size() * MULTI_PATCH_COUNT
-        + self.drum.data_size()
-        + self.effects[0].data_size() * EFFECT_PATCH_COUNT
+    fn data_size() -> usize {
+        SinglePatch::data_size() * SINGLE_PATCH_COUNT
+        + MultiPatch::data_size() * MULTI_PATCH_COUNT
+        + DrumPatch::data_size()
+        + EffectPatch::data_size() * EFFECT_PATCH_COUNT
      }
 }
 

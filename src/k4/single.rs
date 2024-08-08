@@ -99,10 +99,10 @@ pub struct AutoBend {
 impl Default for AutoBend {
     fn default() -> Self {
         AutoBend {
-            time: Level::new(0).unwrap(),
-            depth: ModulationDepth::new(0).unwrap(),
-            key_scaling_time: ModulationDepth::new(0).unwrap(),
-            velocity_depth: ModulationDepth::new(0).unwrap(),
+            time: Level::try_new(0).unwrap(),
+            depth: ModulationDepth::try_new(0).unwrap(),
+            key_scaling_time: ModulationDepth::try_new(0).unwrap(),
+            velocity_depth: ModulationDepth::try_new(0).unwrap(),
         }
     }
 }
@@ -129,10 +129,10 @@ impl fmt::Display for AutoBend {
 impl SystemExclusiveData for AutoBend {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(AutoBend {
-            time: Level::new(data[0] & 0x7f).unwrap(),
-            depth: ModulationDepth::new(((data[1] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-            key_scaling_time: ModulationDepth::new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-            velocity_depth: ModulationDepth::new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            time: Level::try_new(data[0] & 0x7f).unwrap(),
+            depth: ModulationDepth::try_new(((data[1] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            key_scaling_time: ModulationDepth::try_new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            velocity_depth: ModulationDepth::try_new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
         })
     }
 
@@ -150,7 +150,7 @@ impl SystemExclusiveData for AutoBend {
         buf
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }
 
 /// Single patch.
@@ -182,8 +182,8 @@ impl SinglePatch {
     pub fn new() -> SinglePatch {
         SinglePatch {
             name: "NewSound  ".to_string(),
-            volume: Level::new(100).unwrap(),
-            effect: EffectNumber::new(1).unwrap(),
+            volume: Level::try_new(100).unwrap(),
+            effect: EffectNumber::try_new(1).unwrap(),
             submix: Submix::A,
             source_mode: SourceMode::Normal,
             polyphony_mode: PolyphonyMode::Poly1,
@@ -459,8 +459,8 @@ impl SystemExclusiveData for SinglePatch {
 
         Ok(SinglePatch {
             name,
-            volume: Level::new(volume).unwrap(),
-            effect: EffectNumber::new(effect).unwrap(),
+            volume: Level::try_new(volume).unwrap(),
+            effect: EffectNumber::try_new(effect).unwrap(),
             submix,
             source_mode: SourceMode::try_from(source_mode).unwrap(),
             polyphony_mode: PolyphonyMode::try_from(polyphony_mode).unwrap(),
@@ -489,7 +489,7 @@ impl SystemExclusiveData for SinglePatch {
         buf
     }
 
-    fn data_size(&self) -> usize { 131 }
+    fn data_size() -> usize { 131 }
 }
 
 impl Checksum for SinglePatch {

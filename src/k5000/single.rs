@@ -9,27 +9,27 @@ use std::collections::BTreeMap;
 use bit::BitIndex;
 
 use crate::{
-    SystemExclusiveData, 
-    ParseError, 
+    SystemExclusiveData,
+    ParseError,
     Checksum
 };
 use crate::k5000::control::{
-    Polyphony, 
-    AmplitudeModulation, 
-    MacroController, 
+    Polyphony,
+    AmplitudeModulation,
+    MacroController,
     SwitchControl,
-    ControlDestination, 
+    ControlDestination,
     Switch
 };
 use crate::k5000::effect::{
-    EffectSettings, 
+    EffectSettings,
     EffectControl
 };
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
 use crate::k5000::{
-    Volume, 
-    MacroParameterDepth, 
+    Volume,
+    MacroParameterDepth,
     PortamentoLevel
 };
 
@@ -107,7 +107,7 @@ impl SystemExclusiveData for Common {
         eprintln!("Common data ({} bytes): {:02X?}", data.len(), data);
 
         let mut offset = 0;
-        let mut size = EffectSettings::default().data_size();
+        let mut size = EffectSettings::data_size();
         let mut start = offset;
         let mut end = offset + size;
         let effects_data = &data[start..end];
@@ -294,7 +294,7 @@ impl SystemExclusiveData for Common {
         result
     }
 
-    fn data_size(&self) -> usize { 81 }
+    fn data_size() -> usize { 81 }
 }
 
 /// Single patch.
@@ -408,7 +408,7 @@ impl SystemExclusiveData for SinglePatch {
         eprintln!("single patch checksum = {:#02x}", checksum);
         offset += 1;
 
-        size = Common::default().data_size();
+        size = Common::data_size();
         start = offset;
         end = start + size;
         let common_data = &data[start..end];
@@ -421,14 +421,14 @@ impl SystemExclusiveData for SinglePatch {
         eprintln!("{:#04X}: starting to parse {} sources",
             offset, common.as_ref().unwrap().source_count);
 
-        size = Source::default().data_size();
+        size = Source::data_size();
         eprintln!("source data size is reported as {} bytes", size);
         let mut sources = Vec::<Source>::new();
         for i in 0..common.as_ref().unwrap().source_count {
             start = offset;
             end = start + size;
             let source_data = &data[start..end];
-            eprintln!("{:#04X}: parsing source {}, data start={} end={}", 
+            eprintln!("{:#04X}: parsing source {}, data start={} end={}",
                 offset, i + 1, start, end);
             let source = Source::from_bytes(source_data);
             sources.push(source?);
@@ -440,7 +440,7 @@ impl SystemExclusiveData for SinglePatch {
         // How many additive kits should we expect then?
         let kit_count = sources.iter().filter(|s| s.oscillator.wave.is_additive()).count();
         let mut kit_index = 0;
-        size = AdditiveKit::default().data_size();
+        size = AdditiveKit::data_size();
         while kit_index < kit_count {
             start = offset;
             end = start + size;
@@ -493,8 +493,8 @@ impl SystemExclusiveData for SinglePatch {
         result
     }
 
-    fn data_size(&self) -> usize {
-        todo!("Compute single patch size")        
+    fn data_size() -> usize {
+        todo!("Compute single patch size")
     }
 }
 
@@ -568,9 +568,9 @@ mod tests {
     #[test]
     fn test_single_patch_from_bytes() {
         let data: [u8; 1070] = include!("WizooIni.in");
-        
+
         // Skip sysex header but not the checksum
-        let single_patch = SinglePatch::from_bytes(&data[9..]);  
+        let single_patch = SinglePatch::from_bytes(&data[9..]);
         assert_eq!(single_patch.unwrap().common.name, "WizooIni");
     }
 }

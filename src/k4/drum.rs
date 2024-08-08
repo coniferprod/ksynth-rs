@@ -7,15 +7,15 @@ use log::debug;
 use bit::BitIndex;
 
 use crate::{
-    SystemExclusiveData, 
-    ParseError, 
+    SystemExclusiveData,
+    ParseError,
     Checksum
 };
 use crate::k4::{
     DRUM_NOTE_COUNT,
-    Channel, 
-    Level, 
-    ModulationDepth, 
+    Channel,
+    Level,
+    ModulationDepth,
     Decay
 };
 use crate::k4::wave::Wave;
@@ -67,7 +67,7 @@ impl fmt::Display for DrumPatch {
 impl SystemExclusiveData for DrumPatch {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let common = Common::from_bytes(&data[0..]);
-        let mut offset = common.as_ref().unwrap().data_size();
+        let mut offset = Common::data_size();
         let mut notes = [Default::default(); DRUM_NOTE_COUNT];
 
         for i in 0..DRUM_NOTE_COUNT {
@@ -75,7 +75,7 @@ impl SystemExclusiveData for DrumPatch {
 
             let note = Note::from_bytes(&data[offset..])?;
             notes[i] = note;
-            offset += note.data_size();
+            offset += Note::data_size();
         }
 
         Ok(DrumPatch {
@@ -92,9 +92,9 @@ impl SystemExclusiveData for DrumPatch {
         buf
     }
 
-    fn data_size(&self) -> usize {
-        self.common.data_size()
-            + self.notes[0].data_size() * DRUM_NOTE_COUNT
+    fn data_size() -> usize {
+        Common::data_size()
+            + Note::data_size() * DRUM_NOTE_COUNT
     }
 }
 
@@ -108,9 +108,9 @@ pub struct Common {
 impl Default for Common {
     fn default() -> Self {
         Common {
-            channel: Channel::new(10).unwrap(),
-            volume: Level::new(100).unwrap(),
-            velocity_depth: ModulationDepth::new(0).unwrap(),
+            channel: Channel::try_new(10).unwrap(),
+            volume: Level::try_new(100).unwrap(),
+            velocity_depth: ModulationDepth::try_new(0).unwrap(),
         }
     }
 }
@@ -156,9 +156,9 @@ impl Checksum for Common {
 impl SystemExclusiveData for Common {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Common {
-            channel: Channel::new(data[0] + 1).unwrap(),
-            volume: Level::new(data[1]).unwrap(),
-            velocity_depth: ModulationDepth::new(data[2] as i8 - 50).unwrap(),
+            channel: Channel::try_new(data[0] + 1).unwrap(),
+            volume: Level::try_new(data[1]).unwrap(),
+            velocity_depth: ModulationDepth::try_new(data[2] as i8 - 50).unwrap(),
         })
     }
 
@@ -170,7 +170,7 @@ impl SystemExclusiveData for Common {
         buf
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         3 + 7 + 1 // include the seven dummy bytes and checksum
     }
 }
@@ -268,10 +268,9 @@ impl SystemExclusiveData for Note {
         buf
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         1 // include checksum
-            + self.source1.data_size()
-            + self.source2.data_size()
+            + 2 * Source::data_size()
     }
 }
 
@@ -288,9 +287,9 @@ impl Default for Source {
     fn default() -> Self {
         Source {
             wave: Wave::new(),
-            decay: Decay::new(1).unwrap(),
-            tune: ModulationDepth::new(0).unwrap(),
-            level: Level::new(100).unwrap(),
+            decay: Decay::try_new(1).unwrap(),
+            tune: ModulationDepth::try_new(0).unwrap(),
+            level: Level::try_new(100).unwrap(),
         }
     }
 }
@@ -312,9 +311,9 @@ impl SystemExclusiveData for Source {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Source {
             wave: Wave::from_bytes(&[data[0], data[1]])?,
-            decay: Decay::new(data[2]).unwrap(),
-            tune: ModulationDepth::new((data[3] as i8) - 50).unwrap(),  // adjust to -50~+50
-            level: Level::new(data[4]).unwrap(),
+            decay: Decay::try_new(data[2]).unwrap(),
+            tune: ModulationDepth::try_new((data[3] as i8) - 50).unwrap(),  // adjust to -50~+50
+            level: Level::try_new(data[4]).unwrap(),
         })
     }
 
@@ -327,7 +326,5 @@ impl SystemExclusiveData for Source {
         buf
     }
 
-    fn data_size(&self) -> usize {
-        5
-    }
+    fn data_size() -> usize { 5 }
 }

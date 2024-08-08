@@ -9,12 +9,12 @@ use num_enum::TryFromPrimitive;
 use lazy_static::lazy_static;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 use crate::k5000::control;
 use crate::k5000::{
-    EffectParameter, 
+    EffectParameter,
     Depth
 };
 
@@ -270,7 +270,7 @@ impl SystemExclusiveData for EffectDefinition {
         ]
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }
 
 /// Effect settings.
@@ -331,7 +331,7 @@ impl SystemExclusiveData for EffectSettings {
         result
     }
 
-    fn data_size(&self) -> usize { 31 }
+    fn data_size() -> usize { 31 }
 }
 
 /// Effect destinations.
@@ -371,7 +371,7 @@ impl SystemExclusiveData for ControlSource {
         vec![self.source as u8, self.destination as u8, self.depth.into()]
     }
 
-    fn data_size(&self) -> usize { 3 }
+    fn data_size() -> usize { 3 }
 }
 
 /// Effect control with two sources.
@@ -396,7 +396,7 @@ impl SystemExclusiveData for EffectControl {
         result
     }
 
-    fn data_size(&self) -> usize { 6 }
+    fn data_size() -> usize { 6 }
 }
 
 #[cfg(test)]

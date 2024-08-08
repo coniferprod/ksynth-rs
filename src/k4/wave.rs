@@ -287,7 +287,7 @@ pub struct Wave {
 impl Default for Wave {
     fn default() -> Self {
         Wave {
-            number: WaveNumber::new(1).unwrap()
+            number: WaveNumber::try_new(1).unwrap()
         }
     }
 }
@@ -318,7 +318,7 @@ impl SystemExclusiveData for Wave {
         let high = data[0] & 0x01;  // `wave select h` is b0 of s34/s35/s36/s37
         let low = data[1] & 0x7f;   // `wave select l` is bits 0...6 of s38/s39/s40/s41
         Ok(Wave {
-            number: WaveNumber::new((((high as u16) << 7) | low as u16) + 1).unwrap(),
+            number: WaveNumber::try_new((((high as u16) << 7) | low as u16) + 1).unwrap(),
         })
     }
 
@@ -330,7 +330,7 @@ impl SystemExclusiveData for Wave {
         ]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 #[cfg(test)]
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn test_wave_name() {
         let wave = Wave {
-            number: WaveNumber::new(1).unwrap(),
+            number: WaveNumber::try_new(1).unwrap(),
         };
 
         assert_eq!(wave.name(), "SIN 1ST");
@@ -355,7 +355,7 @@ mod tests {
     #[test]
     fn test_wave_to_bytes() {
         let wave = Wave {
-            number: WaveNumber::new(256).unwrap(),
+            number: WaveNumber::try_new(256).unwrap(),
         };
 
         assert_eq!(wave.to_bytes(), vec![0x01, 0x7f]);

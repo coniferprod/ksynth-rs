@@ -85,7 +85,7 @@ impl SystemExclusiveData for VelocitySwitchSettings {
         vec![value]
     }
 
-    fn data_size(&self) -> usize { 1 }
+    fn data_size() -> usize { 1 }
 }
 
 /// Control source.
@@ -264,7 +264,7 @@ impl SystemExclusiveData for MacroController {
         ]
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }
 
 /// Assignable controller.
@@ -288,7 +288,7 @@ impl SystemExclusiveData for AssignableController {
         vec![self.source as u8, self.destination as u8, self.depth.into()]
     }
 
-    fn data_size(&self) -> usize { 3 }
+    fn data_size() -> usize { 3 }
 }
 
 /// Modulation settings.
@@ -324,9 +324,9 @@ impl SystemExclusiveData for ModulationSettings {
         result
     }
 
-    fn data_size(&self) -> usize {
-        3 * self.pressure.data_size()
-        + 2 * self.assignable1.data_size()
+    fn data_size() -> usize {
+        3 * MacroController::data_size()
+        + 2 * AssignableController::data_size()
     }
 }
 
@@ -381,7 +381,7 @@ impl SystemExclusiveData for PanSettings {
         vec![self.pan_type as u8, self.pan_value.into()]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// Switch kind.
@@ -456,7 +456,7 @@ impl SystemExclusiveData for SwitchControl {
         vec![self.switch1 as u8, self.switch2 as u8, self.footswitch1 as u8, self.footswitch2 as u8]
     }
 
-    fn data_size(&self) -> usize { 4 }
+    fn data_size() -> usize { 4 }
 }
 
 /// Polyphony type.

@@ -27,15 +27,15 @@ pub struct Source {
 impl Source {
     pub fn new() -> Source {
         Source {
-            delay: Level::new(0).unwrap(),
+            delay: Level::try_new(0).unwrap(),
             wave: Default::default(),
-            ks_curve: Curve::new(1).unwrap(),
-            coarse: Coarse::new(0).unwrap(),
+            ks_curve: Curve::try_new(1).unwrap(),
+            coarse: Coarse::try_new(0).unwrap(),
             key_track: KeyTrack::On,
-            fine: Fine::new(0).unwrap(),
+            fine: Fine::try_new(0).unwrap(),
             press_freq: true,
             vibrato: true,
-            velocity_curve: Curve::new(1).unwrap(),
+            velocity_curve: Curve::try_new(1).unwrap(),
         }
     }
 }
@@ -112,15 +112,15 @@ impl SystemExclusiveData for Source {
         let velocity_curve = ((b >> 2) & 0x07) + 1;  // 0...7 to 1...8
 
         Ok(Source {
-            delay: Level::new(delay).unwrap(),
+            delay: Level::try_new(delay).unwrap(),
             wave: wave?,
-            ks_curve: Curve::new(ks_curve).unwrap(),
-            coarse: Coarse::new(coarse).unwrap(),
+            ks_curve: Curve::try_new(ks_curve).unwrap(),
+            coarse: Coarse::try_new(coarse).unwrap(),
             key_track,
-            fine: Fine::new(fine).unwrap(),
+            fine: Fine::try_new(fine).unwrap(),
             press_freq,
             vibrato,
-            velocity_curve: Curve::new(velocity_curve).unwrap(),
+            velocity_curve: Curve::try_new(velocity_curve).unwrap(),
         })
     }
 
@@ -161,7 +161,7 @@ impl SystemExclusiveData for Source {
         buf
     }
 
-    fn data_size(&self) -> usize { 7 }
+    fn data_size() -> usize { 7 }
 }
 
 /// Key tracking setting.

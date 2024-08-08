@@ -4,7 +4,7 @@
 use std::fmt;
 
 use crate::{
-    SystemExclusiveData, 
+    SystemExclusiveData,
     ParseError
 };
 
@@ -564,7 +564,7 @@ impl SystemExclusiveData for Wave {
         vec![msb, lsb]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 #[cfg(test)]

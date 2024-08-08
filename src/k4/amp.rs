@@ -17,10 +17,10 @@ pub struct Envelope {
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack: EnvelopeTime::new(54).unwrap(),
-            decay: EnvelopeTime::new(72).unwrap(),
-            sustain: EnvelopeLevel::new(90).unwrap(),
-            release: EnvelopeTime::new(64).unwrap(),
+            attack: EnvelopeTime::try_new(54).unwrap(),
+            decay: EnvelopeTime::try_new(72).unwrap(),
+            sustain: EnvelopeLevel::try_new(90).unwrap(),
+            release: EnvelopeTime::try_new(64).unwrap(),
         }
     }
 }
@@ -44,10 +44,10 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
-            attack: EnvelopeTime::new(data[0] & 0x7f).unwrap(),
-            decay: EnvelopeTime::new(data[1] & 0x7f).unwrap(),
-            sustain: EnvelopeLevel::new(data[2] & 0x7f).unwrap(),
-            release: EnvelopeTime::new(data[3] & 0x7f).unwrap(),
+            attack: EnvelopeTime::try_new(data[0] & 0x7f).unwrap(),
+            decay: EnvelopeTime::try_new(data[1] & 0x7f).unwrap(),
+            sustain: EnvelopeLevel::try_new(data[2] & 0x7f).unwrap(),
+            release: EnvelopeTime::try_new(data[3] & 0x7f).unwrap(),
         })
     }
 
@@ -60,9 +60,7 @@ impl SystemExclusiveData for Envelope {
         ]
     }
 
-    fn data_size(&self) -> usize {
-        4
-    }
+    fn data_size() -> usize { 4 }
 }
 
 #[derive(Copy, Clone)]
@@ -75,9 +73,9 @@ pub struct LevelModulation {
 impl LevelModulation {
     pub fn new() -> LevelModulation {
         LevelModulation {
-            velocity_depth: ModulationDepth::new(15).unwrap(),
-            pressure_depth: ModulationDepth::new(0).unwrap(),
-            key_scaling_depth: ModulationDepth::new(-6).unwrap(),
+            velocity_depth: ModulationDepth::try_new(15).unwrap(),
+            pressure_depth: ModulationDepth::try_new(0).unwrap(),
+            key_scaling_depth: ModulationDepth::try_new(-6).unwrap(),
         }
     }
 }
@@ -103,9 +101,9 @@ impl fmt::Display for LevelModulation {
 impl SystemExclusiveData for LevelModulation {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(LevelModulation {
-            velocity_depth: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
-            pressure_depth: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
-            key_scaling_depth: ModulationDepth::new((data[2] as i8) - 50).unwrap(),
+            velocity_depth: ModulationDepth::try_new((data[0] as i8) - 50).unwrap(),
+            pressure_depth: ModulationDepth::try_new((data[1] as i8) - 50).unwrap(),
+            key_scaling_depth: ModulationDepth::try_new((data[2] as i8) - 50).unwrap(),
         })
     }
 
@@ -117,9 +115,7 @@ impl SystemExclusiveData for LevelModulation {
         ]
     }
 
-    fn data_size(&self) -> usize {
-        3
-    }
+    fn data_size() -> usize { 3 }
 }
 
 #[derive(Copy, Clone)]
@@ -132,9 +128,9 @@ pub struct TimeModulation {
 impl TimeModulation {
     pub fn new() -> TimeModulation {
         TimeModulation {
-            attack_velocity: ModulationDepth::new(0).unwrap(),
-            release_velocity: ModulationDepth::new(0).unwrap(),
-            key_scaling: ModulationDepth::new(0).unwrap(),
+            attack_velocity: ModulationDepth::try_new(0).unwrap(),
+            release_velocity: ModulationDepth::try_new(0).unwrap(),
+            key_scaling: ModulationDepth::try_new(0).unwrap(),
         }
     }
 }
@@ -160,9 +156,9 @@ impl fmt::Display for TimeModulation {
 impl SystemExclusiveData for TimeModulation {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(TimeModulation {
-            attack_velocity: ModulationDepth::new((data[0] as i8) - 50).unwrap(),
-            release_velocity: ModulationDepth::new((data[1] as i8) - 50).unwrap(),
-            key_scaling: ModulationDepth::new((data[2] as i8) - 50).unwrap(),
+            attack_velocity: ModulationDepth::try_new((data[0] as i8) - 50).unwrap(),
+            release_velocity: ModulationDepth::try_new((data[1] as i8) - 50).unwrap(),
+            key_scaling: ModulationDepth::try_new((data[2] as i8) - 50).unwrap(),
         })
     }
 
@@ -174,9 +170,7 @@ impl SystemExclusiveData for TimeModulation {
         ]
     }
 
-    fn data_size(&self) -> usize {
-        3
-    }
+    fn data_size() -> usize { 3 }
 }
 
 #[derive(Copy, Clone)]
@@ -190,7 +184,7 @@ pub struct Amplifier {
 impl Amplifier {
     pub fn new() -> Amplifier {
         Amplifier {
-            level: Level::new(75).unwrap(),
+            level: Level::try_new(75).unwrap(),
             envelope: Default::default(),
             level_modulation: Default::default(),
             time_modulation: Default::default(),
@@ -222,7 +216,7 @@ impl SystemExclusiveData for Amplifier {
 
         let b = data[offset];
         offset += 1;
-        let level = Level::new(b & 0x7f).unwrap();
+        let level = Level::try_new(b & 0x7f).unwrap();
 
         start = offset;
         end = start + 4;
@@ -260,11 +254,11 @@ impl SystemExclusiveData for Amplifier {
         buf
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         1
-            + self.envelope.data_size()
-            + self.level_modulation.data_size()
-            + self.time_modulation.data_size()
+            + Envelope::data_size()
+            + LevelModulation::data_size()
+            + TimeModulation::data_size()
     }
 }
 
@@ -275,10 +269,10 @@ mod tests {
     #[test]
     fn test_amplifier_envelope() {
         let env = Envelope {
-            attack: EnvelopeTime::new(10).unwrap(),
-            decay: EnvelopeTime::new(5).unwrap(),
-            sustain: EnvelopeLevel::new(20).unwrap(),
-            release: EnvelopeTime::new(10).unwrap(),
+            attack: EnvelopeTime::try_new(10).unwrap(),
+            decay: EnvelopeTime::try_new(5).unwrap(),
+            sustain: EnvelopeLevel::try_new(20).unwrap(),
+            release: EnvelopeTime::try_new(10).unwrap(),
         };
 
         assert_eq!(

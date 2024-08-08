@@ -8,17 +8,17 @@ use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
 use crate::{
-    SystemExclusiveData, 
-    Checksum, 
+    SystemExclusiveData,
+    Checksum,
     ParseError
 };
 use crate::k4;
 use crate::k4::{
     get_note_name,
-    Level, 
-    MIDIChannel, 
-    PatchNumber, 
-    EffectNumber, 
+    Level,
+    MIDIChannel,
+    PatchNumber,
+    EffectNumber,
     Transpose
 };
 
@@ -54,8 +54,8 @@ impl Default for MultiPatch {
     fn default() -> Self {
         MultiPatch {
             name: "NewMulti  ".to_string(),
-            volume: Level::new(100).unwrap(),
-            effect: EffectNumber::new(1).unwrap(),
+            volume: Level::try_new(100).unwrap(),
+            effect: EffectNumber::try_new(1).unwrap(),
             sections: [Default::default(); SECTION_COUNT],
         }
     }
@@ -91,8 +91,8 @@ impl SystemExclusiveData for MultiPatch {
 
         Ok(MultiPatch {
             name,
-            volume: Level::new(data[10]).unwrap(),
-            effect: EffectNumber::new(data[11]).unwrap(),
+            volume: Level::try_new(data[10]).unwrap(),
+            effect: EffectNumber::try_new(data[11]).unwrap(),
             sections,
         })
     }
@@ -105,7 +105,7 @@ impl SystemExclusiveData for MultiPatch {
         buf
     }
 
-    fn data_size(&self) -> usize { 77 }
+    fn data_size() -> usize { 77 }
 }
 
 impl Checksum for MultiPatch {
@@ -135,15 +135,15 @@ pub struct Section {
 impl Section {
     pub fn new() -> Section {
         Section {
-            single_number: PatchNumber::new(0).unwrap(),
+            single_number: PatchNumber::try_new(0).unwrap(),
             zone: Zone { low_key: Key { note: 0 }, high_key: Key { note: 127 } },
             velocity_switch: VelocitySwitch::All,
-            receive_channel: MIDIChannel::new(1).unwrap(),  // use 1...16 for MIDI channel here
+            receive_channel: MIDIChannel::try_new(1).unwrap(),  // use 1...16 for MIDI channel here
             is_muted: false,
             out_select: 0,
             play_mode: PlayMode::Keyboard,
-            level: Level::new(100).unwrap(),
-            transpose: Transpose::new(0).unwrap(),
+            level: Level::try_new(100).unwrap(),
+            transpose: Transpose::try_new(0).unwrap(),
             tune: 0,
         }
     }
@@ -158,14 +158,14 @@ impl Default for Section {
 impl SystemExclusiveData for Section {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Section {
-            single_number: PatchNumber::new(data[0]).unwrap(),
+            single_number: PatchNumber::try_new(data[0]).unwrap(),
             zone: Zone::from_bytes(&[data[1], data[2]])?,
             velocity_switch: VelocitySwitch::try_from((data[3] >> 4) & 0b0000_0011).unwrap(),
             receive_channel: MIDIChannel::from_bytes(&[data[3] & 0b0000_1111])?,  // adjust MIDI channel to 1...16
             is_muted: data[3] >> 6 == 1,
             out_select: data[4] & 0b0000_0111,
             play_mode: PlayMode::try_from((data[4] >> 3) & 0b0000_0011).unwrap(),
-            level: Level::new(data[5]).unwrap(),
+            level: Level::try_new(data[5]).unwrap(),
             transpose: Transpose::from_bytes(&[data[6]])?,
             tune: (data[7] as i8) - 50,
         })
@@ -192,7 +192,7 @@ impl SystemExclusiveData for Section {
         buf
     }
 
-    fn data_size(&self) -> usize { 8 }
+    fn data_size() -> usize { 8 }
 }
 
 /// Key in a keyboard zone.
@@ -227,9 +227,9 @@ impl fmt::Display for Zone {
 impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(
-            Zone { 
-                low_key: Key { note: data[0] }, 
-                high_key: Key { note: data[1] } 
+            Zone {
+                low_key: Key { note: data[0] },
+                high_key: Key { note: data[1] }
             }
         )
     }
@@ -238,7 +238,7 @@ impl SystemExclusiveData for Zone {
         vec![self.low_key.note, self.high_key.note]
     }
 
-    fn data_size(&self) -> usize { 2 }
+    fn data_size() -> usize { 2 }
 }
 
 /// Velocity switch setting.

@@ -1666,7 +1666,7 @@ impl From<u8> for ControlDepth {
 
 impl From<ControlDepth> for u8 {
     fn from(val: ControlDepth) -> Self {
-        (val.value() + 64) as u8        
+        (val.value() + 64) as u8
     }
 }
 
@@ -2148,14 +2148,14 @@ mod tests {
 
     #[test]
     fn test_short_patch_name_is_right_padded() {
-        let patch_name = PatchName::new("Short");
+        let patch_name = PatchName::try_new("Short");
         assert_eq!(patch_name.unwrap().into_inner(), "Short   ");
     }
 
     #[test]
     fn test_long_patch_name_is_truncated() {
         assert_eq!(
-            PatchName::new("WayTooLong"),
+            PatchName::try_new("WayTooLong"),
             Err(PatchNameError::LenCharMaxViolated)
         );
     }

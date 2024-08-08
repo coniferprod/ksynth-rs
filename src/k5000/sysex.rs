@@ -67,7 +67,7 @@ impl SystemExclusiveData for Message {
         result
     }
 
-    fn data_size(&self) -> usize {
+    fn data_size() -> usize {
         todo!("Compute K5000 message size")
     }
 }
@@ -395,7 +395,7 @@ impl SystemExclusiveData for Header {
             Ok(header)
         }
         else {
-            Err(ParseError::InvalidData(0))
+            Err(ParseError::InvalidData(0, "unidentified header".to_string()))
         }
     }
 
@@ -429,8 +429,8 @@ impl SystemExclusiveData for Header {
         result
     }
 
-    fn data_size(&self) -> usize {
-        self.size()
+    fn data_size() -> usize {
+        unimplemented!()  // a header has no static size
     }
 }
 
@@ -507,12 +507,12 @@ impl SystemExclusiveData for ToneMap {
             result.push(byte);
         }
 
-        assert_eq!(result.len(), self.data_size());
+        assert_eq!(result.len(), ToneMap::data_size());
 
         result
     }
 
-    fn data_size(&self) -> usize { 19 }
+    fn data_size() -> usize { 19 }
 }
 
 
