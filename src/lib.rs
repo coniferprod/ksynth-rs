@@ -65,7 +65,7 @@ impl SystemExclusiveData for MIDIChannel {
         if data.len() < 1 {
             Err(ParseError::InvalidLength(data.len(), 1))
         } else {
-            match MIDIChannel::try_new(data[0].into()) {
+            match MIDIChannel::try_new((data[0] + 1).into()) {  // bring into 1...16
                 Ok(ch) => Ok(ch),
                 Err(e) => Err(ParseError::InvalidData(0, format!("invalid value {}", e)))
             }
