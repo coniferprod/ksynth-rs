@@ -45,6 +45,8 @@ impl fmt::Display for ValueError {
     }
 }
 
+impl std::error::Error for ValueError { }
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct MIDIChannel(i32);
 
