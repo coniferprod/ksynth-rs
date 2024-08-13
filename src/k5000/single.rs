@@ -567,7 +567,7 @@ mod tests {
 
     #[test]
     fn test_single_patch_from_bytes() {
-        let data: [u8; 1070] = include!("WizooIni.in");
+        let data = include_bytes!("WizooIni.syx");
 
         // Skip sysex header but not the checksum
         let single_patch = SinglePatch::from_bytes(&data[9..]);

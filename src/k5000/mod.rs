@@ -2,8 +2,6 @@ use std::fmt;
 use rand::Rng;
 use std::ops::RangeInclusive;
 
-use crate::MIDIChannel;
-
 pub mod filter;
 pub mod amp;
 pub mod osc;
