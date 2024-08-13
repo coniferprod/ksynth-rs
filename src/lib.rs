@@ -27,6 +27,8 @@ impl fmt::Display for ParseError {
     }
 }
 
+impl std::error::Error for ParseError { }
+
 /// Parsing and generating MIDI System Exclusive data.
 pub trait SystemExclusiveData: Sized {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError>;
