@@ -148,13 +148,14 @@ impl SystemExclusiveData for Bank {
 #[cfg(test)]
 mod tests {
     use super::{*};
+    use crate::k4::sysex::Header;
+
+    static DATA: &'static [u8] = include_bytes!("A401.SYX");
 
     #[test]
     fn test_bank_from_bytes() {
-        let data: [u8; 15123] = include!("a401.in");
-
-        // Skip the SysEx header when constructing the bank
-        let bank = Bank::from_bytes(&data[8..]);
+        let start = 2 + Header::data_size();
+        let bank = Bank::from_bytes(&DATA[start..]);
 
         assert_eq!(bank.as_ref().unwrap().singles.len(), SINGLE_PATCH_COUNT);
         assert_eq!(bank.as_ref().unwrap().effects.len(), EFFECT_PATCH_COUNT);

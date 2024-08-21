@@ -283,10 +283,24 @@ impl fmt::Display for PlayMode {
 mod tests {
     use super::{*};
 
+    use crate::k4::{
+        bank,
+        sysex::Header,
+        single::SinglePatch,
+        multi::MultiPatch,
+    };
+    
+    use super::{*};
+
+    static DATA: &'static [u8] = include_bytes!("A401.SYX");
+
     #[test]
     fn test_multi_patch_from_bytes() {
-        let data: [u8; 77] = include!("a401multi1.in");
-        let patch = MultiPatch::from_bytes(&data);
+        let start: usize = dbg!(
+            2 +
+            Header::data_size() + 
+            bank::SINGLE_PATCH_COUNT * SinglePatch::data_size());
+        let patch = MultiPatch::from_bytes(&DATA[start..]);
         assert_eq!(patch.as_ref().unwrap().name, "Fatt!Anna5");
         assert_eq!(patch.as_ref().unwrap().volume.into_inner(), 0x50);
     }

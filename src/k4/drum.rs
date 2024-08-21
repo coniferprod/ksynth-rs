@@ -328,3 +328,30 @@ impl SystemExclusiveData for Source {
 
     fn data_size() -> usize { 5 }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    use crate::k4::{
+        bank,
+        sysex::Header,
+        single::SinglePatch,
+        multi::MultiPatch,
+        drum::DrumPatch
+    };
+
+    static DATA: &'static [u8] = include_bytes!("A401.SYX");
+
+    #[test]
+    fn test_drum_patch_from_bytes() {
+        let start: usize = dbg!(
+            2 +
+            Header::data_size() + 
+            bank::SINGLE_PATCH_COUNT * SinglePatch::data_size() +
+            bank::MULTI_PATCH_COUNT * MultiPatch::data_size());        
+        let patch = DrumPatch::from_bytes(&DATA[start..]);
+        assert_eq!(patch.unwrap().common.volume.into_inner(), 0x64);
+    }
+
+}

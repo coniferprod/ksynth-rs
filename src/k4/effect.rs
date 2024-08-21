@@ -278,7 +278,17 @@ impl fmt::Display for Submix {
 
 #[cfg(test)]
 mod tests {
+    use crate::k4::{
+        bank,
+        sysex::Header,
+        single::SinglePatch,
+        multi::MultiPatch,
+        drum::DrumPatch
+    };
+    
     use super::{*};
+
+    static DATA: &'static [u8] = include_bytes!("A401.SYX");
 
     #[test]
     fn test_submix_name() {
@@ -286,11 +296,16 @@ mod tests {
         assert_eq!(submix.name(), "A");
     }
 
-
     #[test]
     fn test_effect_patch_from_bytes() {
-        let data: [u8; 35] = include!("a401effect32.in");
-        let patch = EffectPatch::from_bytes(&data);
+        let start: usize = dbg!(
+            2 +
+            Header::data_size() + 
+            bank::SINGLE_PATCH_COUNT * SinglePatch::data_size() +
+            bank::MULTI_PATCH_COUNT * MultiPatch::data_size() +
+            DrumPatch::data_size());
+        
+        let patch = EffectPatch::from_bytes(&DATA[start..]);
         assert_eq!(patch.unwrap().effect, Effect::Reverb1);
     }
 

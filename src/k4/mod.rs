@@ -63,8 +63,11 @@ pub struct Level(u8);
 
 /// Depth used for DCA/DCF modulation values
 #[nutype(
-    validate(greater_or_equal = -50, less_or_equal = 50),
-    derive(Copy, Clone)
+    validate(
+        greater_or_equal = -50, 
+        less_or_equal = 50,
+    ),
+    derive(Debug, Copy, Clone)
 )]
 pub struct ModulationDepth(i8);  // note: signed inner type
 
@@ -81,6 +84,7 @@ pub struct Channel(u8);
     derive(Copy, Clone)
 )]
 pub struct Decay(u8);
+
 
 /// Small effect parameter
 #[nutype(

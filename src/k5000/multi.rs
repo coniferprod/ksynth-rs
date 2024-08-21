@@ -307,5 +307,4 @@ mod tests {
         let multi_patch = MultiPatch::from_bytes(data[9..].to_vec());  // skip sysex header but not checksum
         assert_eq!(multi_patch.common.name, "WizooIni");
     }
-
 }

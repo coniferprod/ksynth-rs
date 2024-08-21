@@ -59,12 +59,6 @@ pub struct Header {
     pub substatus2: u8,
 }
 
-impl Header {
-    pub fn data_size() -> u32 {
-        6
-    }
-}
-
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Ch: {}  Fn: {}, Sub1: {}, Sub2: {}",
@@ -198,10 +192,11 @@ mod tests {
     use super::{*};
     use syxpack::Message;
 
+    static DATA: &'static [u8] = include_bytes!("A401.SYX");
+
     #[test]
     fn test_dump_identify_all() {
-        let data: [u8; 15123] = include!("a401.in");
-        match Message::from_bytes(&data.to_vec()) {
+        match Message::from_bytes(&DATA.to_vec()) {
             Ok(Message::ManufacturerSpecific { manufacturer: _, payload }) => {
                 match Dump::identify(payload) {
                     Ok(dump) => {

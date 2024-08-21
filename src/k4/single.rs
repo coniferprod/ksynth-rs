@@ -9,12 +9,18 @@ use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
 use crate::{SystemExclusiveData, ParseError, Checksum, every_nth_byte};
-use crate::k4::{Level, ModulationDepth, EffectNumber, NAME_LENGTH, get_effect_number};
-use crate::k4::source::Source;
-use crate::k4::lfo::*;
-use crate::k4::amp::Amplifier;
-use crate::k4::filter::Filter;
-use crate::k4::effect::Submix;
+use crate::k4::{
+    Level, 
+    ModulationDepth, 
+    EffectNumber, 
+    NAME_LENGTH, 
+    get_effect_number,
+    source::Source,
+    lfo::*,
+    amp::Amplifier,
+    filter::Filter,
+    effect::Submix,
+};
 
 /// Source mode setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
@@ -505,11 +511,18 @@ impl Checksum for SinglePatch {
 mod tests {
     use super::{*};
 
+    use crate::k4::{
+        sysex::Header,
+        single::SinglePatch,
+    };
+
+    static DATA: &'static [u8] = include_bytes!("A401.SYX");
+
     #[test]
     fn test_single_patch_from_bytes() {
-        let data: [u8; 131] = include!("a401single1.in");
-        let single_patch = SinglePatch::from_bytes(&data);
-        assert_eq!(single_patch.as_ref().unwrap().name, "Melo Vox 1");
-        assert_eq!(single_patch.as_ref().unwrap().volume.into_inner(), 100);
+        let start: usize = dbg!(2 + Header::data_size());
+        let patch = SinglePatch::from_bytes(&DATA[start..]);
+        assert_eq!(patch.as_ref().unwrap().name, "Melo Vox 1");
+        assert_eq!(patch.as_ref().unwrap().volume.into_inner(), 100);
     }
 }
