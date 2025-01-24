@@ -1,14 +1,14 @@
 //! Data model for DCF.
 //!
 
-use std::convert::TryInto;
 use std::fmt;
 
 use bit::BitIndex;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k4::{
     EnvelopeTime,
@@ -34,10 +34,10 @@ pub struct Envelope {
 impl Default for Envelope {
     fn default() -> Self {
         Envelope {
-            attack: EnvelopeTime::try_new(0).unwrap(),
-            decay: EnvelopeTime::try_new(50).unwrap(),
-            sustain: FilterEnvelopeLevel::try_new(25).unwrap(),
-            release: EnvelopeTime::try_new(25).unwrap(),
+            attack: EnvelopeTime::new(0),
+            decay: EnvelopeTime::new(50),
+            sustain: FilterEnvelopeLevel::new(25),
+            release: EnvelopeTime::new(25),
         }
     }
 }
@@ -52,10 +52,10 @@ impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
             "A={} D={} S={} R={}",
-            self.attack.into_inner(),
-            self.decay.into_inner(),
-            self.sustain.into_inner(),
-            self.release.into_inner()
+            self.attack.value(),
+            self.decay.value(),
+            self.sustain.value(),
+            self.release.value()
         )
     }
 }
@@ -63,19 +63,19 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
-            attack: EnvelopeTime::try_new(data[0]).unwrap(),
-            decay: EnvelopeTime::try_new(data[1]).unwrap(),
-            sustain: FilterEnvelopeLevel::try_new((data[2] as i8) - 50).unwrap(),
-            release: EnvelopeTime::try_new(data[3]).unwrap(),
+            attack: EnvelopeTime::new(data[0] as i32),
+            decay: EnvelopeTime::new(data[1] as i32),
+            sustain: FilterEnvelopeLevel::new((data[2] as i32) - 50),
+            release: EnvelopeTime::new(data[3] as i32),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack.into_inner(),
-            self.decay.into_inner(),
-            (self.sustain.into_inner() + 50).try_into().unwrap(),
-            self.release.into_inner(),
+            self.attack.value() as u8,
+            self.decay.value() as u8,
+            (self.sustain.value() + 50) as u8,
+            self.release.value() as u8,
         ]
     }
 
@@ -98,12 +98,12 @@ pub struct Filter {
 impl Default for Filter {
     fn default() -> Self {
         Filter {
-            cutoff: Cutoff::try_new(49).unwrap(),
-            resonance: Resonance::try_new(2).unwrap(),
+            cutoff: Cutoff::new(49),
+            resonance: Resonance::new(2),
             cutoff_mod: Default::default(),
             lfo_modulates_cutoff: false,
-            env_depth: ModulationDepth::try_new(0).unwrap(),
-            env_vel_depth: ModulationDepth::try_new(0).unwrap(),
+            env_depth: ModulationDepth::new(0),
+            env_vel_depth: ModulationDepth::new(0),
             envelope: Default::default(),
             time_mod: Default::default(),
         }
@@ -120,13 +120,13 @@ impl fmt::Display for Filter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
             "cutoff = {}, resonance = {}, LFO sw = {}, cutoff mod = {}, env = {}, env depth = {}, env vel.depth = {}",
-            self.cutoff.into_inner(),
-            self.resonance.into_inner(),
+            self.cutoff.value(),
+            self.resonance.value(),
             self.lfo_modulates_cutoff,
             self.cutoff_mod,
             self.envelope,
-            self.env_depth.into_inner(),
-            self.env_vel_depth.into_inner()
+            self.env_depth.value(),
+            self.env_vel_depth.value()
         )
     }
 }
@@ -176,12 +176,12 @@ impl SystemExclusiveData for Filter {
         let time_mod = TimeModulation::from_bytes(&time_mod_bytes);
 
         Ok(Filter {
-            cutoff: Cutoff::try_new(cutoff).unwrap(),
-            resonance: Resonance::try_new(resonance).unwrap(),
+            cutoff: Cutoff::new(cutoff as i32),
+            resonance: Resonance::new(resonance as i32),
             cutoff_mod: cutoff_mod?,
             lfo_modulates_cutoff,
-            env_depth: ModulationDepth::try_new(env_depth).unwrap(),
-            env_vel_depth: ModulationDepth::try_new(env_vel_depth).unwrap(),
+            env_depth: ModulationDepth::new(env_depth as i32),
+            env_vel_depth: ModulationDepth::new(env_vel_depth as i32),
             envelope: envelope?,
             time_mod: time_mod?,
         })
@@ -190,16 +190,16 @@ impl SystemExclusiveData for Filter {
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.cutoff.into_inner());
-        let mut s104 = self.resonance.into_inner();
+        buf.push(self.cutoff.value() as u8);
+        let mut s104 = self.resonance.value() as u8;
         if self.lfo_modulates_cutoff {
             s104.set_bit(3, true);
         }
         buf.push(s104);
 
         buf.extend(self.cutoff_mod.to_bytes());
-        buf.push((self.env_depth.into_inner() + 50).try_into().unwrap());
-        buf.push((self.env_vel_depth.into_inner() + 50).try_into().unwrap());
+        buf.push((self.env_depth.value() + 50) as u8);
+        buf.push((self.env_vel_depth.value() + 50) as u8);
         buf.extend(self.envelope.to_bytes());
         buf.extend(self.time_mod.to_bytes());
 

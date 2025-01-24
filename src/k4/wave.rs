@@ -5,7 +5,11 @@ use std::fmt;
 use std::convert::TryInto;
 
 use crate::k4::WaveNumber;
-use crate::{SystemExclusiveData, ParseError};
+use crate::{
+    SystemExclusiveData,
+    ParseError,
+    Ranged
+};
 
 static WAVE_NAMES: &[&str] = &[
     "(not used)",  // just to bring the index in line with the one-based wave number
@@ -287,7 +291,7 @@ pub struct Wave {
 impl Default for Wave {
     fn default() -> Self {
         Wave {
-            number: WaveNumber::try_new(1).unwrap()
+            number: WaveNumber::new(1)
         }
     }
 }
@@ -298,7 +302,7 @@ impl Wave {
     }
 
     pub fn name(&self) -> String {
-        WAVE_NAMES[self.number.into_inner() as usize].to_string()
+        WAVE_NAMES[self.number.value() as usize].to_string()
     }
 }
 
@@ -307,7 +311,7 @@ impl fmt::Display for Wave {
         write!(
             f,
             "{} {}",
-            self.number.into_inner(),
+            self.number.value(),
             self.name()
         )
     }
@@ -317,13 +321,14 @@ impl SystemExclusiveData for Wave {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let high = data[0] & 0x01;  // `wave select h` is b0 of s34/s35/s36/s37
         let low = data[1] & 0x7f;   // `wave select l` is bits 0...6 of s38/s39/s40/s41
+        let number = (((high as u16) << 7) | low as u16) + 1;
         Ok(Wave {
-            number: WaveNumber::try_new((((high as u16) << 7) | low as u16) + 1).unwrap(),
+            number: WaveNumber::new(number as i32),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let n = self.number.into_inner() - 1;
+        let n = self.number.value() - 1;
         vec![
             (n & 0b0000_0001).try_into().unwrap(),
             (n & 0x7f).try_into().unwrap(),
@@ -340,7 +345,7 @@ mod tests {
     #[test]
     fn test_wave_name() {
         let wave = Wave {
-            number: WaveNumber::try_new(1).unwrap(),
+            number: WaveNumber::new(1),
         };
 
         assert_eq!(wave.name(), "SIN 1ST");
@@ -349,13 +354,13 @@ mod tests {
     #[test]
     fn test_wave_from_bytes() {
         let w = Wave::from_bytes(&[0x01, 0x7f]);
-        assert_eq!(w.unwrap().number.into_inner(), 256);
+        assert_eq!(w.unwrap().number.value(), 256);
     }
 
     #[test]
     fn test_wave_to_bytes() {
         let wave = Wave {
-            number: WaveNumber::try_new(256).unwrap(),
+            number: WaveNumber::new(256),
         };
 
         assert_eq!(wave.to_bytes(), vec![0x01, 0x7f]);

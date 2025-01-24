@@ -10,7 +10,8 @@ use lazy_static::lazy_static;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::control;
 use crate::k5000::{

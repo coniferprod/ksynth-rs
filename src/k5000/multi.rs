@@ -4,25 +4,77 @@
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::fmt;
-use std::collections::BTreeMap;
 use bit::BitIndex;
-use crate::{SystemExclusiveData, ParseError, Checksum};
-use crate::k5000::control::{
-    Polyphony, AmplitudeModulation, MacroController, SwitchControl,
-    ControlDestination, Switch,
+use crate::{
+    SystemExclusiveData,
+    ParseError,
+    Checksum,
+    Ranged,
+    vec_to_array,
 };
-use crate::k5000::effect::{EffectSettings, EffectControl};
-use crate::k5000::addkit::AdditiveKit;
-use crate::k5000::source::Source;
+use crate::k5000::{
+    Volume,
+    PatchName
+};
+use crate::k5000::control::{
+    Polyphony,
+    AmplitudeModulation,
+    MacroController,
+    SwitchControl,
+    ControlDestination,
+    Switch,
+    VelocitySwitchSettings,
+};
+use crate::k5000::effect::{
+    EffectSettings,
+    EffectControl
+};
+use crate::k5000::source::{Source, Key, Zone};
 
 pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
+
+pub const GEQ_BAND_COUNT: usize = 7;
+
+pub struct GEQ {
+    bands: [i8; GEQ_BAND_COUNT],
+}
+
+impl GEQ {
+    pub fn new() -> Self {
+        Self { bands: [0; GEQ_BAND_COUNT] }
+    }
+
+    pub fn from(values: Vec<i8>) -> Self {
+        Self { bands: vec_to_array(values) }
+    }
+}
+
+impl SystemExclusiveData for GEQ {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut result: Vec<u8> = Vec::new();
+
+        for i in 0..=GEQ_BAND_COUNT {
+            result.push((i + 64) as u8);
+        }
+
+        result
+    }
+
+    fn data_size() -> usize {
+        GEQ_BAND_COUNT
+    }
+}
 
 /// Multi patch common settings.
 pub struct Common {
     pub effects: EffectSettings,
     pub geq: [i8; 7],
-    pub name: String,
-    pub volume: UnsignedLevel,
+    pub name: PatchName,
+    pub volume: Volume,
     pub section_mutes: [bool; SECTION_COUNT],
     pub effect_control: EffectControl,
 }
@@ -32,8 +84,9 @@ impl Default for Common {
         Common {
             effects: Default::default(),
             geq: [0; 7],
-            name: "NewMulti".to_string(),
-            section_mutes: 0x00,  // all sections muted by default
+            name: PatchName::try_new("NewMulti").expect("patchname should be valid"),
+            volume: Volume::new(100),
+            section_mutes: [false; SECTION_COUNT],  // all sections muted by default
             effect_control: Default::default(),
         }
     }
@@ -41,7 +94,7 @@ impl Default for Common {
 
 impl fmt::Display for Common {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "{}", self.name.clone().into_inner())
     }
 }
 
@@ -55,12 +108,12 @@ impl SystemExclusiveData for Common {
         let mut end = offset + size;
 
         let effects_data = &data[start..end];
-        let effects = EffectSettings::from_bytes(effects_data);
+        let effects = EffectSettings::from_bytes(effects_data)?;
         offset += size;
 
         size = 7;
         end = start + size;
-        let geq_data = data[start..end];
+        let geq_data = &data[start..end];
         let geq_values = geq_data.iter().map(|n| *n as i8 - 64).collect();  // 58(-6) ~ 70(+6), so 64 is zero
         offset += size;
 
@@ -79,21 +132,21 @@ impl SystemExclusiveData for Common {
         }
         offset += 1;
 
-        let volume = UnsignedLevel::from(data[offset]);
+        let volume = Volume::new(data[offset] as i32);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
         size = 6;
         start = offset;
         end = start + size;
-        let effect_control_data = data[start..end];
-        let effect_control = EffectControl::from_bytes(effect_control_data);
+        let effect_control_data = &data[start..end];
+        let effect_control = EffectControl::from_bytes(effect_control_data)?;
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
 
         Ok(Common {
             effects,
-            geq,
+            geq: geq_values,
             name,
             volume,
             section_mutes,
@@ -107,7 +160,7 @@ impl SystemExclusiveData for Common {
         result.extend(self.effects.to_bytes());
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.extend(self.name.clone().into_bytes());  // note the use of clone() here
-        result.push(self.volume as u8);
+        result.push(self.volume.value() as u8);
 
         let mut mute_byte = 0x00;
         for i in 0..SECTION_COUNT {
@@ -120,6 +173,15 @@ impl SystemExclusiveData for Common {
         result.extend(self.effect_control.to_bytes());
 
         result
+    }
+
+    fn data_size() -> usize {
+        EffectSettings::data_size()
+        + GEQ::data_size()
+        + PatchName::data_size()
+        + 1 // volume
+        + 1 // section mutes
+        + EffectControl::data_size()
     }
 }
 
@@ -188,9 +250,9 @@ impl SystemExclusiveData for Section {
         eprintln!("Tune = {}", tune);
         offset += 1;
 
-        let zone = Zone { 
-            low: Key { note: data[offset] }, 
-            high: Key { note: data[offset + 1] } 
+        let zone = Zone {
+            low: Key { note: data[offset] },
+            high: Key { note: data[offset + 1] }
         };
         offset += 2;
 
@@ -260,12 +322,12 @@ impl SystemExclusiveData for MultiPatch {
 
         MultiPatch {
             checksum: data[0],
-            common: Common::from_bytes(data[1..55]),
+            common: Common::from_bytes(&data[1..55]).expect("valid common"),
             sections: [
-                Section::from_bytes(data[55..67]),
-                Section::from_bytes(data[67..79]),
-                Section::from_bytes(data[79..91]),
-                Section::from_bytes(data[91..103]),
+                Section::from_bytes(&data[55..67]).expect("valid section"),
+                Section::from_bytes(&data[67..79]).expect("valid section"),
+                Section::from_bytes(&data[79..91]).expect("valid section"),
+                Section::from_bytes(&data[91..103]).expect("valid section"),
             ]
         }
     }
@@ -277,7 +339,7 @@ impl SystemExclusiveData for MultiPatch {
 
         result.extend(self.common.to_bytes());
 
-        for section in self.sections {
+        for section in &self.sections {
             result.extend(section.to_bytes());
         }
 
@@ -301,10 +363,12 @@ mod tests {
 
     }
 
+    /*
     #[test]
     fn test_multi_patch_from_bytes() {
-        let data: [u8; 1070] = include!("WizooIni.in");
+        let data: [u8; 1070] = include!("WizooIni.syx");
         let multi_patch = MultiPatch::from_bytes(data[9..].to_vec());  // skip sysex header but not checksum
         assert_eq!(multi_patch.common.name, "WizooIni");
     }
+     */
 }

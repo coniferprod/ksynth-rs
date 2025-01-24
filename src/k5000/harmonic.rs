@@ -5,7 +5,8 @@ use bit::BitIndex;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
@@ -72,8 +73,8 @@ pub struct EnvelopeSegment {
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: EnvelopeRate::new(0),
-            level: HarmonicEnvelopeLevel::new(0),
+            rate: Default::default(),
+            level: Default::default(),
         }
     }
 }
@@ -107,8 +108,8 @@ impl Envelope {
     /// Creates a harmonic envelope with default values.
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
-            rate: EnvelopeRate::new(0),
-            level: HarmonicEnvelopeLevel::new(0),
+            rate: Default::default(),
+            level: Default::default(),
         };
 
         Envelope {

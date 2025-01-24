@@ -9,11 +9,12 @@ use bit::BitIndex;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Checksum
+    Checksum,
+    MIDIChannel,
+    Ranged
 };
 use crate::k4::{
     DRUM_NOTE_COUNT,
-    Channel,
     Level,
     ModulationDepth,
     Decay
@@ -100,7 +101,7 @@ impl SystemExclusiveData for DrumPatch {
 
 /// Drum common data.
 pub struct Common {
-    pub channel: Channel,  // MIDI channel, here 1...16, stored in SysEx as 0...15
+    pub channel: MIDIChannel,  // MIDI channel, here 1...16, stored in SysEx as 0...15
     pub volume: Level, // 0~100
     pub velocity_depth: ModulationDepth,  // 0~100
 }
@@ -108,9 +109,9 @@ pub struct Common {
 impl Default for Common {
     fn default() -> Self {
         Common {
-            channel: Channel::try_new(10).unwrap(),
-            volume: Level::try_new(100).unwrap(),
-            velocity_depth: ModulationDepth::try_new(0).unwrap(),
+            channel: MIDIChannel::new(10),
+            volume: Level::new(100),
+            velocity_depth: ModulationDepth::new(0),
         }
     }
 }
@@ -126,9 +127,9 @@ impl fmt::Display for Common {
         write!(
             f,
             "channel = {}, volume = {}, vel.depth = {}",
-            self.channel.into_inner(),
-            self.volume.into_inner(),
-            self.velocity_depth.into_inner()
+            self.channel.value(),
+            self.volume.value(),
+            self.velocity_depth.value()
         )
     }
 }
@@ -136,9 +137,9 @@ impl fmt::Display for Common {
 impl Common {
     fn collect_data(&self) -> Vec<u8> {
         vec![
-            self.channel.into_inner() - 1,
-            self.volume.into_inner(),
-            (self.velocity_depth.into_inner() + 50) as u8,
+            self.channel.value() as u8 - 1,
+            self.volume.value() as u8,
+            (self.velocity_depth.value() + 50) as u8,
             0, 0, 0, 0, 0, 0, 0,  // seven dummy bytes by design
         ]
     }
@@ -156,9 +157,9 @@ impl Checksum for Common {
 impl SystemExclusiveData for Common {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Common {
-            channel: Channel::try_new(data[0] + 1).unwrap(),
-            volume: Level::try_new(data[1]).unwrap(),
-            velocity_depth: ModulationDepth::try_new(data[2] as i8 - 50).unwrap(),
+            channel: MIDIChannel::new((data[0] + 1) as i32),
+            volume: Level::new(data[1] as i32),
+            velocity_depth: ModulationDepth::new((data[2] as i32) - 50),
         })
     }
 
@@ -287,9 +288,9 @@ impl Default for Source {
     fn default() -> Self {
         Source {
             wave: Wave::new(),
-            decay: Decay::try_new(1).unwrap(),
-            tune: ModulationDepth::try_new(0).unwrap(),
-            level: Level::try_new(100).unwrap(),
+            decay: Decay::new(1),
+            tune: ModulationDepth::new(0),
+            level: Level::new(100),
         }
     }
 }
@@ -299,10 +300,10 @@ impl fmt::Display for Source {
         write!(
             f,
             "wave = {} ({}), decay = {}, tune = {}, level = {}",
-            self.wave.name(), self.wave.number.into_inner(),
-            self.decay.into_inner(),
-            self.tune.into_inner(),
-            self.level.into_inner()
+            self.wave.name(), self.wave.number.value(),
+            self.decay.value(),
+            self.tune.value(),
+            self.level.value()
         )
     }
 }
@@ -311,18 +312,18 @@ impl SystemExclusiveData for Source {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Source {
             wave: Wave::from_bytes(&[data[0], data[1]])?,
-            decay: Decay::try_new(data[2]).unwrap(),
-            tune: ModulationDepth::try_new((data[3] as i8) - 50).unwrap(),  // adjust to -50~+50
-            level: Level::try_new(data[4]).unwrap(),
+            decay: Decay::new(data[2] as i32),
+            tune: ModulationDepth::new((data[3] as i32) - 50),  // adjust to -50~+50
+            level: Level::new(data[4] as i32),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
         buf.extend(self.wave.to_bytes());
-        buf.push(self.decay.into_inner());
-        buf.push((self.tune.into_inner() + 50) as u8);
-        buf.push(self.level.into_inner());
+        buf.push(self.decay.value() as u8);
+        buf.push((self.tune.value() + 50) as u8);
+        buf.push(self.level.value() as u8);
         buf
     }
 
@@ -347,11 +348,11 @@ mod tests {
     fn test_drum_patch_from_bytes() {
         let start: usize = dbg!(
             2 +
-            Header::data_size() + 
+            Header::data_size() +
             bank::SINGLE_PATCH_COUNT * SinglePatch::data_size() +
-            bank::MULTI_PATCH_COUNT * MultiPatch::data_size());        
+            bank::MULTI_PATCH_COUNT * MultiPatch::data_size());
         let patch = DrumPatch::from_bytes(&DATA[start..]);
-        assert_eq!(patch.unwrap().common.volume.into_inner(), 0x64);
+        assert_eq!(patch.unwrap().common.volume.value(), 0x64);
     }
 
 }

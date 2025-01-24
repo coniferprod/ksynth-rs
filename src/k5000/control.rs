@@ -10,7 +10,8 @@ use strum_macros;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::{
     MacroParameterDepth,
@@ -228,9 +229,9 @@ impl Default for MacroController {
     fn default() -> Self {
         MacroController {
             destination1: Default::default(),
-            depth1: MacroParameterDepth::new(0),
+            depth1: Default::default(),
             destination2: Default::default(),
-            depth2: MacroParameterDepth::new(0),
+            depth2: Default::default(),
         }
     }
 }

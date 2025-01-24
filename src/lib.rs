@@ -7,6 +7,8 @@ pub mod k4;
 
 use std::fmt;
 
+use rand::Rng;
+
 /// Error type for parsing data from MIDI System Exclusive bytes.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ParseError {
@@ -47,51 +49,104 @@ impl fmt::Display for ValueError {
 
 impl std::error::Error for ValueError { }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub struct MIDIChannel(i32);
+pub fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
+    v.try_into()
+        .unwrap_or_else(|v: Vec<i8>| panic!("Expected a Vec of length {} but it was {}", 4, v.len()))
+}
 
-impl MIDIChannel {
-    pub fn try_new(value: i32) -> Result<Self, ValueError> {
-        if let 1..=16 = value {
-            Ok(Self(value))
-        } else {
-            Err(ValueError(1, 16, value))
+
+// Here is a trick learned from "Programming Rust" 2nd Ed., p. 280.
+// Define associated consts in a trait, but don't give them a value.
+// Let the implementor of the trait do that.
+pub trait Ranged {
+    const FIRST: i32;
+    const LAST: i32;
+    const DEFAULT: i32;
+
+    fn new(value: i32) -> Self;
+    fn value(&self) -> i32;
+    fn contains(value: i32) -> bool;
+    fn random() -> Self;
+}
+
+// The `ranged_impl` macro generates an implementation of the `Ranged` trait,
+// along with implementations of the `Default` and `Display` traits based on
+// the values supplied as parameters (type name, first, last, default).
+#[macro_export]
+macro_rules! ranged_impl {
+    ($typ:ty, $first:expr, $last:expr, $default:expr) => {
+        impl Ranged for $typ {
+            const FIRST: i32 = $first;
+            const LAST: i32 = $last;
+            const DEFAULT: i32 = $default;
+
+            fn new(value: i32) -> Self {
+                if Self::contains(value) {
+                    Self(value)
+                }
+                else {
+                    panic!("expected value in range {}...{}, got {}",
+                        Self::FIRST, Self::LAST, value);
+                }
+            }
+
+            fn value(&self) -> i32 { self.0 }
+
+            fn contains(value: i32) -> bool {
+                value >= Self::FIRST && value <= Self::LAST
+            }
+
+            fn random() -> Self {
+                let mut rng = rand::thread_rng();
+                Self::new(rng.gen_range(Self::FIRST..=Self::LAST))
+            }
+        }
+
+        impl Default for $typ {
+            fn default() -> Self {
+                Self::new(Self::DEFAULT)
+            }
+        }
+
+        impl fmt::Display for $typ {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{}", self.0)
+            }
         }
     }
-
-    pub fn value(&self) -> i32 {
-        self.0
-    }
 }
+
+/// MIDI channel (1...16)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct MIDIChannel(i32);
+crate::ranged_impl!(MIDIChannel, 1, 16, 1);
 
 impl SystemExclusiveData for MIDIChannel {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         if data.len() < 1 {
             Err(ParseError::InvalidLength(data.len(), 1))
         } else {
-            match MIDIChannel::try_new((data[0] + 1).into()) {  // bring into 1...16
-                Ok(ch) => Ok(ch),
-                Err(e) => Err(ParseError::InvalidData(0, format!("invalid value {}", e)))
+            let value = data[0] as i32 + 1;
+            if MIDIChannel::contains(value) {
+                Ok(MIDIChannel::new(value))
+            }
+            else {
+                Err(ParseError::InvalidData(0, format!("invalid value {}", value)))
             }
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.0 as u8 - 1]  // bring into range 0...15 for SysEx
+        vec![self.value() as u8 - 1]  // bring into range 0...15 for SysEx
     }
 
     fn data_size() -> usize { 1 }
 }
 
-use nutype::nutype;
-
 /// MIDI note (0...127)
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 127),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct MIDINote(u8);
-
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct MIDINote(i32);
+crate::ranged_impl!(MIDINote, 1, 16, 1);
 
 /// Checksum for a patch.
 pub trait Checksum {
@@ -135,18 +190,7 @@ mod tests {
 
     #[test]
     fn test_channel() {
-        let ch = MIDIChannel::try_new(1);
-        assert!(ch.is_ok());
-        //let value = ch.value();
-        //assert_eq!(value, 1);  // 0x00 goes in, channel should be 1
+        let ch = MIDIChannel::new(1);
+        assert_eq!(ch.value(), 1);
     }
-
-    /*
-    #[test]
-    fn test_byte_from_midi_channel() {
-        let ch = MIDIChannel::try_new(16);  // channel 16
-        let b: u8 = ch.value();
-        assert_eq!(b, 0x0F);
-    }
-     */
 }

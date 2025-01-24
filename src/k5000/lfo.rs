@@ -8,7 +8,8 @@ use num_enum::TryFromPrimitive;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::{
     LFOSpeed,
@@ -51,8 +52,8 @@ pub struct Control {
 impl Default for Control {
     fn default() -> Self {
         Control {
-            depth: Depth::new(0),
-            key_scaling: KeyScaling::new(0),
+            depth: Default::default(),
+            key_scaling: Default::default(),
         }
     }
 }
@@ -95,10 +96,10 @@ impl Default for Lfo {
     fn default() -> Self {
         Lfo {
             waveform: Default::default(),
-            speed: LFOSpeed::new(0),
-            fade_in_time: LFOSpeed::new(0),
-            fade_in_to_speed: Depth::new(0),
-            delay_onset: LFOSpeed::new(0),
+            speed: Default::default(),
+            fade_in_time: Default::default(),
+            fade_in_to_speed: Default::default(),
+            delay_onset: Default::default(),
             vibrato: Default::default(),
             growl: Default::default(),
             tremolo: Default::default(),

@@ -8,7 +8,8 @@ use num_enum::TryFromPrimitive;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::{
     EnvelopeTime,
@@ -51,20 +52,20 @@ pub struct Envelope {
 
 impl Envelope {
     pub fn new() -> Envelope {
-        Envelope {
-            attack_time: EnvelopeTime::new(0),
-            decay1_time: EnvelopeTime::new(0),
-            decay1_level: EnvelopeLevel::new(0),
-            decay2_time: EnvelopeTime::new(0),
-            decay2_level: EnvelopeLevel::new(0),
-            release_time: EnvelopeTime::new(0),
-        }
+        Default::default()
     }
 }
 
 impl Default for Envelope {
     fn default() -> Self {
-        Envelope::new()
+        Envelope {
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
+            decay1_level: Default::default(),
+            decay2_time: Default::default(),
+            decay2_level: Default::default(),
+            release_time: Default::default(),
+        }
     }
 }
 
@@ -113,8 +114,8 @@ pub struct KeyScalingControl {
 impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
-            attack_time: ControlTime::new(0),
-            decay1_time: ControlTime::new(0),
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
         }
     }
 }
@@ -154,9 +155,9 @@ pub struct VelocityControl {
 impl Default for VelocityControl {
     fn default() -> Self {
         VelocityControl {
-            depth: EnvelopeDepth::new(0),
-            attack_time: ControlTime::new(0),
-            decay1_time: ControlTime::new(0),
+            depth: Default::default(),
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
         }
     }
 }
@@ -242,25 +243,25 @@ pub struct Filter {
 
 impl Filter {
     pub fn new() -> Filter {
-        Filter {
-            is_active: true,
-            cutoff: Cutoff::new(0),
-            resonance: Resonance::new(0),
-            mode: FilterMode::LowPass,
-            velocity_curve: VelocityCurve::Curve1,
-            level: Level::new(0),
-            ks_to_cutoff: EnvelopeDepth::new(0),
-            vel_to_cutoff: EnvelopeDepth::new(0),
-            envelope_depth: EnvelopeDepth::new(0),
-            envelope: Envelope::new(),
-            modulation: Modulation::default()
-        }
+        Default::default()
     }
 }
 
 impl Default for Filter {
     fn default() -> Self {
-        Filter::new()
+        Filter {
+            is_active: true,
+            cutoff: Default::default(),
+            resonance: Default::default(),
+            mode: FilterMode::LowPass,
+            velocity_curve: VelocityCurve::Curve1,
+            level: Default::default(),
+            ks_to_cutoff: Default::default(),
+            vel_to_cutoff: Default::default(),
+            envelope_depth: Default::default(),
+            envelope: Default::default(),
+            modulation: Modulation::default()
+        }
     }
 }
 

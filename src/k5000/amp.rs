@@ -6,11 +6,10 @@ use std::fmt;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::{
-    RangedInteger,
-    Parameter,
     EnvelopeTime,
     ControlTime,
     KeyScaling,
@@ -23,51 +22,10 @@ use crate::k5000::control::VelocityCurve;
 // others are -63 to 63. So we define our own type in
 // this module, and *don't* import the normal level type.
 
-type EnvelopeLevelValue = RangedInteger::<0, 127>;
-
-/// Wrapper for envelope level parameter.
-#[derive(Debug, Copy, Clone)]
-pub struct EnvelopeLevel {
-    value: EnvelopeLevelValue,  // private field to prevent accidental range violations
-}
-
-impl EnvelopeLevel {
-    /// Makes a new `EnvelopeLevel` initialized with the specified value.
-    pub fn new(value: i32) -> Self {
-        Self { value: EnvelopeLevelValue::new(value) }
-    }
-
-    /// Gets the wrapped value.
-    pub fn value(&self) -> i32 {
-        self.value.value
-    }
-}
-
-impl Parameter for EnvelopeLevel {
-    fn name(&self) -> String {
-        "EnvelopeLevel".to_string()
-    }
-
-    fn minimum_value() -> i32 {
-        *EnvelopeLevelValue::range().start()
-    }
-
-    fn maximum_value() -> i32 {
-        *EnvelopeLevelValue::range().end()
-    }
-
-    fn default_value() -> i32 {
-        Self::default().value()
-    }
-
-    fn random_value() -> i32 {
-        EnvelopeLevelValue::random_value()
-    }
-}
-
-impl Default for EnvelopeLevel {
-    fn default() -> Self { Self::new(0) }
-}
+/// Envelope level (0...127)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeLevel(i32);
+crate::ranged_impl!(EnvelopeLevel, 0, 127, 0);
 
 impl From<u8> for EnvelopeLevel {
     fn from(value: u8) -> EnvelopeLevel {
@@ -78,12 +36,6 @@ impl From<u8> for EnvelopeLevel {
 impl From<EnvelopeLevel> for u8 {
     fn from(val: EnvelopeLevel) -> Self {
         val.value() as u8
-    }
-}
-
-impl fmt::Display for EnvelopeLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value())
     }
 }
 
@@ -100,20 +52,20 @@ pub struct Envelope {
 
 impl Envelope {
     pub fn new() -> Envelope {
-        Envelope {
-            attack_time: EnvelopeTime::new(0),
-            decay1_time: EnvelopeTime::new(0),
-            decay1_level: EnvelopeLevel::new(0),
-            decay2_time: EnvelopeTime::new(0),
-            decay2_level: EnvelopeLevel::new(0),
-            release_time: EnvelopeTime::new(0),
-        }
+        Default::default()
     }
 }
 
 impl Default for Envelope {
     fn default() -> Self {
-        Envelope::new()
+        Envelope {
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
+            decay1_level: Default::default(),
+            decay2_time: Default::default(),
+            decay2_level: Default::default(),
+            release_time: Default::default(),
+        }
     }
 }
 
@@ -214,10 +166,10 @@ pub struct VelocityControl {
 impl Default for VelocityControl {
     fn default() -> Self {
         VelocityControl {
-            level: VelocityControlLevel::new(0),
-            attack_time: ControlTime::new(0),
-            decay1_time: ControlTime::new(0),
-            release: ControlTime::new(0),
+            level: Default::default(),
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
+            release: Default::default(),
         }
     }
 }

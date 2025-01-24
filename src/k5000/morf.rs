@@ -8,7 +8,8 @@ use num_enum::TryFromPrimitive;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::{
     VelocityDepth,
@@ -49,9 +50,9 @@ impl Default for HarmonicCommon {
             morf_enabled: false,
             total_gain: 0,
             group: Default::default(),
-            ks_to_gain: KeyScalingToGain::new(0),
+            ks_to_gain: Default::default(),
             velocity_curve: VelocityCurve::Curve1,
-            velocity_depth: VelocityDepth::new(0),
+            velocity_depth: Default::default(),
         }
     }
 }
@@ -152,10 +153,10 @@ pub struct MorfHarmonicEnvelope {
 impl Default for MorfHarmonicEnvelope {
     fn default() -> Self {
         MorfHarmonicEnvelope {
-            time1: EnvelopeTime::new(0),
-            time2: EnvelopeTime::new(0),
-            time3: EnvelopeTime::new(0),
-            time4: EnvelopeTime::new(0),
+            time1: Default::default(),
+            time2: Default::default(),
+            time3: Default::default(),
+            time4: Default::default(),
             loop_type: Default::default(),
         }
     }

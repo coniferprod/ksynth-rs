@@ -11,7 +11,9 @@ use bit::BitIndex;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Checksum
+    Checksum,
+    Ranged,
+    vec_to_array
 };
 use crate::k5000::control::{
     Polyphony,
@@ -95,11 +97,6 @@ impl fmt::Display for Common {
             self.effects
         )
     }
-}
-
-fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
-    v.try_into()
-        .unwrap_or_else(|v: Vec<i8>| panic!("Expected a Vec of length {} but it was {}", 4, v.len()))
 }
 
 impl SystemExclusiveData for Common {

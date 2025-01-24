@@ -501,14 +501,6 @@ pub struct Wave {
     pub number: u16,  // 1~512
 }
 
-impl Default for Wave {
-    fn default() -> Self {
-        Wave {
-            number: 411
-        }
-    }
-}
-
 impl Wave {
     /// Makes a new wave with the default value.
     pub fn new() -> Self {
@@ -528,6 +520,14 @@ impl Wave {
     /// Returns true if this wave represents the special case of ADD.
     pub fn is_additive(&self) -> bool {
         self.number == 512
+    }
+}
+
+impl Default for Wave {
+    fn default() -> Self {
+        Wave {
+            number: 411
+        }
     }
 }
 

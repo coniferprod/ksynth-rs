@@ -9,7 +9,8 @@ use pretty_hex::*;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 use crate::k5000::{
@@ -72,8 +73,8 @@ impl Oscillator {
     pub fn new() -> Oscillator {
         Oscillator {
             wave: Wave { number: 384 },
-            coarse: Coarse::new(0),
-            fine: Fine::new(0),
+            coarse: Default::default(),
+            fine: Default::default(),
             ks_to_pitch: KeyScaling::ZeroCent,
             fixed_key: FixedKey::Off,
             pitch_envelope: PitchEnvelope::new(),

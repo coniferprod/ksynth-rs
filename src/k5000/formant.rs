@@ -8,7 +8,8 @@ use num_enum::TryFromPrimitive;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::{
@@ -40,8 +41,8 @@ pub struct EnvelopeSegment {
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: EnvelopeRate::new(0),
-            level: EnvelopeLevel::new(0),
+            rate: Default::default(),
+            level: Default::default(),
         }
     }
 }
@@ -81,8 +82,8 @@ impl Default for Envelope {
             decay2: Default::default(),
             release: Default::default(),
             decay_loop: Default::default(),
-            velocity_depth: EnvelopeDepth::new(0),
-            ks_depth: EnvelopeDepth::new(0),
+            velocity_depth: Default::default(),
+            ks_depth: Default::default(),
         }
     }
 }
@@ -146,9 +147,9 @@ pub struct Lfo {
 impl Default for Lfo {
     fn default() -> Self {
         Lfo {
-            speed: LFOSpeed::new(0),
+            speed: Default::default(),
             shape: Default::default(),
-            depth: LFODepth::new(0),
+            depth: Default::default(),
         }
     }
 }
@@ -181,9 +182,9 @@ pub struct FormantFilter {
 impl Default for FormantFilter {
     fn default() -> Self {
         FormantFilter {
-            bias: Bias::new(0),
+            bias: Default::default(),
             mode: Default::default(),
-            envelope_depth: EnvelopeDepth::new(0),
+            envelope_depth: Default::default(),
             envelope: Default::default(),
             lfo: Default::default(),
         }

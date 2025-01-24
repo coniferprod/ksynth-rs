@@ -1,7 +1,6 @@
 //! Data model for LFO.
 //!
 
-use std::convert::TryInto;
 use std::convert::TryFrom;
 use std::fmt;
 
@@ -9,7 +8,8 @@ use num_enum::TryFromPrimitive;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k4::{
     Level,
@@ -54,10 +54,10 @@ impl Lfo {
     pub fn new() -> Lfo {
         Lfo {
             shape: Shape::Triangle,
-            speed: Level::try_new(0).unwrap(),
-            delay: Level::try_new(0).unwrap(),
-            depth: ModulationDepth::try_new(0).unwrap(),
-            pressure_depth: ModulationDepth::try_new(0).unwrap(),
+            speed: Level::new(0),
+            delay: Level::new(0),
+            depth: ModulationDepth::new(0),
+            pressure_depth: ModulationDepth::new(0),
         }
     }
 }
@@ -73,10 +73,10 @@ impl fmt::Display for Lfo {
         write!(f,
             "shape = {}, speed = {}, delay = {}, depth = {}, prs.depth = {}",
             self.shape,
-            self.speed.into_inner(),
-            self.delay.into_inner(),
-            self.depth.into_inner(),
-            self.pressure_depth.into_inner()
+            self.speed.value(),
+            self.delay.value(),
+            self.depth.value(),
+            self.pressure_depth.value()
         )
     }
 }
@@ -85,10 +85,10 @@ impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Lfo {
             shape: Shape::try_from(data[0] & 0x03).unwrap(),
-            speed: Level::try_new(data[1] & 0x7f).unwrap(),
-            delay: Level::try_new(data[2] & 0x7f).unwrap(),
-            depth: ModulationDepth::try_new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-            pressure_depth: ModulationDepth::try_new(((data[4] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            speed: Level::new((data[1] & 0x7f) as i32),
+            delay: Level::new((data[2] & 0x7f) as i32),
+            depth: ModulationDepth::new(((data[3] & 0x7f) as i32) - 50), // 0~100 to ±50
+            pressure_depth: ModulationDepth::new(((data[4] & 0x7f) as i32) - 50), // 0~100 to ±50
         })
     }
 
@@ -97,10 +97,10 @@ impl SystemExclusiveData for Lfo {
 
         let b = vec![
             self.shape as u8,
-            self.speed.into_inner(),
-            self.delay.into_inner(),
-            (self.depth.into_inner() + 50).try_into().unwrap(),
-            (self.pressure_depth.into_inner() + 50).try_into().unwrap(),
+            self.speed.value() as u8,
+            self.delay.value() as u8,
+            (self.depth.value() + 50) as u8,
+            (self.pressure_depth.value() + 50) as u8,
         ];
         buf.extend(b);
 
@@ -123,9 +123,9 @@ impl Vibrato {
     pub fn new() -> Vibrato {
         Vibrato {
             shape: Shape::Triangle,
-            speed: Level::try_new(0).unwrap(),
-            pressure: ModulationDepth::try_new(0).unwrap(),
-            depth: ModulationDepth::try_new(0).unwrap(),
+            speed: Level::new(0),
+            pressure: ModulationDepth::new(0),
+            depth: ModulationDepth::new(0),
         }
     }
 }
@@ -141,9 +141,9 @@ impl fmt::Display for Vibrato {
         write!(f,
             "shape = {}, speed = {}, pressure = {}, depth = {}",
             self.shape,
-            self.speed.into_inner(),
-            self.pressure.into_inner(),
-            self.depth.into_inner()
+            self.speed.value(),
+            self.pressure.value(),
+            self.depth.value()
         )
     }
 }
@@ -152,9 +152,9 @@ impl SystemExclusiveData for Vibrato {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Vibrato {
             shape: Shape::try_from((data[0] >> 4) & 0x03).unwrap(),
-            speed: Level::try_new(data[1] & 0x7f).unwrap(),
-            pressure: ModulationDepth::try_new(((data[2] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
-            depth: ModulationDepth::try_new(((data[3] & 0x7f) as i8) - 50).unwrap(), // 0~100 to ±50
+            speed: Level::new((data[1] & 0x7f) as i32),
+            pressure: ModulationDepth::new(((data[2] & 0x7f) as i32) - 50), // 0~100 to ±50
+            depth: ModulationDepth::new(((data[3] & 0x7f) as i32) - 50), // 0~100 to ±50
         })
     }
 
@@ -163,9 +163,9 @@ impl SystemExclusiveData for Vibrato {
 
         let b = vec![
             self.shape as u8,
-            self.speed.into_inner(),
-            (self.pressure.into_inner() + 50).try_into().unwrap(),
-            (self.depth.into_inner() + 50).try_into().unwrap(),
+            self.speed.value() as u8,
+            (self.pressure.value() + 50) as u8,
+            (self.depth.value() + 50) as u8,
         ];
         buf.extend(b);
 

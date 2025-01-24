@@ -5,7 +5,8 @@ use std::fmt;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::{
     PitchEnvelopeLevel,
@@ -38,20 +39,20 @@ pub struct Envelope {
 impl Envelope {
     /// Creates a new envelope with default values.
     pub fn new() -> Envelope {
-        Envelope {
-            start: PitchEnvelopeLevel::new(0),
-            attack_time: PitchEnvelopeTime::new(0),
-            attack_level: PitchEnvelopeLevel::new(0),
-            decay_time: PitchEnvelopeTime::new(0),
-            time_vel_sens: VelocitySensitivity::new(0),
-            level_vel_sens: VelocitySensitivity::new(0),
-        }
+        Default::default()
     }
 }
 
 impl Default for Envelope {
     fn default() -> Self {
-        Self::new()
+        Envelope {
+            start: Default::default(),
+            attack_time: Default::default(),
+            attack_level: Default::default(),
+            decay_time: Default::default(),
+            time_vel_sens: Default::default(),
+            level_vel_sens: Default::default(),
+        }
     }
 }
 

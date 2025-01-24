@@ -18,7 +18,8 @@ use crate::k4::{
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Checksum
+    Checksum,
+    Ranged
 };
 
 static EFFECT_NAMES: &[&str] = &[
@@ -105,9 +106,9 @@ impl Default for EffectPatch {
     fn default() -> Self {
         EffectPatch {
             effect: Effect::Reverb1,
-            param1: SmallEffectParameter::try_new(0).unwrap(),
-            param2: SmallEffectParameter::try_new(0).unwrap(),
-            param3: BigEffectParameter::try_new(0).unwrap(),
+            param1: SmallEffectParameter::new(0),
+            param2: SmallEffectParameter::new(0),
+            param3: BigEffectParameter::new(0),
             submixes: [Default::default(); SUBMIX_COUNT],
         }
     }
@@ -119,9 +120,9 @@ impl fmt::Display for EffectPatch {
             f,
             "{}, {} = {}, {} = {}, {} = {}",
             EFFECT_NAMES[self.effect as usize],
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1.into_inner(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2.into_inner(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3.into_inner()
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1.value(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2.value(),
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3.value()
         )
     }
 }
@@ -130,9 +131,9 @@ impl EffectPatch {
     fn collect_data(&self) -> Vec<u8> {
         let mut buf = vec![
             self.effect as u8 - 1,
-            (self.param1.into_inner() + 7) as u8,
-            (self.param2.into_inner() + 7) as u8,
-            self.param3.into_inner()
+            (self.param1.value() + 7) as u8,
+            (self.param2.value() + 7) as u8,
+            self.param3.value() as u8
         ];
 
         buf.extend(vec![0, 0, 0, 0, 0, 0]); // six dummy bytes
@@ -164,8 +165,8 @@ impl SystemExclusiveData for EffectPatch {
         while i < SUBMIX_COUNT {
             submixes[i] = SubmixSettings {
                 pan: data[offset] as i32 - 7,
-                send1: Level::try_new(data[offset + 1]).unwrap(),
-                send2: Level::try_new(data[offset + 2]).unwrap(),
+                send1: Level::new(data[offset + 1] as i32),
+                send2: Level::new(data[offset + 2] as i32),
             };
             offset += 3;
             i += 1;
@@ -173,9 +174,9 @@ impl SystemExclusiveData for EffectPatch {
 
         Ok(EffectPatch {
             effect: Effect::try_from(data[0] + 1).unwrap(),
-            param1: SmallEffectParameter::try_new((data[1] as i8) - 7).unwrap(),
-            param2: SmallEffectParameter::try_new((data[2] as i8) - 7).unwrap(),
-            param3: BigEffectParameter::try_new(data[3]).unwrap(),
+            param1: SmallEffectParameter::new((data[1] as i32) - 7),
+            param2: SmallEffectParameter::new((data[2] as i32) - 7),
+            param3: BigEffectParameter::new(data[3] as i32),
             submixes,
         })
     }
@@ -215,8 +216,8 @@ impl Default for SubmixSettings {
     fn default() -> Self {
         SubmixSettings {
             pan: 0,
-            send1: Level::try_new(0).unwrap(),
-            send2: Level::try_new(0).unwrap(),
+            send1: Level::new(0),
+            send2: Level::new(0),
         }
     }
 }
@@ -225,16 +226,16 @@ impl SystemExclusiveData for SubmixSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(SubmixSettings {
             pan: data[0] as i32 - 7,
-            send1: Level::try_new(data[1]).unwrap(),
-            send2: Level::try_new(data[2]).unwrap(),
+            send1: Level::new(data[1] as i32),
+            send2: Level::new(data[2] as i32),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             (self.pan + 7).try_into().unwrap(),
-            self.send1.into_inner(),
-            self.send2.into_inner()
+            self.send1.value() as u8,
+            self.send2.value() as u8
         ]
     }
 
@@ -285,7 +286,7 @@ mod tests {
         multi::MultiPatch,
         drum::DrumPatch
     };
-    
+
     use super::{*};
 
     static DATA: &'static [u8] = include_bytes!("A401.SYX");
@@ -300,11 +301,11 @@ mod tests {
     fn test_effect_patch_from_bytes() {
         let start: usize = dbg!(
             2 +
-            Header::data_size() + 
+            Header::data_size() +
             bank::SINGLE_PATCH_COUNT * SinglePatch::data_size() +
             bank::MULTI_PATCH_COUNT * MultiPatch::data_size() +
             DrumPatch::data_size());
-        
+
         let patch = EffectPatch::from_bytes(&DATA[start..]);
         assert_eq!(patch.unwrap().effect, Effect::Reverb1);
     }
@@ -313,9 +314,9 @@ mod tests {
     fn test_effect_parameter_names() {
         let effect = EffectPatch {
             effect: Effect::Reverb1,
-            param1: SmallEffectParameter::try_new(7).unwrap(),
-            param2: SmallEffectParameter::try_new(5).unwrap(),
-            param3: BigEffectParameter::try_new(31).unwrap(),
+            param1: SmallEffectParameter::new(7),
+            param2: SmallEffectParameter::new(5),
+            param3: BigEffectParameter::new(31),
             submixes: [Default::default(); SUBMIX_COUNT],
         };
 
@@ -331,9 +332,9 @@ mod tests {
     fn test_effect_get_parameter_names() {
         let effect = EffectPatch {
             effect: Effect::Reverb1,
-            param1: SmallEffectParameter::try_new(7).unwrap(),
-            param2: SmallEffectParameter::try_new(5).unwrap(),
-            param3: BigEffectParameter::try_new(31).unwrap(),
+            param1: SmallEffectParameter::new(7),
+            param2: SmallEffectParameter::new(5),
+            param3: BigEffectParameter::new(31),
             submixes: [Default::default(); SUBMIX_COUNT],
         };
 

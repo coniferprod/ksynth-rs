@@ -10,7 +10,8 @@ use crate::k5000::control::{
 };
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged
 };
 use crate::k5000::osc::*;
 use crate::k5000::filter::*;
@@ -108,10 +109,10 @@ impl Default for SourceControl {
             vel_sw: Default::default(),
             effect_path: 0,
             volume: Volume::new(100),
-            bender_pitch: BenderPitch::new(0),
-            bender_cutoff: BenderCutoff::new(0),
+            bender_pitch: Default::default(),
+            bender_cutoff: Default::default(),
             modulation: Default::default(),
-            key_on_delay: KeyOnDelay::new(0),
+            key_on_delay: Default::default(),
             pan: Default::default(),
         }
     }
@@ -133,9 +134,9 @@ impl SystemExclusiveData for SourceControl {
             zone: Zone { low: Key { note: data[0] }, high: Key { note: data[1] } },
             vel_sw: VelocitySwitchSettings::from_bytes(&[data[2]])?,
             effect_path: data[3],
-            volume: Volume::from(data[4]),
-            bender_pitch: BenderPitch::from(data[5]),
-            bender_cutoff: BenderCutoff::from(data[6]),
+            volume: Volume::new(data[4] as i32),
+            bender_pitch: BenderPitch::new(data[5] as i32),
+            bender_cutoff: BenderCutoff::new(data[6] as i32),
             modulation: ModulationSettings::from_bytes(&data[7..25])?,
             key_on_delay: KeyOnDelay::from(data[25]),
             pan: PanSettings::from_bytes(&data[26..28])?,
