@@ -1,10 +1,13 @@
-use std::fmt;
-use std::ops::RangeInclusive;
+use std::{alloc::System, fmt};
 
 use rand::Rng;
 use nutype::nutype;
 
-use crate::Ranged;
+use crate::{
+    Ranged,
+    SystemExclusiveData,
+    ParseError,
+};
 
 pub mod filter;
 pub mod amp;
@@ -25,39 +28,6 @@ pub mod multi;
 
 /// Length of patch name
 pub const NAME_LENGTH: usize = 8;
-
-/// A simple struct for wrapping an `i32` with const generic parameters to limit
-/// the range of allowed values.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct RangedInteger<const MIN: i32, const MAX: i32> {
-    value: i32,
-}
-
-impl <const MIN: i32, const MAX: i32> RangedInteger<MIN, MAX> {
-    /// Makes a new ranged integer if the value is in the allowed range, otherwise panics.
-    pub fn new(value: i32) -> Self {
-        let range = Self::range();
-        if range.contains(&value) {
-            Self { value }
-        }
-        else {
-            panic!("new() expected value in range {}...{}, got {}", range.start(), range.end(), value);
-        }
-    }
-
-    /// Gets the range of allowed values as an inclusive range,
-    /// constructed from the generic parameters.
-    pub fn range() -> RangeInclusive<i32> {
-        MIN ..= MAX
-    }
-
-    /// Gets a random value that is in the range of allowed values.
-    pub fn random_value() -> i32 {
-        let mut rng = rand::thread_rng();
-        let range = Self::range();
-        rng.gen_range(*range.start() ..= *range.end())
-    }
-}
 
 /// Trait for a synth parameter.
 trait Parameter {
@@ -596,29 +566,41 @@ pub trait RandomValue {
 }
 
 /// Patch name.
-#[nutype(
+/*#[nutype(
     sanitize(with = |s: String| format!("{:<8}", s)),
     validate(not_empty, len_char_max = 8),
     derive(Debug, PartialEq, Clone)
-)]
+)]*/
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct PatchName(String);
 
+impl fmt::Display for PatchName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl SystemExclusiveData for PatchName {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        if data.len() != NAME_LENGTH {
+            return Err(ParseError::InvalidLength(data.len(), NAME_LENGTH));
+        }
+
+        match String::from_utf8(data.to_vec()) {
+            Ok(name) => Ok(PatchName(name)),
+            Err(e) => Err(ParseError::InvalidData(0, format!("invalid name data, error: {}", e)))
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        self.0.as_bytes().to_vec()
+    }
+
+    fn data_size() -> usize { 8 }
+}
 
 #[cfg(test)]
 mod tests {
     use super::{*};
 
-    #[test]
-    fn test_short_patch_name_is_right_padded() {
-        let patch_name = PatchName::try_new("Short");
-        assert_eq!(patch_name.unwrap().into_inner(), "Short   ");
-    }
-
-    #[test]
-    fn test_long_patch_name_is_truncated() {
-        assert_eq!(
-            PatchName::try_new("WayTooLong"),
-            Err(PatchNameError::LenCharMaxViolated)
-        );
-    }
 }

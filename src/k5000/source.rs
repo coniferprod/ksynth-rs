@@ -73,6 +73,12 @@ impl fmt::Display for Zone {
     }
 }
 
+impl Default for Zone {
+    fn default() -> Self {
+        Zone { low: Key { note: 0 }, high: Key { note: 127 } }
+    }
+}
+
 impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Zone { low: Key { note: data[0] }, high: Key { note: data[1] } })
@@ -105,7 +111,7 @@ pub struct SourceControl {
 impl Default for SourceControl {
     fn default() -> Self {
         SourceControl {
-            zone: Zone { low: Key { note: 0 }, high: Key { note: 127 } },
+            zone: Default::default(),
             vel_sw: Default::default(),
             effect_path: 0,
             volume: Volume::new(100),

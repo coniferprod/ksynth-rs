@@ -5,8 +5,7 @@ use bit::BitIndex;
 
 use crate::{
     SystemExclusiveData,
-    ParseError,
-    Ranged
+    ParseError
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;

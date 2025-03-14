@@ -357,7 +357,7 @@ impl Header {
 
     }
 
-    // Returns the size of this dump command in bytes
+    /// Returns the size of this dump command in bytes
     pub fn size(&self) -> usize {
         let mut count =
             1 // channel     ("3rd" in K5000 MIDI spec)
@@ -367,7 +367,7 @@ impl Header {
             + 1; // kind ("7th")
 
         if self.kind == PatchKind::Single {
-                count += 1;  // for bank identifier
+            count += 1;  // for bank identifier
         }
 
         count += self.sub_bytes.len();  // 0 to max 19 (if block tone map present)
@@ -377,14 +377,15 @@ impl Header {
 
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {} {}, sub-bytes={:02X?}",
+        write!(f, "channel={}\ncardinality={}\nbank={}\nkind={}\nsub-bytes={:02X?}",
+            self.channel.value(),
             self.cardinality,
-            self.kind,
             if let Some(bank) = &self.bank_identifier {
                 bank.to_string()
             } else {
                 String::from("N/A")
             },
+            self.kind,
             self.sub_bytes
         )
     }

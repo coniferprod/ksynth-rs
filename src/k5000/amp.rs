@@ -4,6 +4,8 @@
 use std::convert::TryFrom;
 use std::fmt;
 
+use rand::Rng;
+
 use crate::{
     SystemExclusiveData,
     ParseError,
