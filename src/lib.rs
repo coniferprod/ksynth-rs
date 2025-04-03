@@ -83,15 +83,50 @@ impl SystemExclusiveData for MIDIChannel {
     fn data_size() -> usize { 1 }
 }
 
-use nutype::nutype;
-
 /// MIDI note (0...127)
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 127),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct MIDINote(u8);
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub struct MIDINote(i32);
 
+impl MIDINote {
+    pub fn try_new(value: i32) -> Result<Self, ValueError> {
+        if let 0..=127 = value {
+            Ok(Self(value))
+        } else {
+            Err(ValueError(0, 127, value))
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        self.0
+    }
+
+    pub fn name(&self) -> String {
+        let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
+        let octave = (self.0 / 12) - 2;
+        let name = notes[self.0 as usize % 12];
+    
+        format!("{}{}", name, octave)
+    }
+}
+
+impl SystemExclusiveData for MIDINote {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        if data.len() < 1 {
+            Err(ParseError::InvalidLength(data.len(), 1))
+        } else {
+            match MIDINote::try_new(data[0].into()) {
+                Ok(ch) => Ok(ch),
+                Err(e) => Err(ParseError::InvalidData(0, format!("invalid value {}", e)))
+            }
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        vec![self.0 as u8]
+    }
+
+    fn data_size() -> usize { 1 }
+}
 
 /// Checksum for a patch.
 pub trait Checksum {

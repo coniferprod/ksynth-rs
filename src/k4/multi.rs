@@ -11,11 +11,10 @@ use crate::{
     SystemExclusiveData,
     Checksum,
     ParseError,
-    MIDIChannel
+    MIDIChannel,
+    MIDINote,
 };
-use crate::k4;
 use crate::k4::{
-    get_note_name,
     Level,
     PatchNumber,
     EffectNumber,
@@ -175,8 +174,8 @@ impl SystemExclusiveData for Section {
         let mut buf: Vec<u8> = Vec::new();
 
         buf.push(self.single_number.into_inner());
-        buf.push(self.zone.low_key.note);
-        buf.push(self.zone.high_key.note);
+        buf.push(self.zone.low_key.note.value() as u8);
+        buf.push(self.zone.high_key.note.value() as u8);
 
         let mut m15 = (self.receive_channel.to_bytes()[0]) | ((self.velocity_switch as u8) << 4);
         m15.set_bit(6, self.is_muted);
@@ -199,13 +198,13 @@ impl SystemExclusiveData for Section {
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Key {
     /// MIDI note number for the key.
-    pub note: u8,
+    pub note: MIDINote,
 }
 
 impl Key {
     /// Name of this key's note.
     pub fn note_name(&self) -> String {
-        get_note_name(self.note)
+        self.note.name()
     }
 }
 
@@ -219,8 +218,8 @@ pub struct Zone {
 impl fmt::Display for Zone {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} ... {}",
-            k4::get_note_name(self.low_key.note),
-            k4::get_note_name(self.high_key.note))
+            self.low_key.note.name(),
+            self.high_key.note.name())
     }
 }
 
@@ -228,14 +227,14 @@ impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(
             Zone {
-                low_key: Key { note: data[0] },
-                high_key: Key { note: data[1] }
+                low_key: Key { note: MIDINote::try_new(data[0].into()) },
+                high_key: Key { note: MIDINote::try_new(data[1].into())? }
             }
         )
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.low_key.note, self.high_key.note]
+        vec![self.low_key.note.value(), self.high_key.note]
     }
 
     fn data_size() -> usize { 2 }
