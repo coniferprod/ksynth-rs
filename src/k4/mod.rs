@@ -1,4 +1,7 @@
-use crate::{SystemExclusiveData, ParseError};
+use std::fmt;
+use rand::Rng;
+
+use crate::Ranged;
 
 pub mod amp;
 pub mod effect;
@@ -31,165 +34,86 @@ fn get_effect_number(b: u8) -> u8 {
     value + 1
 }
 
-pub fn get_note_name(note_number: u8) -> String {
-    let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
-    let octave = (note_number / 12) - 2;
-    let name = notes[note_number as usize % 12];
-
-    format!("{}{}", name, octave)
-}
-
-// Domain types based on nutype.
-// We use the smallest possible inner type for the wrapped value, FWIW.
-
-use nutype::nutype;
-
 /// Envelope time for DCA/DCF attack, decay and release
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 100),
-    derive(Copy, Clone, PartialEq, Eq)
-)]
-pub struct EnvelopeTime(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeTime(i32);
+crate::ranged_impl!(EnvelopeTime, 0, 100, 0);
 
-/// Envelope level for DCA/DCF sustain
-type EnvelopeLevel = EnvelopeTime;
+/// Envelope level for DCA/DCF sustain (level from 0 to 100)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeLevel(i32);
+crate::ranged_impl!(EnvelopeLevel, 0, 100, 0);
 
-/// Level from 0 to 100
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 100),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Level(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Level(i32);
+crate::ranged_impl!(Level, 0, 100, 0);
 
 /// Depth used for DCA/DCF modulation values
-#[nutype(
-    validate(
-        greater_or_equal = -50, 
-        less_or_equal = 50,
-    ),
-    derive(Debug, Copy, Clone)
-)]
-pub struct ModulationDepth(i8);  // note: signed inner type
-
-/// MIDI channel
-#[nutype(
-    validate(greater_or_equal = 1, less_or_equal = 16),
-    derive(Copy, Clone)
-)]
-pub struct Channel(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct ModulationDepth(i32);
+crate::ranged_impl!(ModulationDepth, -50, 50, 0);
 
 /// Drum source 1 and 2 decay
-#[nutype(
-    validate(greater_or_equal = 1, less_or_equal = 100),
-    derive(Copy, Clone)
-)]
-pub struct Decay(u8);
-
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Decay(i32);
+crate::ranged_impl!(Decay, 1, 100, 0);
 
 /// Small effect parameter
-#[nutype(
-    validate(greater_or_equal = -7, less_or_equal = 7),
-    derive(Copy, Clone)
-)]
-pub struct SmallEffectParameter(i8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct SmallEffectParameter(i32);
+crate::ranged_impl!(SmallEffectParameter, -7, 7, 0);
 
 /// Big effect parameter
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 31),
-    derive(Copy, Clone)
-)]
-pub struct BigEffectParameter(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct BigEffectParameter(i32);
+crate::ranged_impl!(BigEffectParameter, 0, 31, 0);
 
 /// Envelope level for DCF sustain
-#[nutype(
-    validate(greater_or_equal = -50, less_or_equal = 50),
-    derive(Copy, Clone, PartialEq, Eq)
-)]
-pub struct FilterEnvelopeLevel(i8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct FilterEnvelopeLevel(i32);
+crate::ranged_impl!(FilterEnvelopeLevel, -50, 50, 0);
 
 /// Filter cutoff
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 100),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Cutoff(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Cutoff(i32);
+crate::ranged_impl!(Cutoff, 0, 100, 0);
 
 /// Filter resonance
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 7),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Resonance(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Resonance(i32);
+crate::ranged_impl!(Resonance, 0, 7, 0);
 
 /// Effect number
-#[nutype(
-    validate(greater_or_equal = 1, less_or_equal = 32),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct EffectNumber(u8);
-
-impl SystemExclusiveData for EffectNumber {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self::try_new(data[0] + 1).unwrap())  // adjust 0~31 to 1~32
-    }
-
-    fn to_bytes(&self) -> Vec<u8> {
-        vec![self.into_inner() - 1]
-    }
-
-    fn data_size() -> usize { 1 }
-}
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EffectNumber(i32);
+crate::ranged_impl!(EffectNumber, 1, 32, 0);
 
 /// Velocity or Key Scaling curve 1~8
-#[nutype(
-    validate(greater_or_equal = 1, less_or_equal = 8),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Curve(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Curve(i32);
+crate::ranged_impl!(Curve, 1, 8, 1);
 
 /// DCO coarse tuning
-#[nutype(
-    validate(greater_or_equal = -24, less_or_equal = 24),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Coarse(i8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Coarse(i32);
+crate::ranged_impl!(Coarse, -24, 24, 0);
 
 /// DCO fine tuning
-#[nutype(
-    validate(greater_or_equal = -50, less_or_equal = 50),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Fine(i8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Fine(i32);
+crate::ranged_impl!(Fine, -50, 50, 0);
 
 /// Wave number
-#[nutype(
-    validate(greater_or_equal = 1, less_or_equal = 256),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct WaveNumber(u16);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct WaveNumber(i32);
+crate::ranged_impl!(WaveNumber, 1, 256, 0);
 
 /// Patch number 0...63 (can be converted to A-1...D-16)
-#[nutype(
-    validate(greater_or_equal = 0, less_or_equal = 63),
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct PatchNumber(u8);
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct PatchNumber(i32);
+crate::ranged_impl!(PatchNumber, 0, 63, 0);
 
 /// Transpose
-#[nutype(
-    validate(greater_or_equal = -24, less_or_equal = 24), // +-24 (in SysEx 0~48)
-    derive(Debug, Copy, Clone, PartialEq, Eq)
-)]
-pub struct Transpose(i8);
-
-impl SystemExclusiveData for Transpose {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self::try_new(data[0] as i8 - 24).unwrap())
-    }
-
-    fn to_bytes(&self) -> Vec<u8> {
-        vec![(self.into_inner() + 24) as u8]
-    }
-
-    fn data_size() -> usize { 1 }
-}
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Transpose(i32);
+crate::ranged_impl!(Transpose, -24, 24, 0); // +-24 (in SysEx 0~48)

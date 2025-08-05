@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_bank_from_bytes() {
-        let start = 2 + Header::data_size();
+        let start = 2 + Header::data_size();  // skip F0 40
         let bank = Bank::from_bytes(&DATA[start..]);
 
         assert_eq!(bank.as_ref().unwrap().singles.len(), SINGLE_PATCH_COUNT);

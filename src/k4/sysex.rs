@@ -7,7 +7,8 @@ use num_enum::TryFromPrimitive;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    MIDIChannel
+    MIDIChannel,
+    Ranged
 };
 
 const GROUP: u8 = 0x00;      // synth group
@@ -72,7 +73,7 @@ impl fmt::Display for Header {
 impl SystemExclusiveData for Header {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Header {
-            channel: MIDIChannel::try_new(data[0] as i32 + 1).unwrap(),
+            channel: MIDIChannel::new(data[0] as i32 + 1),
             function: Function::try_from(data[1]).unwrap(),
             substatus1: data[4],
             substatus2: data[5],
@@ -80,9 +81,9 @@ impl SystemExclusiveData for Header {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let ch = self.channel.to_bytes()[0]; // 1...16 to 0...15
+        let ch = self.channel.value() - 1; // 1...16 to 0...15
         vec![
-            ch,
+            ch as u8,
             self.function as u8,
             GROUP,
             MACHINE_ID,

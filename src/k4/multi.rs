@@ -8,6 +8,7 @@ use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
 use crate::{
+    Ranged,
     SystemExclusiveData,
     Checksum,
     ParseError,
@@ -38,8 +39,8 @@ impl MultiPatch {
         let mut buf: Vec<u8> = Vec::new();
 
         buf.extend(self.name.as_bytes());
-        buf.push(self.volume.into_inner());
-        buf.extend(self.effect.to_bytes());  // adjust 1~32 to 0~31
+        buf.push(self.volume.value().try_into().unwrap());
+        buf.push((self.effect.value() - 1).try_into().unwrap());  // adjust 1~32 to 0~31
 
         for s in self.sections  {
             buf.extend(s.to_bytes());
@@ -53,8 +54,8 @@ impl Default for MultiPatch {
     fn default() -> Self {
         MultiPatch {
             name: "NewMulti  ".to_string(),
-            volume: Level::try_new(100).unwrap(),
-            effect: EffectNumber::try_new(1).unwrap(),
+            volume: Level::new(100),
+            effect: EffectNumber::new(1),
             sections: [Default::default(); SECTION_COUNT],
         }
     }
@@ -63,7 +64,7 @@ impl Default for MultiPatch {
 impl fmt::Display for MultiPatch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} volume={} effect={}",
-            self.name, self.volume.into_inner(), self.effect.into_inner())
+            self.name, self.volume.value(), self.effect.value())
 
             // TODO: Write the sections too
     }
@@ -90,8 +91,8 @@ impl SystemExclusiveData for MultiPatch {
 
         Ok(MultiPatch {
             name,
-            volume: Level::try_new(data[10]).unwrap(),
-            effect: EffectNumber::try_new(data[11]).unwrap(),
+            volume: Level::new(data[10].into()),
+            effect: EffectNumber::new(data[11].into()),
             sections,
         })
     }
@@ -134,15 +135,18 @@ pub struct Section {
 impl Section {
     pub fn new() -> Section {
         Section {
-            single_number: PatchNumber::try_new(0).unwrap(),
-            zone: Zone { low_key: Key { note: 0 }, high_key: Key { note: 127 } },
+            single_number: PatchNumber::new(0),
+            zone: Zone {
+                low_key: Key { note: MIDINote::new(0) },
+                high_key: Key { note: MIDINote::new(127) }
+            },
             velocity_switch: VelocitySwitch::All,
-            receive_channel: MIDIChannel::try_new(1).unwrap(),  // use 1...16 for MIDI channel here
+            receive_channel: MIDIChannel::new(1),  // use 1...16 for MIDI channel here
             is_muted: false,
             out_select: 0,
             play_mode: PlayMode::Keyboard,
-            level: Level::try_new(100).unwrap(),
-            transpose: Transpose::try_new(0).unwrap(),
+            level: Level::new(100),
+            transpose: Transpose::new(0),
             tune: 0,
         }
     }
@@ -156,16 +160,17 @@ impl Default for Section {
 
 impl SystemExclusiveData for Section {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let transpose = data[6] as i32 - 24;
         Ok(Section {
-            single_number: PatchNumber::try_new(data[0]).unwrap(),
+            single_number: PatchNumber::new(data[0].into()),
             zone: Zone::from_bytes(&[data[1], data[2]])?,
             velocity_switch: VelocitySwitch::try_from((data[3] >> 4) & 0b0000_0011).unwrap(),
-            receive_channel: MIDIChannel::from_bytes(&[data[3] & 0b0000_1111])?,  // adjust MIDI channel to 1...16
+            receive_channel: MIDIChannel::new(((data[3] & 0b0000_1111) + 1).into()),  // adjust MIDI channel to 1...16
             is_muted: data[3] >> 6 == 1,
             out_select: data[4] & 0b0000_0111,
             play_mode: PlayMode::try_from((data[4] >> 3) & 0b0000_0011).unwrap(),
-            level: Level::try_new(data[5]).unwrap(),
-            transpose: Transpose::from_bytes(&[data[6]])?,
+            level: Level::new(data[5].into()),
+            transpose: Transpose::new(transpose),
             tune: (data[7] as i8) - 50,
         })
     }
@@ -173,19 +178,19 @@ impl SystemExclusiveData for Section {
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.single_number.into_inner());
+        buf.push(self.single_number.value().try_into().unwrap());
         buf.push(self.zone.low_key.note.value() as u8);
         buf.push(self.zone.high_key.note.value() as u8);
 
-        let mut m15 = (self.receive_channel.to_bytes()[0]) | ((self.velocity_switch as u8) << 4);
+        let mut m15 = (self.receive_channel.value() as u8) | ((self.velocity_switch as u8) << 4);
         m15.set_bit(6, self.is_muted);
         buf.push(m15);
 
         let m16 = self.out_select | ((self.play_mode as u8) << 3);
         buf.push(m16);
 
-        buf.push(self.level.into_inner());
-        buf.push(self.transpose.to_bytes()[0]);
+        buf.push(self.level.value().try_into().unwrap());
+        buf.push((self.transpose.value() + 24).try_into().unwrap());
         buf.push((self.tune + 50) as u8);
 
         buf
@@ -227,14 +232,17 @@ impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(
             Zone {
-                low_key: Key { note: MIDINote::try_new(data[0].into()) },
-                high_key: Key { note: MIDINote::try_new(data[1].into())? }
+                low_key: Key { note: MIDINote::new(data[0].into()) },
+                high_key: Key { note: MIDINote::new(data[1].into()) }
             }
         )
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.low_key.note.value(), self.high_key.note]
+        vec![
+            self.low_key.note.value().try_into().unwrap(),
+            self.high_key.note.value().try_into().unwrap()
+        ]
     }
 
     fn data_size() -> usize { 2 }
@@ -282,13 +290,15 @@ impl fmt::Display for PlayMode {
 mod tests {
     use super::{*};
 
+    use crate::Ranged;
+
     use crate::k4::{
         bank,
         sysex::Header,
         single::SinglePatch,
         multi::MultiPatch,
     };
-    
+
     use super::{*};
 
     static DATA: &'static [u8] = include_bytes!("A401.SYX");
@@ -297,10 +307,10 @@ mod tests {
     fn test_multi_patch_from_bytes() {
         let start: usize = dbg!(
             2 +
-            Header::data_size() + 
+            Header::data_size() +
             bank::SINGLE_PATCH_COUNT * SinglePatch::data_size());
         let patch = MultiPatch::from_bytes(&DATA[start..]);
         assert_eq!(patch.as_ref().unwrap().name, "Fatt!Anna5");
-        assert_eq!(patch.as_ref().unwrap().volume.into_inner(), 0x50);
+        assert_eq!(patch.as_ref().unwrap().volume.value(), 0x50);
     }
 }

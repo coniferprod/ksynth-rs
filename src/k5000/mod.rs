@@ -48,9 +48,9 @@ impl <const MIN: i32, const MAX: i32> RangedInteger<MIN, MAX> {
 
     /// Gets a random value that is in the range of allowed values.
     pub fn random_value() -> i32 {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let range = Self::range();
-        rng.gen_range(*range.start() ..= *range.end())
+        rng.random_range(*range.start() ..= *range.end())
     }
 }
 
@@ -2067,34 +2067,7 @@ pub trait RandomValue {
     fn random_value(&self) -> Self::T;
 }
 
-use nutype::nutype;
-
-/// Patch name.
-#[nutype(
-    sanitize(with = |s: String| format!("{:<8}", s)),
-    validate(not_empty, len_char_max = 8),
-    derive(Debug, PartialEq)
-)]
-pub struct PatchName(String);
-
-
 #[cfg(test)]
 mod tests {
     use super::{*};
-
-    #[test]
-    fn test_short_patch_name_is_right_padded() {
-        let patch_name = PatchName::try_new("Short");
-        assert_eq!(patch_name.unwrap().into_inner(), "Short   ");
-    }
-
-    #[test]
-    fn test_long_patch_name_is_truncated() {
-        assert_eq!(
-            PatchName::try_new("WayTooLong"),
-            Err(PatchNameError::LenCharMaxViolated)
-        );
-    }
-
-
 }
