@@ -475,7 +475,7 @@ impl SystemExclusiveData for ToneMap {
         let mut tone_number = 0;
         while tone_number < MAX_TONE_COUNT {
             for n in 0..7 {
-                //eprintln!("data[{}].bit({}) = {}  tone_number={}",
+                //println!("data[{}].bit({}) = {}  tone_number={}",
                 //    i, n, data[i].bit(n), tone_number);
                 included[tone_number as usize] = data[i].bit(n);
                 tone_number += 1;
