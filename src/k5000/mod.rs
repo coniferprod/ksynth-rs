@@ -119,7 +119,7 @@ impl From<u8> for EnvelopeRate {
     }
 }
 
-impl From<EnvelopeRate> for u8{
+impl From<EnvelopeRate> for u8 {
     fn from(value: EnvelopeRate) -> Self {
         value.value() as u8    // used as such in SysEx, redefine if necessary
     }
@@ -131,8 +131,8 @@ pub struct ControlTime(i32);
 ranged_impl!(ControlTime, -63, 63, 0);
 
 impl From<u8> for ControlTime {
-    fn from(value: u8) -> ControlTime {
-        ControlTime::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
@@ -148,8 +148,8 @@ pub struct EnvelopeDepth(i32);
 ranged_impl!(EnvelopeDepth, -63, 63, 0);
 
 impl From<u8> for EnvelopeDepth {
-    fn from(value: u8) -> EnvelopeDepth {
-        EnvelopeDepth::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
@@ -165,12 +165,12 @@ pub struct EffectParameter(i32);
 ranged_impl!(EffectParameter, 0, 127, 0);
 
 impl From<u8> for EffectParameter {
-    fn from(value: u8) -> EffectParameter {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
 
-impl From<EffectParameter> for u8{
+impl From<EffectParameter> for u8 {
     fn from(value: EffectParameter) -> Self {
         value.value() as u8    // used as such in SysEx, redefine if necessary
     }
@@ -199,7 +199,7 @@ pub struct Resonance(i32);
 ranged_impl!(Resonance, 0, 31, 0);
 
 impl From<u8> for Resonance {
-    fn from(value: u8) -> Resonance {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -216,7 +216,7 @@ pub struct Level(i32);
 ranged_impl!(Level, 0, 31, 0);
 
 impl From<u8> for Level {
-    fn from(value: u8) -> Level {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -238,7 +238,7 @@ impl From<u8> for PitchEnvelopeLevel {
     }
 }
 
-impl From<PitchEnvelopeLevel> for u8{
+impl From<PitchEnvelopeLevel> for u8 {
     fn from(value: PitchEnvelopeLevel) -> Self {
         (value.value() + 64) as u8
     }
@@ -420,8 +420,8 @@ pub struct Coarse(i32);
 ranged_impl!(Coarse, -24, 24, 0);
 
 impl From<u8> for Coarse {
-    fn from(value: u8) -> Coarse {
-        Coarse::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
@@ -437,8 +437,8 @@ pub struct Fine(i32);
 ranged_impl!(Fine, -63, 63, 0);
 
 impl From<u8> for Fine {
-    fn from(value: u8) -> Fine {
-        Fine::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
@@ -454,8 +454,8 @@ pub struct MacroParameterDepth(i32);
 ranged_impl!(MacroParameterDepth, -31, 31, 0);
 
 impl From<u8> for MacroParameterDepth {
-    fn from(value: u8) -> MacroParameterDepth {
-        MacroParameterDepth::new((value as i32) - 64)  // (-31)33~(+31)95 (K5000W=64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)  // (-31)33~(+31)95 (K5000W=64)
     }
 }
 
@@ -471,7 +471,7 @@ pub struct MIDINote(i32);
 ranged_impl!(MIDINote, 0, 127, 60);
 
 impl From<u8> for MIDINote {
-    fn from(value: u8) -> MIDINote {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -488,7 +488,7 @@ pub struct PatchNumber(i32);
 ranged_impl!(PatchNumber, 0, 127, 0);
 
 impl From<u8> for PatchNumber {
-    fn from(value: u8) -> PatchNumber {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -505,7 +505,7 @@ pub struct Transpose(i32);
 ranged_impl!(Transpose, -24, 24, 0);
 
 impl From<u8> for Transpose {
-    fn from(value: u8) -> Transpose {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -522,8 +522,8 @@ pub struct KeyScaling(i32);
 ranged_impl!(KeyScaling, -63, 63, 0);
 
 impl From<u8> for KeyScaling {
-    fn from(value: u8) -> KeyScaling {
-        KeyScaling::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
