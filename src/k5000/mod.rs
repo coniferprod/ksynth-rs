@@ -98,13 +98,13 @@ ranged_impl!(EnvelopeLevel, -63, 63, 0);
 
 impl From<u8> for EnvelopeLevel {
     fn from(value: u8) -> EnvelopeLevel {
-        Self::new(value as i32)
+        Self::new((value as i32) - 64)
     }
 }
 
 impl From<EnvelopeLevel> for u8{
     fn from(value: EnvelopeLevel) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        (value.value() + 64) as u8
     }
 }
 
@@ -234,13 +234,13 @@ ranged_impl!(PitchEnvelopeLevel, -63, 63, 0);
 
 impl From<u8> for PitchEnvelopeLevel {
     fn from(value: u8) -> PitchEnvelopeLevel {
-        Self::new(value as i32)
+        Self::new((value as i32) - 64)
     }
 }
 
 impl From<PitchEnvelopeLevel> for u8{
     fn from(value: PitchEnvelopeLevel) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        (value.value() + 64) as u8
     }
 }
 
@@ -516,55 +516,6 @@ impl From<Transpose> for u8{
     }
 }
 
-/// A simple struct for wrapping an `i32` with const generic parameters to limit
-/// the range of allowed values.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct RangedInteger<const MIN: i32, const MAX: i32> {
-    value: i32,
-}
-
-impl <const MIN: i32, const MAX: i32> RangedInteger<MIN, MAX> {
-    /// Makes a new ranged integer if the value is in the allowed range, otherwise panics.
-    pub fn new(value: i32) -> Self {
-        let range = Self::range();
-        if range.contains(&value) {
-            Self { value }
-        }
-        else {
-            panic!("new() expected value in range {}...{}, got {}", range.start(), range.end(), value);
-        }
-    }
-
-    /// Gets the range of allowed values as an inclusive range,
-    /// constructed from the generic parameters.
-    pub fn range() -> RangeInclusive<i32> {
-        MIN ..= MAX
-    }
-
-    /// Gets a random value that is in the range of allowed values.
-    pub fn random_value() -> i32 {
-        let mut rng = rand::rng();
-        let range = Self::range();
-        rng.random_range(*range.start() ..= *range.end())
-    }
-}
-
-/// Trait for a synth parameter.
-trait Parameter {
-    fn name(&self) -> String;
-    fn minimum_value() -> i32;
-    fn maximum_value() -> i32;
-    fn default_value() -> i32;
-    fn random_value() -> i32;
-}
-
-// The following types are all based on `RangedInteger`.
-// It would be nice if they could be generated with a macro.
-// The macro should generate the type to hold the value, with
-// the minimum and maximum value. It should also generate the
-// implementation for the Parameter trait.
-
-
 /// Key scaling (-63...63, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct KeyScaling(i32);
@@ -580,12 +531,6 @@ impl From<KeyScaling> for u8 {
     fn from(value: KeyScaling) -> Self {
         (value.value() + 64) as u8 // value needs adjustment for SysEx
     }
-}
-
-/// Generates random value that falls in the range of the type.
-pub trait RandomValue {
-    type T;
-    fn random_value(&self) -> Self::T;
 }
 
 #[cfg(test)]

@@ -75,8 +75,8 @@ macro_rules! ranged_impl {
                     Self(value)
                 }
                 else {
-                    panic!("expected value in range [{}...{}], got {}",
-                        Self::FIRST, Self::LAST, value);
+                    panic!("{} expected value in range [{}...{}], got {}",
+                        stringify!($typ), Self::FIRST, Self::LAST, value);
                 }
             }
 
