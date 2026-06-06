@@ -80,7 +80,7 @@ pub struct EnvelopeTime(i32);
 ranged_impl!(EnvelopeTime, 0, 127, 0);
 
 impl From<u8> for EnvelopeTime {
-    fn from(value: u8) -> EnvelopeTime {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -97,7 +97,7 @@ pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, -63, 63, 0);
 
 impl From<u8> for EnvelopeLevel {
-    fn from(value: u8) -> EnvelopeLevel {
+    fn from(value: u8) -> Self {
         Self::new((value as i32) - 64)
     }
 }
@@ -114,7 +114,7 @@ pub struct EnvelopeRate(i32);
 ranged_impl!(EnvelopeRate, 0, 127, 0);
 
 impl From<u8> for EnvelopeRate {
-    fn from(value: u8) -> EnvelopeRate {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -182,7 +182,7 @@ pub struct Cutoff(i32);
 ranged_impl!(Cutoff, 0, 127, 0);
 
 impl From<u8> for Cutoff {
-    fn from(value: u8) -> Cutoff {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -233,7 +233,7 @@ pub struct PitchEnvelopeLevel(i32);
 ranged_impl!(PitchEnvelopeLevel, -63, 63, 0);
 
 impl From<u8> for PitchEnvelopeLevel {
-    fn from(value: u8) -> PitchEnvelopeLevel {
+    fn from(value: u8) -> Self {
         Self::new((value as i32) - 64)
     }
 }
@@ -250,7 +250,7 @@ pub struct PitchEnvelopeTime(i32);
 ranged_impl!(PitchEnvelopeTime, 0, 127, 0);
 
 impl From<u8> for PitchEnvelopeTime {
-    fn from(value: u8) -> PitchEnvelopeTime {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -267,7 +267,7 @@ pub struct VelocityDepth(i32);
 ranged_impl!(VelocityDepth, 0, 127, 0);
 
 impl From<u8> for VelocityDepth {
-    fn from(value: u8) -> VelocityDepth {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -284,7 +284,7 @@ pub struct VelocityControlLevel(i32);
 ranged_impl!(VelocityControlLevel, 0, 127, 0);
 
 impl From<u8> for VelocityControlLevel {
-    fn from(value: u8) -> VelocityControlLevel {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -301,7 +301,7 @@ pub struct PortamentoLevel(i32);
 ranged_impl!(PortamentoLevel, 0, 127, 0);
 
 impl From<u8> for PortamentoLevel {
-    fn from(value: u8) -> PortamentoLevel {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -318,7 +318,7 @@ pub struct KeyOnDelay(i32);
 ranged_impl!(KeyOnDelay, 0, 127, 0);
 
 impl From<u8> for KeyOnDelay {
-    fn from(value: u8) -> KeyOnDelay {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -335,7 +335,7 @@ pub struct VelocitySensitivity(i32);
 ranged_impl!(VelocitySensitivity, -63, 63, 0);
 
 impl From<u8> for VelocitySensitivity {
-    fn from(value: u8) -> VelocitySensitivity {
+    fn from(value: u8) -> Self {
         Self::new((value as i32) - 64)
     }
 }
@@ -352,7 +352,7 @@ pub struct ControlDepth(i32);
 ranged_impl!(ControlDepth, -63, 63, 0);
 
 impl From<u8> for ControlDepth {
-    fn from(value: u8) -> ControlDepth {
+    fn from(value: u8) -> Self {
         ControlDepth::new((value as i32) - 64)
     }
 }
@@ -369,7 +369,7 @@ pub struct Depth(i32);
 ranged_impl!(Depth, 0, 100, 0);
 
 impl From<u8> for Depth {
-    fn from(value: u8) -> Depth {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -386,8 +386,8 @@ pub struct Pan(i32);
 ranged_impl!(Pan, -63, 63, 0);
 
 impl From<u8> for Pan {
-    fn from(value: u8) -> Pan {
-        Pan::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
@@ -403,8 +403,8 @@ pub struct KeyScalingToGain(i32);
 ranged_impl!(KeyScalingToGain, -63, 63, 0);
 
 impl From<u8> for KeyScalingToGain {
-    fn from(value: u8) -> KeyScalingToGain {
-        KeyScalingToGain::new((value as i32) - 64)
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
     }
 }
 
