@@ -1,7 +1,10 @@
 //! Data models for the harmonic levels and envelopes.
 //!
 
+use std::fmt;
+
 use bit::BitIndex;
+use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
@@ -11,8 +14,26 @@ use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
 use crate::k5000::{
     EnvelopeRate,
-    HarmonicEnvelopeLevel
 };
+use crate::{Ranged, ranged_impl};
+
+/// Harmonic envelope level (0...127, default 0)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeLevel(i32);
+ranged_impl!(EnvelopeLevel, 0, 127, 0);
+
+impl From<u8> for EnvelopeLevel {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl From<EnvelopeLevel> for u8 {
+    fn from(value: EnvelopeLevel) -> Self {
+        value.value() as u8 // value can be used as such in SysEx
+    }
+}
+
 
 pub type Level = u8;
 
@@ -66,14 +87,14 @@ impl SystemExclusiveData for Levels {
 #[derive(Debug, Copy, Clone)]
 pub struct EnvelopeSegment {
     pub rate: EnvelopeRate,
-    pub level: HarmonicEnvelopeLevel,
+    pub level: EnvelopeLevel,
 }
 
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: EnvelopeRate::new(0),
-            level: HarmonicEnvelopeLevel::new(0),
+            rate: Default::default(),
+            level: Default::default(),
         }
     }
 }
@@ -82,7 +103,7 @@ impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(EnvelopeSegment {
             rate: EnvelopeRate::from(data[0]),
-            level: HarmonicEnvelopeLevel::from(data[1]),
+            level: EnvelopeLevel::from(data[1]),
         })
     }
 
@@ -107,8 +128,8 @@ impl Envelope {
     /// Creates a harmonic envelope with default values.
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
-            rate: EnvelopeRate::new(0),
-            level: HarmonicEnvelopeLevel::new(0),
+            rate: Default::default(),
+            level: EnvelopeLevel::new(0),
         };
 
         Envelope {
@@ -124,17 +145,17 @@ impl Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         let segment0_rate = EnvelopeRate::from(data[0]);
-        let segment0_level = HarmonicEnvelopeLevel::from(data[1] & 0b0011_1111);
+        let segment0_level = EnvelopeLevel::from(data[1] & 0b0011_1111);
         let segment1_rate = EnvelopeRate::from(data[2]);
-        let segment1_level = HarmonicEnvelopeLevel::from(data[3] & 0b0011_1111);
+        let segment1_level = EnvelopeLevel::from(data[3] & 0b0011_1111);
         let segment1_level_bit6 = data[3].bit(6);
         let segment2_rate = EnvelopeRate::from(data[4]);
         let mut segment2_level_byte = data[5];
         let segment2_level_bit6 = data[5].bit(6);
         segment2_level_byte.set_bit(6, false);
-        let segment2_level = HarmonicEnvelopeLevel::from(segment2_level_byte & 0b0011_1111);
+        let segment2_level = EnvelopeLevel::from(segment2_level_byte & 0b0011_1111);
         let segment3_rate = EnvelopeRate::from(data[6]);
-        let segment3_level = HarmonicEnvelopeLevel::from(data[7] & 0b0011_1111);
+        let segment3_level = EnvelopeLevel::from(data[7] & 0b0011_1111);
 
         Ok(Envelope {
             attack: EnvelopeSegment {

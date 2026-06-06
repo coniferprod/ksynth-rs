@@ -10,7 +10,8 @@ use crate::k5000::control::{
 };
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged,
 };
 use crate::k5000::osc::*;
 use crate::k5000::filter::*;
@@ -270,6 +271,7 @@ impl SystemExclusiveData for Source {
 #[cfg(test)]
 mod tests {
     use super::{*};
+    use crate::Ranged;
 
     #[test]
     fn test_key_name() {

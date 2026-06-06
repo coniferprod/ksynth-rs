@@ -5,7 +5,8 @@ use std::fmt;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged,
 };
 use crate::k5000::{
     PitchEnvelopeLevel,

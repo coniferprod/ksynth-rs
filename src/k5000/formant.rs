@@ -5,6 +5,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
@@ -15,10 +16,26 @@ use crate::k5000::{
     EnvelopeRate,
     EnvelopeLevel,
     EnvelopeDepth,
-    Bias,
-    LFODepth,
-    LFOSpeed
 };
+use crate::k5000::lfo::{Depth, Speed};
+use crate::{Ranged, ranged_impl};
+
+/// FF bias (-63...63, default 0)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Bias(i32);
+ranged_impl!(Bias, -63, 63, 0);
+
+impl From<u8> for Bias {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl From<Bias> for u8 {
+    fn from(value: Bias) -> Self {
+        value.value() as u8 // value can be used as such in SysEx
+    }
+}
 
 /// Formant filter envelope mode.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
@@ -40,8 +57,8 @@ pub struct EnvelopeSegment {
 impl Default for EnvelopeSegment {
     fn default() -> Self {
         EnvelopeSegment {
-            rate: EnvelopeRate::new(0),
-            level: EnvelopeLevel::new(0),
+            rate: Default::default(),
+            level: Default::default(),
         }
     }
 }
@@ -138,17 +155,17 @@ pub enum LFOShape {
 /// Formant filter LFO.
 #[derive(Debug)]
 pub struct Lfo {
-    pub speed: LFOSpeed,
+    pub speed: Speed,
     pub shape: LFOShape,
-    pub depth: LFODepth,
+    pub depth: Depth,
 }
 
 impl Default for Lfo {
     fn default() -> Self {
         Lfo {
-            speed: LFOSpeed::new(0),
+            speed: Default::default(),
             shape: Default::default(),
-            depth: LFODepth::new(0),
+            depth: Default::default(),
         }
     }
 }
@@ -156,9 +173,9 @@ impl Default for Lfo {
 impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Lfo {
-            speed: LFOSpeed::from(data[0]),
+            speed: Speed::from(data[0]),
             shape: LFOShape::try_from(data[1]).unwrap(),
-            depth: LFODepth::from(data[2]),
+            depth: Depth::from(data[2]),
         })
     }
 
@@ -181,9 +198,9 @@ pub struct FormantFilter {
 impl Default for FormantFilter {
     fn default() -> Self {
         FormantFilter {
-            bias: Bias::new(0),
+            bias: Default::default(),
             mode: Default::default(),
-            envelope_depth: EnvelopeDepth::new(0),
+            envelope_depth: Default::default(),
             envelope: Default::default(),
             lfo: Default::default(),
         }

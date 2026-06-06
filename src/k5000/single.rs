@@ -11,7 +11,8 @@ use bit::BitIndex;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Checksum
+    Checksum,
+    Ranged,
 };
 use crate::k5000::control::{
     Polyphony,

@@ -228,9 +228,9 @@ impl Default for MacroController {
     fn default() -> Self {
         MacroController {
             destination1: Default::default(),
-            depth1: MacroParameterDepth::new(0),
+            depth1: Default::default(),
             destination2: Default::default(),
-            depth2: MacroParameterDepth::new(0),
+            depth2: Default::default(),
         }
     }
 }
@@ -364,7 +364,7 @@ impl Default for PanSettings {
     fn default() -> Self {
         PanSettings {
             pan_type: Default::default(),
-            pan_value: Pan::new(0),
+            pan_value: Default::default(),
         }
     }
 }

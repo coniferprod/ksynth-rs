@@ -4,13 +4,13 @@
 use std::convert::TryFrom;
 use std::fmt;
 
+use rand::Rng;
+
 use crate::{
     SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    RangedInteger,
-    Parameter,
     EnvelopeTime,
     ControlTime,
     KeyScaling,
@@ -18,72 +18,27 @@ use crate::k5000::{
 };
 use crate::k5000::control::VelocityCurve;
 
+use crate::{Ranged, ranged_impl};
+
 // Amplifier envelope level is different from the other
 // envelope levels; it goes from 0 to 127, while the
 // others are -63 to 63. So we define our own type in
 // this module, and *don't* import the normal level type.
 
-type EnvelopeLevelValue = RangedInteger::<0, 127>;
-
-/// Wrapper for envelope level parameter.
-#[derive(Debug, Copy, Clone)]
-pub struct EnvelopeLevel {
-    value: EnvelopeLevelValue,  // private field to prevent accidental range violations
-}
-
-impl EnvelopeLevel {
-    /// Makes a new `EnvelopeLevel` initialized with the specified value.
-    pub fn new(value: i32) -> Self {
-        Self { value: EnvelopeLevelValue::new(value) }
-    }
-
-    /// Gets the wrapped value.
-    pub fn value(&self) -> i32 {
-        self.value.value
-    }
-}
-
-impl Parameter for EnvelopeLevel {
-    fn name(&self) -> String {
-        "EnvelopeLevel".to_string()
-    }
-
-    fn minimum_value() -> i32 {
-        *EnvelopeLevelValue::range().start()
-    }
-
-    fn maximum_value() -> i32 {
-        *EnvelopeLevelValue::range().end()
-    }
-
-    fn default_value() -> i32 {
-        Self::default().value()
-    }
-
-    fn random_value() -> i32 {
-        EnvelopeLevelValue::random_value()
-    }
-}
-
-impl Default for EnvelopeLevel {
-    fn default() -> Self { Self::new(0) }
-}
+/// Amplifier envelope level (0...127, default 0)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeLevel(i32);
+ranged_impl!(EnvelopeLevel, 0, 127, 0);
 
 impl From<u8> for EnvelopeLevel {
-    fn from(value: u8) -> EnvelopeLevel {
-        EnvelopeLevel::new(value as i32)
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
     }
 }
 
 impl From<EnvelopeLevel> for u8 {
-    fn from(val: EnvelopeLevel) -> Self {
-        val.value() as u8
-    }
-}
-
-impl fmt::Display for EnvelopeLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value())
+    fn from(value: EnvelopeLevel) -> Self {
+        value.value() as u8 // value can be used as such in SysEx
     }
 }
 
@@ -103,9 +58,9 @@ impl Envelope {
         Envelope {
             attack_time: EnvelopeTime::new(0),
             decay1_time: EnvelopeTime::new(0),
-            decay1_level: EnvelopeLevel::new(0),
+            decay1_level: Default::default(),
             decay2_time: EnvelopeTime::new(0),
-            decay2_level: EnvelopeLevel::new(0),
+            decay2_level: Default::default(),
             release_time: EnvelopeTime::new(0),
         }
     }
@@ -164,7 +119,7 @@ pub struct KeyScalingControl {
 impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
-            level: KeyScaling::new(0),
+            level: Default::default(),
             attack_time: ControlTime::new(0),
             decay1_time: ControlTime::new(0),
             release: ControlTime::new(0),

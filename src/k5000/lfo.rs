@@ -4,6 +4,7 @@
 use std::fmt;
 use std::convert::TryFrom;
 
+use rand::Rng;
 use num_enum::TryFromPrimitive;
 
 use crate::{
@@ -11,10 +12,44 @@ use crate::{
     ParseError
 };
 use crate::k5000::{
-    LFOSpeed,
-    Depth,
     KeyScaling
 };
+
+use crate::{Ranged, ranged_impl};
+
+/// LFO speed (0...127, default 0)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Speed(i32);
+ranged_impl!(Speed, 0, 127, 0);
+
+impl From<u8> for Speed {
+    fn from(value: u8) -> Speed {
+        Speed::new(value as i32)
+    }
+}
+
+impl From<Speed> for u8 {
+    fn from(value: Speed) -> Self {
+        value.value() as u8 // value can be used as such in SysEx
+    }
+}
+
+/// LFO depth (0...63, default 0)
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Depth(i32);
+ranged_impl!(Depth, 0, 63, 0);
+
+impl From<u8> for Depth {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl From<Depth> for u8 {
+    fn from(value: Depth) -> Self {
+        value.value() as u8 // value can be used as such in SysEx
+    }
+}
 
 /// LFO waveform type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
@@ -50,9 +85,9 @@ pub struct Control {
 
 impl Default for Control {
     fn default() -> Self {
-        Control {
-            depth: Depth::new(0),
-            key_scaling: KeyScaling::new(0),
+        Self {
+            depth: Default::default(),
+            key_scaling: Default::default(),
         }
     }
 }
@@ -82,10 +117,10 @@ impl SystemExclusiveData for Control {
 #[derive(Debug)]
 pub struct Lfo {
     pub waveform: Waveform,
-    pub speed: LFOSpeed,
-    pub fade_in_time: LFOSpeed,
+    pub speed: Speed,
+    pub fade_in_time: Speed,
     pub fade_in_to_speed: Depth,
-    pub delay_onset: LFOSpeed,
+    pub delay_onset: Speed,
     pub vibrato: Control,
     pub growl: Control,
     pub tremolo: Control,
@@ -95,10 +130,10 @@ impl Default for Lfo {
     fn default() -> Self {
         Lfo {
             waveform: Default::default(),
-            speed: LFOSpeed::new(0),
-            fade_in_time: LFOSpeed::new(0),
-            fade_in_to_speed: Depth::new(0),
-            delay_onset: LFOSpeed::new(0),
+            speed: Default::default(),
+            fade_in_time: Default::default(),
+            fade_in_to_speed: Default::default(),
+            delay_onset: Default::default(),
             vibrato: Default::default(),
             growl: Default::default(),
             tremolo: Default::default(),
@@ -119,10 +154,10 @@ impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Lfo {
             waveform: Waveform::try_from(data[0]).unwrap(),
-            speed: LFOSpeed::from(data[1]),
-            fade_in_time: LFOSpeed::from(data[2]),
+            speed: Speed::from(data[1]),
+            fade_in_time: Speed::from(data[2]),
             fade_in_to_speed: Depth::from(data[3]),
-            delay_onset: LFOSpeed::from(data[4]),
+            delay_onset: Speed::from(data[4]),
             vibrato: Control {
                 depth: Depth::from(data[5]),
                 key_scaling: KeyScaling::from(data[6]),
