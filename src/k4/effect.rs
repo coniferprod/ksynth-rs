@@ -70,6 +70,8 @@ impl fmt::Display for Effect {
     }
 }
 
+pub const DATA_SIZE: usize = 35;
+
 #[derive(Clone)]
 pub struct EffectPatch {
     pub effect: Effect,
@@ -189,7 +191,7 @@ impl SystemExclusiveData for EffectPatch {
         buf
     }
 
-    fn data_size() -> usize { 35 }
+    fn data_size() -> usize { DATA_SIZE }
 }
 
 impl Checksum for EffectPatch {

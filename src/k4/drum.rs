@@ -22,6 +22,8 @@ use crate::k4::{
 use crate::k4::wave::Wave;
 use crate::k4::effect::Submix;
 
+pub const DATA_SIZE: usize = 131;
+
 pub struct DrumPatch {
     pub common: Common,
     pub notes: [Note; DRUM_NOTE_COUNT],
@@ -99,6 +101,8 @@ impl SystemExclusiveData for DrumPatch {
     }
 }
 
+pub const COMMON_DATA_SIZE: usize = 11;
+
 /// Drum common data.
 pub struct Common {
     pub channel: MIDIChannel,  // MIDI channel, here 1...16, stored in SysEx as 0...15
@@ -175,6 +179,8 @@ impl SystemExclusiveData for Common {
         3 + 7 + 1 // include the seven dummy bytes and checksum
     }
 }
+
+pub const NOTE_DATA_SIZE: usize = 1 + 2 * SOURCE_DATA_SIZE;
 
 /// Drum note.
 #[derive(Copy, Clone)]
@@ -271,9 +277,11 @@ impl SystemExclusiveData for Note {
 
     fn data_size() -> usize {
         1 // include checksum
-            + 2 * Source::data_size()
+        + 2 * SOURCE_DATA_SIZE
     }
 }
+
+pub const SOURCE_DATA_SIZE: usize = 5;
 
 /// Drum source.
 #[derive(Copy, Clone)]

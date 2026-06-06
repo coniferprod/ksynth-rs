@@ -29,6 +29,8 @@ use crate::k4::{
     effect::Submix,
 };
 
+pub const DATA_SIZE: usize = 131;
+
 /// Source mode setting.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
 #[repr(u8)]
@@ -497,7 +499,7 @@ impl SystemExclusiveData for SinglePatch {
         buf
     }
 
-    fn data_size() -> usize { 131 }
+    fn data_size() -> usize { DATA_SIZE }
 }
 
 impl Checksum for SinglePatch {

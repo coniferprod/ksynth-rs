@@ -22,6 +22,8 @@ use crate::k4::{
     Transpose
 };
 
+pub const DATA_SIZE: usize = 77;
+
 /// Number of sections in a multi patch.
 pub const SECTION_COUNT: usize = 8;
 
@@ -105,7 +107,7 @@ impl SystemExclusiveData for MultiPatch {
         buf
     }
 
-    fn data_size() -> usize { 77 }
+    fn data_size() -> usize { DATA_SIZE }
 }
 
 impl Checksum for MultiPatch {
