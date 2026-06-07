@@ -8,14 +8,14 @@ use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged, ranged_impl,
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
 use crate::k5000::{
     EnvelopeRate,
 };
-use crate::{Ranged, ranged_impl};
 
 /// Harmonic envelope level (0...127, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -34,7 +34,6 @@ impl From<EnvelopeLevel> for u8 {
     }
 }
 
-
 pub type Level = u8;
 
 /// Harmonic levels (soft and loud).
@@ -45,7 +44,7 @@ pub struct Levels {
 
 impl Default for Levels {
     fn default() -> Self {
-        Levels {
+        Self {
             soft: [0; HARMONIC_COUNT],
             loud: [0; HARMONIC_COUNT],
         }
@@ -68,7 +67,7 @@ impl SystemExclusiveData for Levels {
             offset += 1;
         }
 
-        Ok(Levels { soft, loud })
+        Ok(Self { soft, loud })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -92,7 +91,7 @@ pub struct EnvelopeSegment {
 
 impl Default for EnvelopeSegment {
     fn default() -> Self {
-        EnvelopeSegment {
+        Self {
             rate: Default::default(),
             level: Default::default(),
         }
@@ -101,7 +100,7 @@ impl Default for EnvelopeSegment {
 
 impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(EnvelopeSegment {
+        Ok(Self {
             rate: EnvelopeRate::from(data[0]),
             level: EnvelopeLevel::from(data[1]),
         })
@@ -129,10 +128,10 @@ impl Envelope {
     pub fn new() -> Self {
         let zero_segment = EnvelopeSegment {
             rate: Default::default(),
-            level: EnvelopeLevel::new(0),
+            level: Default::default(),
         };
 
-        Envelope {
+        Self {
             attack: zero_segment,
             decay1: zero_segment,
             decay2: zero_segment,
@@ -157,7 +156,7 @@ impl SystemExclusiveData for Envelope {
         let segment3_rate = EnvelopeRate::from(data[6]);
         let segment3_level = EnvelopeLevel::from(data[7] & 0b0011_1111);
 
-        Ok(Envelope {
+        Ok(Self {
             attack: EnvelopeSegment {
                 rate: segment0_rate,
                 level: segment0_level,

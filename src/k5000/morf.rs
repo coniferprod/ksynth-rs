@@ -66,7 +66,7 @@ impl fmt::Display for HarmonicCommon {
 
 impl SystemExclusiveData for HarmonicCommon {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(HarmonicCommon {
+        Ok(Self {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
             group: HarmonicGroup::try_from(data[2]).unwrap(),
@@ -106,7 +106,7 @@ impl fmt::Display for MorfHarmonicCopyParameters {
 
 impl SystemExclusiveData for MorfHarmonicCopyParameters {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(MorfHarmonicCopyParameters {
+        Ok(Self {
             patch_number: data[0],
             source_number: data[1],
         })
@@ -151,7 +151,7 @@ pub struct MorfHarmonicEnvelope {
 
 impl Default for MorfHarmonicEnvelope {
     fn default() -> Self {
-        MorfHarmonicEnvelope {
+        Self {
             time1: Default::default(),
             time2: Default::default(),
             time3: Default::default(),
@@ -171,7 +171,7 @@ impl fmt::Display for MorfHarmonicEnvelope {
 
 impl SystemExclusiveData for MorfHarmonicEnvelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(MorfHarmonicEnvelope {
+        Ok(Self {
             time1: EnvelopeTime::from(data[0]),
             time2: EnvelopeTime::from(data[1]),
             time3: EnvelopeTime::from(data[2]),
@@ -213,7 +213,7 @@ impl fmt::Display for MorfHarmonic {
 
 impl SystemExclusiveData for MorfHarmonic {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(MorfHarmonic {
+        Ok(Self {
             copy1: MorfHarmonicCopyParameters::from_bytes(&data[..2])?,
             copy2: MorfHarmonicCopyParameters::from_bytes(&data[2..4])?,
             copy3: MorfHarmonicCopyParameters::from_bytes(&data[4..6])?,
@@ -235,6 +235,7 @@ impl SystemExclusiveData for MorfHarmonic {
     }
 
     fn data_size() -> usize {
-        4 * MorfHarmonicCopyParameters::data_size() + MorfHarmonicEnvelope::data_size()
+        4 * MorfHarmonicCopyParameters::data_size() 
+        + MorfHarmonicEnvelope::data_size()
     }
 }

@@ -45,7 +45,7 @@ pub struct Message {
 
 impl SystemExclusiveData for Message {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Message {
+        Ok(Self {
             channel: MIDIChannel::new(data[2].into()),
             function: Function::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this

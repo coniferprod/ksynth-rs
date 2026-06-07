@@ -9,7 +9,8 @@ use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged, ranged_impl,
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::{
@@ -18,7 +19,6 @@ use crate::k5000::{
     EnvelopeDepth,
 };
 use crate::k5000::lfo::{Depth, Speed};
-use crate::{Ranged, ranged_impl};
 
 /// FF bias (-63...63, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -56,7 +56,7 @@ pub struct EnvelopeSegment {
 
 impl Default for EnvelopeSegment {
     fn default() -> Self {
-        EnvelopeSegment {
+        Self {
             rate: Default::default(),
             level: Default::default(),
         }
@@ -65,7 +65,7 @@ impl Default for EnvelopeSegment {
 
 impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(EnvelopeSegment {
+        Ok(Self {
             rate: EnvelopeRate::from(data[0]),
             level: EnvelopeLevel::from(data[1]),
         })
@@ -92,21 +92,21 @@ pub struct Envelope {
 
 impl Default for Envelope {
     fn default() -> Self {
-        Envelope {
+        Self {
             attack: Default::default(),
             decay1: Default::default(),
             decay2: Default::default(),
             release: Default::default(),
             decay_loop: Default::default(),
-            velocity_depth: EnvelopeDepth::new(0),
-            ks_depth: EnvelopeDepth::new(0),
+            velocity_depth: Default::default(),
+            ks_depth: Default::default(),
         }
     }
 }
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Envelope {
+        Ok(Self {
             attack: EnvelopeSegment::from_bytes(&data[..2])?,
             decay1: EnvelopeSegment::from_bytes(&data[2..4])?,
             decay2: EnvelopeSegment::from_bytes(&data[4..6])?,
@@ -142,9 +142,14 @@ impl SystemExclusiveData for Envelope {
 }
 
 /// Formant filter LFO shape.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug, Copy, Clone,
+    Eq, PartialEq, 
+    Default,
+    TryFromPrimitive
+)]
 #[repr(u8)]
-pub enum LFOShape {
+pub enum Shape {
     #[default]
     Triangle,
 
@@ -156,13 +161,13 @@ pub enum LFOShape {
 #[derive(Debug)]
 pub struct Lfo {
     pub speed: Speed,
-    pub shape: LFOShape,
+    pub shape: Shape,
     pub depth: Depth,
 }
 
 impl Default for Lfo {
     fn default() -> Self {
-        Lfo {
+        Self {
             speed: Default::default(),
             shape: Default::default(),
             depth: Default::default(),
@@ -172,15 +177,19 @@ impl Default for Lfo {
 
 impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Lfo {
+        Ok(Self {
             speed: Speed::from(data[0]),
-            shape: LFOShape::try_from(data[1]).unwrap(),
+            shape: Shape::try_from(data[1]).unwrap(),
             depth: Depth::from(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.speed.into(), self.shape as u8, self.depth.into()]
+        vec![
+            self.speed.into(), 
+            self.shape as u8, 
+            self.depth.into()
+        ]
     }
 
     fn data_size() -> usize { 3 }
@@ -197,7 +206,7 @@ pub struct FormantFilter {
 
 impl Default for FormantFilter {
     fn default() -> Self {
-        FormantFilter {
+        Self {
             bias: Default::default(),
             mode: Default::default(),
             envelope_depth: Default::default(),
@@ -217,7 +226,7 @@ impl fmt::Display for FormantFilter {
 
 impl SystemExclusiveData for FormantFilter {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(FormantFilter {
+        Ok(Self {
             bias: Bias::from(data[0]),
             mode: Mode::try_from(data[1]).unwrap(),
             envelope_depth: EnvelopeDepth::from(data[2]),

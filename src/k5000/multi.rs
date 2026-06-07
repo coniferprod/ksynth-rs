@@ -6,14 +6,26 @@ use std::convert::TryInto;
 use std::fmt;
 use std::collections::BTreeMap;
 use bit::BitIndex;
-use crate::{SystemExclusiveData, ParseError, Checksum};
+use crate::k5000::control::VelocitySwitchSettings;
+use crate::{
+    SystemExclusiveData, 
+    ParseError, 
+    Checksum,
+    MIDINote,
+    MIDIChannel,
+};
+use crate::k5000::Volume;
 use crate::k5000::control::{
     Polyphony, AmplitudeModulation, MacroController, SwitchControl,
     ControlDestination, Switch,
 };
 use crate::k5000::effect::{EffectSettings, EffectControl};
 use crate::k5000::addkit::AdditiveKit;
-use crate::k5000::source::Source;
+use crate::k5000::source::{
+    Source,
+    Zone,
+    Key,
+};
 
 pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
 
@@ -22,7 +34,7 @@ pub struct Common {
     pub effects: EffectSettings,
     pub geq: [i8; 7],
     pub name: String,
-    pub volume: UnsignedLevel,
+    pub volume: Volume,
     pub section_mutes: [bool; SECTION_COUNT],
     pub effect_control: EffectControl,
 }
@@ -33,7 +45,7 @@ impl Default for Common {
             effects: Default::default(),
             geq: [0; 7],
             name: "NewMulti".to_string(),
-            section_mutes: 0x00,  // all sections muted by default
+            section_mutes: [false, false, false, false],  // all sections muted by default
             effect_control: Default::default(),
         }
     }
@@ -60,7 +72,7 @@ impl SystemExclusiveData for Common {
 
         size = 7;
         end = start + size;
-        let geq_data = data[start..end];
+        let geq_data = &data[start..end];
         let geq_values = geq_data.iter().map(|n| *n as i8 - 64).collect();  // 58(-6) ~ 70(+6), so 64 is zero
         offset += size;
 
@@ -79,14 +91,14 @@ impl SystemExclusiveData for Common {
         }
         offset += 1;
 
-        let volume = UnsignedLevel::from(data[offset]);
+        let volume = Volume::from(data[offset]);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
         size = 6;
         start = offset;
         end = start + size;
-        let effect_control_data = data[start..end];
+        let effect_control_data = &data[start..end];
         let effect_control = EffectControl::from_bytes(effect_control_data);
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
@@ -107,7 +119,7 @@ impl SystemExclusiveData for Common {
         result.extend(self.effects.to_bytes());
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.extend(self.name.clone().into_bytes());  // note the use of clone() here
-        result.push(self.volume as u8);
+        result.push(self.volume.into());
 
         let mut mute_byte = 0x00;
         for i in 0..SECTION_COUNT {
@@ -133,7 +145,7 @@ pub struct Section {
     pub tune: i32,
     pub zone: Zone,
     pub vel_switch: VelocitySwitchSettings,
-    pub receive_channel: u32,
+    pub receive_channel: MIDIChannel,
 }
 
 impl fmt::Display for Section {
@@ -189,8 +201,8 @@ impl SystemExclusiveData for Section {
         offset += 1;
 
         let zone = Zone { 
-            low: Key { note: data[offset] }, 
-            high: Key { note: data[offset + 1] } 
+            low: Key { note: MIDINote::from(data[offset]) }, 
+            high: Key { note: MIDINote::from(data[offset + 1]) }, 
         };
         offset += 2;
 
@@ -199,7 +211,7 @@ impl SystemExclusiveData for Section {
 
         // Stored as 0...15, scale to 1...16, but on the K50000W it is zero.
         // FIXME: Do we need to deal with this?
-        let receive_channel = data[offset] + 1;
+        let receive_channel = MIDIChannel::from(data[offset]);
 
         Ok(Section {
             single,
@@ -277,7 +289,7 @@ impl SystemExclusiveData for MultiPatch {
 
         result.extend(self.common.to_bytes());
 
-        for section in self.sections {
+        for section in &self.sections {
             result.extend(section.to_bytes());
         }
 

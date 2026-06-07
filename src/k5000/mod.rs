@@ -1,6 +1,5 @@
 use std::fmt;
 use rand::Rng;
-use std::ops::RangeInclusive;
 
 use crate::{Ranged, ranged_impl};
 
@@ -13,6 +12,7 @@ pub mod control;
 pub mod source;
 pub mod effect;
 pub mod single;
+//pub mod multi;
 pub mod morf;
 pub mod harmonic;
 pub mod formant;
@@ -34,9 +34,9 @@ impl From<u8> for Volume {
     }
 }
 
-impl From<Volume> for u8{
+impl From<Volume> for u8 {
     fn from(value: Volume) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -46,14 +46,14 @@ pub struct BenderPitch(i32);
 ranged_impl!(BenderPitch, 0, 24, 0);
 
 impl From<u8> for BenderPitch {
-    fn from(value: u8) -> BenderPitch {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
 
-impl From<BenderPitch> for u8{
+impl From<BenderPitch> for u8 {
     fn from(value: BenderPitch) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -63,14 +63,14 @@ pub struct BenderCutoff(i32);
 ranged_impl!(BenderCutoff, 0, 31, 0);
 
 impl From<u8> for BenderCutoff {
-    fn from(value: u8) -> BenderCutoff {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
 
 impl From<BenderCutoff> for u8{
     fn from(value: BenderCutoff) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -85,9 +85,9 @@ impl From<u8> for EnvelopeTime {
     }
 }
 
-impl From<EnvelopeTime> for u8{
+impl From<EnvelopeTime> for u8 {
     fn from(value: EnvelopeTime) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -121,7 +121,7 @@ impl From<u8> for EnvelopeRate {
 
 impl From<EnvelopeRate> for u8 {
     fn from(value: EnvelopeRate) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -138,7 +138,7 @@ impl From<u8> for ControlTime {
 
 impl From<ControlTime> for u8 {
     fn from(val: ControlTime) -> Self {
-        (val.value() + 64) as u8 // value needs adjustment for SysEx
+        (val.value() + 64) as u8
     }
 }
 
@@ -155,7 +155,7 @@ impl From<u8> for EnvelopeDepth {
 
 impl From<EnvelopeDepth> for u8 {
     fn from(val: EnvelopeDepth) -> Self {
-        (val.value() + 64) as u8 // value needs adjustment for SysEx
+        (val.value() + 64) as u8
     }
 }
 
@@ -172,7 +172,7 @@ impl From<u8> for EffectParameter {
 
 impl From<EffectParameter> for u8 {
     fn from(value: EffectParameter) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -189,7 +189,7 @@ impl From<u8> for Cutoff {
 
 impl From<Cutoff> for u8{
     fn from(value: Cutoff) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -206,7 +206,7 @@ impl From<u8> for Resonance {
 
 impl From<Resonance> for u8{
     fn from(value: Resonance) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -223,7 +223,7 @@ impl From<u8> for Level {
 
 impl From<Level> for u8{
     fn from(value: Level) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -257,7 +257,7 @@ impl From<u8> for PitchEnvelopeTime {
 
 impl From<PitchEnvelopeTime> for u8{
     fn from(value: PitchEnvelopeTime) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -274,7 +274,7 @@ impl From<u8> for VelocityDepth {
 
 impl From<VelocityDepth> for u8{
     fn from(value: VelocityDepth) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -291,7 +291,7 @@ impl From<u8> for VelocityControlLevel {
 
 impl From<VelocityControlLevel> for u8{
     fn from(value: VelocityControlLevel) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -308,7 +308,7 @@ impl From<u8> for PortamentoLevel {
 
 impl From<PortamentoLevel> for u8{
     fn from(value: PortamentoLevel) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -325,7 +325,7 @@ impl From<u8> for KeyOnDelay {
 
 impl From<KeyOnDelay> for u8{
     fn from(value: KeyOnDelay) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -376,7 +376,7 @@ impl From<u8> for Depth {
 
 impl From<Depth> for u8{
     fn from(value: Depth) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -465,23 +465,6 @@ impl From<MacroParameterDepth> for u8 {
     }
 }
 
-/// MIDI note (0...127, default 60).
-#[derive (Debug, Clone, Copy, Eq, PartialEq)]
-pub struct MIDINote(i32);
-ranged_impl!(MIDINote, 0, 127, 60);
-
-impl From<u8> for MIDINote {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl From<MIDINote> for u8{
-    fn from(value: MIDINote) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
-    }
-}
-
 /// Patch number (0...127, default 0).
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct PatchNumber(i32);
@@ -495,7 +478,7 @@ impl From<u8> for PatchNumber {
 
 impl From<PatchNumber> for u8{
     fn from(value: PatchNumber) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -512,7 +495,7 @@ impl From<u8> for Transpose {
 
 impl From<Transpose> for u8{
     fn from(value: Transpose) -> Self {
-        value.value() as u8    // used as such in SysEx, redefine if necessary
+        value.value() as u8
     }
 }
 
@@ -529,7 +512,7 @@ impl From<u8> for KeyScaling {
 
 impl From<KeyScaling> for u8 {
     fn from(value: KeyScaling) -> Self {
-        (value.value() + 64) as u8 // value needs adjustment for SysEx
+        (value.value() + 64) as u8
     }
 }
 

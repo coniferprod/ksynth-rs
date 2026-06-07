@@ -19,7 +19,12 @@ use crate::k5000::{
 };
 
 /// Velocity switch settings.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default, strum_macros::Display)]
+#[derive(
+    Debug, Eq, PartialEq, Copy, Clone, 
+    Default,
+    TryFromPrimitive, 
+    strum_macros::Display
+)]
 #[repr(u8)]
 pub enum VelocitySwitch {
     #[default]
@@ -285,7 +290,11 @@ impl SystemExclusiveData for AssignableController {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.source as u8, self.destination as u8, self.depth.into()]
+        vec![
+            self.source as u8, 
+            self.destination as u8, 
+            self.depth.into()
+        ]
     }
 
     fn data_size() -> usize { 3 }
@@ -303,7 +312,7 @@ pub struct ModulationSettings {
 
 impl SystemExclusiveData for ModulationSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(ModulationSettings {
+        Ok(Self {
             pressure: MacroController::from_bytes(&data[..4])?,
             wheel: MacroController::from_bytes(&data[4..8])?,
             expression: MacroController::from_bytes(&data[8..12])?,
@@ -332,11 +341,9 @@ impl SystemExclusiveData for ModulationSettings {
 
 /// Pan type.
 #[derive(
-    Debug,
-    Eq, PartialEq,
-    Copy, Clone,
-    TryFromPrimitive,
+    Debug, Eq, PartialEq, Copy, Clone,
     Default,
+    TryFromPrimitive,
     strum_macros::Display
 )]
 #[repr(u8)]
@@ -385,7 +392,10 @@ impl SystemExclusiveData for PanSettings {
 }
 
 /// Switch kind.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug, Eq, PartialEq, Copy, Clone, Default,
+    TryFromPrimitive
+)]
 #[repr(u8)]
 pub enum Switch {
     #[default]
@@ -460,7 +470,11 @@ impl SystemExclusiveData for SwitchControl {
 }
 
 /// Polyphony type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(
+    Debug, Copy, Clone,
+    Eq, PartialEq, 
+    TryFromPrimitive
+)]
 #[repr(u8)]
 pub enum Polyphony {
     Poly,
@@ -479,7 +493,10 @@ impl fmt::Display for Polyphony {
 }
 
 /// Amplitude modulation kind.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug, Copy, Clone, Eq, PartialEq, Default, 
+    TryFromPrimitive
+)]
 #[repr(u8)]
 pub enum AmplitudeModulation {
     #[default]
@@ -506,7 +523,7 @@ impl fmt::Display for AmplitudeModulation {
 }
 
 /// Velocity curve.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum VelocityCurve {
     Curve1,

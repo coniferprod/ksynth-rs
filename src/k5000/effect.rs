@@ -71,7 +71,11 @@ static EFFECT_NAMES: &[&str] = &[
 ];
 
 /// Effect type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash, Default)]
+#[derive(
+    Debug, Copy, Clone, 
+    Eq, PartialEq, Hash,
+    Default, TryFromPrimitive
+)]
 #[repr(u8)]
 pub enum Effect {
     #[default]
@@ -188,7 +192,11 @@ lazy_static! {
 }
 
 /// Effect algorithm.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Hash)]
+#[derive(
+    Debug, Copy, Clone, 
+    Eq, PartialEq, Hash,
+    TryFromPrimitive
+)]
 #[repr(u8)]
 pub enum EffectAlgorithm {
     Algorithm1,
@@ -236,7 +244,7 @@ impl fmt::Display for EffectDefinition {
 
 impl Default for EffectDefinition {
     fn default() -> Self {
-        EffectDefinition {
+        Self {
             effect: Default::default(),
             depth: Depth::new(0),
             parameter1: EffectParameter::new(0),
@@ -294,7 +302,7 @@ impl fmt::Display for EffectSettings {
 
 impl Default for EffectSettings {
     fn default() -> Self {
-        EffectSettings {
+        Self {
             algorithm: EffectAlgorithm::Algorithm1,
             reverb: Default::default(),
             effect1: Default::default(),
@@ -336,7 +344,11 @@ impl SystemExclusiveData for EffectSettings {
 }
 
 /// Effect destinations.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(
+    Debug, Copy, Clone, 
+    Eq, PartialEq, 
+    Default, TryFromPrimitive
+)]
 #[repr(u8)]
 pub enum EffectDestination {
     #[default]
@@ -361,7 +373,7 @@ pub struct ControlSource {
 
 impl SystemExclusiveData for ControlSource {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(ControlSource {
+        Ok(Self {
             source: control::ControlSource::try_from(data[0]).unwrap(),
             destination: EffectDestination::try_from(data[1]).unwrap(),
             depth: Depth::from(data[2]),
@@ -369,7 +381,11 @@ impl SystemExclusiveData for ControlSource {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.source as u8, self.destination as u8, self.depth.into()]
+        vec![
+            self.source as u8, 
+            self.destination as u8, 
+            self.depth.into()
+        ]
     }
 
     fn data_size() -> usize { 3 }
@@ -384,7 +400,7 @@ pub struct EffectControl {
 
 impl SystemExclusiveData for EffectControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(EffectControl {
+        Ok(Self {
             source1: ControlSource::from_bytes(&data[0..3])?,
             source2: ControlSource::from_bytes(&data[3..6])?,
         })

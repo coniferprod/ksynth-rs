@@ -9,7 +9,9 @@ use pretty_hex::*;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged,
+    MIDINote,
 };
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 use crate::k5000::{
@@ -42,14 +44,17 @@ impl SystemExclusiveData for FixedKey {
             Ok(FixedKey::Off)
         }
         else {
-            Ok(FixedKey::On(Key { note: data[0] - 21 }))
+            Ok(FixedKey::On(Key { note: MIDINote::from(data[0] - 21) }))
         }
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         match self {
             FixedKey::Off => vec![0x00],
-            FixedKey::On(key) => vec![key.note + 21],
+            FixedKey::On(key) => {
+                let b: u8 = key.note.into();
+                vec![b + 21]
+            },
         }
     }
 
@@ -70,7 +75,7 @@ pub struct Oscillator {
 impl Oscillator {
     /// Makes a new oscillator with default values for PCM.
     pub fn new() -> Oscillator {
-        Oscillator {
+        Self {
             wave: Wave { number: 384 },
             coarse: Default::default(),
             fine: Default::default(),
@@ -82,7 +87,7 @@ impl Oscillator {
 
     /// Makes a new oscillator with default values for ADD.
     pub fn additive() -> Oscillator {
-        Oscillator {
+        Self {
             wave: Wave { number: 512 }, // ADD
             coarse: Default::default(),
             fine: Default::default(),

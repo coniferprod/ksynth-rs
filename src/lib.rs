@@ -121,6 +121,18 @@ crate::ranged_impl!(MIDIChannel, 1, 16, 1);
 pub struct MIDINote(i32);
 crate::ranged_impl!(MIDINote, 0, 127, 60);
 
+impl From<u8> for MIDINote {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl From<MIDINote> for u8{
+    fn from(value: MIDINote) -> Self {
+        value.value() as u8
+    }
+}
+
 impl MIDINote {
     pub fn name(&self) -> String {
         let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];

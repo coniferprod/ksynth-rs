@@ -39,7 +39,7 @@ pub struct Envelope {
 impl Envelope {
     /// Creates a new envelope with default values.
     pub fn new() -> Envelope {
-        Envelope {
+        Self {
             start: PitchEnvelopeLevel::new(0),
             attack_time: PitchEnvelopeTime::new(0),
             attack_level: PitchEnvelopeLevel::new(0),
@@ -66,7 +66,7 @@ impl fmt::Display for Envelope {
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Envelope {
+        Ok(Self {
             start: PitchEnvelopeLevel::from(data[0]),
             attack_time: PitchEnvelopeTime::from(data[1]),
             attack_level: PitchEnvelopeLevel::from(data[2]),

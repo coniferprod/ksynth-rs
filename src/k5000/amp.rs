@@ -8,7 +8,8 @@ use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged, ranged_impl,
 };
 use crate::k5000::{
     EnvelopeTime,
@@ -17,8 +18,6 @@ use crate::k5000::{
     VelocityControlLevel
 };
 use crate::k5000::control::VelocityCurve;
-
-use crate::{Ranged, ranged_impl};
 
 // Amplifier envelope level is different from the other
 // envelope levels; it goes from 0 to 127, while the
@@ -38,7 +37,7 @@ impl From<u8> for EnvelopeLevel {
 
 impl From<EnvelopeLevel> for u8 {
     fn from(value: EnvelopeLevel) -> Self {
-        value.value() as u8 // value can be used as such in SysEx
+        value.value() as u8
     }
 }
 
@@ -56,12 +55,12 @@ pub struct Envelope {
 impl Envelope {
     pub fn new() -> Envelope {
         Envelope {
-            attack_time: EnvelopeTime::new(0),
-            decay1_time: EnvelopeTime::new(0),
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
             decay1_level: Default::default(),
-            decay2_time: EnvelopeTime::new(0),
+            decay2_time: Default::default(),
             decay2_level: Default::default(),
-            release_time: EnvelopeTime::new(0),
+            release_time: Default::default(),
         }
     }
 }
@@ -120,9 +119,9 @@ impl Default for KeyScalingControl {
     fn default() -> Self {
         KeyScalingControl {
             level: Default::default(),
-            attack_time: ControlTime::new(0),
-            decay1_time: ControlTime::new(0),
-            release: ControlTime::new(0),
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
+            release: Default::default(),
         }
     }
 }
@@ -169,10 +168,10 @@ pub struct VelocityControl {
 impl Default for VelocityControl {
     fn default() -> Self {
         VelocityControl {
-            level: VelocityControlLevel::new(0),
-            attack_time: ControlTime::new(0),
-            decay1_time: ControlTime::new(0),
-            release: ControlTime::new(0),
+            level: Default::default(),
+            attack_time: Default::default(),
+            decay1_time: Default::default(),
+            release: Default::default(),
         }
     }
 }

@@ -22,7 +22,7 @@ use crate::k5000::{
 use crate::k5000::control::VelocityCurve;
 
 /// Filter mode.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum FilterMode {
     LowPass = 0,
@@ -51,7 +51,7 @@ pub struct Envelope {
 
 impl Envelope {
     pub fn new() -> Envelope {
-        Envelope {
+        Self {
             attack_time: Default::default(),
             decay1_time: Default::default(),
             decay1_level: Default::default(),
@@ -79,7 +79,7 @@ impl fmt::Display for Envelope {
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Envelope {
+        Ok(Self {
             attack_time: EnvelopeTime::from(data[0]),
             decay1_time: EnvelopeTime::from(data[1]),
             decay1_level: EnvelopeLevel::from(data[2]),
@@ -112,7 +112,7 @@ pub struct KeyScalingControl {
 
 impl Default for KeyScalingControl {
     fn default() -> Self {
-        KeyScalingControl {
+        Self {
             attack_time: Default::default(),
             decay1_time: Default::default(),
         }
@@ -127,7 +127,7 @@ impl fmt::Display for KeyScalingControl {
 
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(KeyScalingControl {
+        Ok(Self {
             attack_time: ControlTime::from(data[0]),
             decay1_time: ControlTime::from(data[1]),
         })
@@ -153,7 +153,7 @@ pub struct VelocityControl {
 
 impl Default for VelocityControl {
     fn default() -> Self {
-        VelocityControl {
+        Self {
             depth: Default::default(),
             attack_time: Default::default(),
             decay1_time: Default::default(),
@@ -170,7 +170,7 @@ impl fmt::Display for VelocityControl {
 
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(VelocityControl {
+        Ok(Self {
             depth: EnvelopeDepth::from(data[0]),
             attack_time: ControlTime::from(data[1]),
             decay1_time: ControlTime::from(data[2]),
@@ -203,7 +203,7 @@ impl fmt::Display for Modulation {
 
 impl SystemExclusiveData for Modulation {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Modulation {
+        Ok(Self {
             ks_to_env: KeyScalingControl::from_bytes(&data[..2])?,
             vel_to_env: VelocityControl::from_bytes(&data[2..5])?,
         })
@@ -242,7 +242,7 @@ pub struct Filter {
 
 impl Filter {
     pub fn new() -> Filter {
-        Filter {
+        Self {
             is_active: true,
             cutoff: Default::default(),
             resonance: Default::default(),
@@ -277,7 +277,7 @@ impl fmt::Display for Filter {
 
 impl SystemExclusiveData for Filter {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Filter {
+        Ok(Self {
             is_active: data[0] != 1,  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
             velocity_curve: VelocityCurve::try_from(data[2]).unwrap(),  // from 0 ~ 11 to enum

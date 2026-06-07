@@ -69,7 +69,7 @@ pub struct Common {
 
 impl Default for Common {
     fn default() -> Self {
-        Common {
+        Self {
             effects: Default::default(),
             name: "NewSound".to_string(),
             volume: Volume::new(99),
@@ -229,7 +229,7 @@ impl SystemExclusiveData for Common {
         };
         eprintln!("Switches: {:?}", switches);
 
-        Ok(Common {
+        Ok(Self {
             effects: effects?,
             geq: vec_to_array(geq_values),
             name,
@@ -331,7 +331,7 @@ impl SinglePatch {
             additive_count -= 1;
         }
 
-        SinglePatch {
+        Self {
             common: Default::default(),
             sources: all_sources,
             additive_kits: kits,
@@ -453,7 +453,7 @@ impl SystemExclusiveData for SinglePatch {
             kit_index += 1;
         }
 
-        Ok(SinglePatch {
+        Ok(Self {
             common: common?,
             sources,
             additive_kits,

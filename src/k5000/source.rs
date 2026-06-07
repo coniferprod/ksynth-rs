@@ -12,6 +12,7 @@ use crate::{
     SystemExclusiveData,
     ParseError,
     Ranged,
+    MIDINote,
 };
 use crate::k5000::osc::*;
 use crate::k5000::filter::*;
@@ -30,7 +31,7 @@ use pretty_hex::*;
 #[derive(Debug, Eq, PartialEq)]
 pub struct Key {
     /// MIDI note number for the key.
-    pub note: u8,
+    pub note: MIDINote,
 }
 
 static NOTE_NAMES: &str = "C C#D D#E F F#G G#A A#B ";
@@ -40,8 +41,8 @@ impl Key {
 
     pub fn name(&self) -> String {
         // Adapted from RIMD:
-        let octave = (self.note as f32 / 12 as f32).floor() - 1.0;
-        let name_index = (self.note as usize % 12) * 2;
+        let octave = (self.note.value() as f32 / 12 as f32).floor() - 1.0;
+        let name_index = (self.note.value() as usize % 12) * 2;
         let slice = if NOTE_NAMES.as_bytes()[name_index + 1] == ' ' as u8 {
             &NOTE_NAMES[name_index..(name_index + 1)]
         } else {
@@ -67,6 +68,15 @@ pub struct Zone {
     pub high: Key,
 }
 
+impl Default for Zone {
+    fn default() -> Self {
+        Self {
+            low: Key { note: MIDINote::new(0) },
+            high: Key { note: MIDINote::from(127) },
+        }
+    }
+}
+
 impl fmt::Display for Zone {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} to {}", self.low, self.high)
@@ -75,13 +85,20 @@ impl fmt::Display for Zone {
 
 impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Zone { low: Key { note: data[0] }, high: Key { note: data[1] } })
+        Ok(Self { 
+            low: Key { 
+                note: MIDINote::from(data[0])
+            }, 
+            high: Key { 
+                note: MIDINote::from(data[1]) 
+            } 
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.low.note,
-            self.high.note,
+            self.low.note.into(),
+            self.high.note.into(),
         ]
     }
 
@@ -104,15 +121,18 @@ pub struct SourceControl {
 
 impl Default for SourceControl {
     fn default() -> Self {
-        SourceControl {
-            zone: Zone { low: Key { note: 0 }, high: Key { note: 127 } },
+        Self {
+            zone: Zone { 
+                low: Key { note: MIDINote::new(MIDINote::FIRST) }, 
+                high: Key { note: MIDINote::new(MIDINote::LAST) },
+            },
             vel_sw: Default::default(),
             effect_path: 0,
             volume: Volume::new(100),
-            bender_pitch: BenderPitch::new(0),
-            bender_cutoff: BenderCutoff::new(0),
+            bender_pitch: Default::default(),
+            bender_cutoff: Default::default(),
             modulation: Default::default(),
-            key_on_delay: KeyOnDelay::new(0),
+            key_on_delay: Default::default(),
             pan: Default::default(),
         }
     }
@@ -130,8 +150,11 @@ impl SystemExclusiveData for SourceControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Source control data = {}", simple_hex(&data));
 
-        Ok(SourceControl {
-            zone: Zone { low: Key { note: data[0] }, high: Key { note: data[1] } },
+        Ok(Self {
+            zone: Zone { 
+                low: Key { note: MIDINote::from(data[0]) }, 
+                high: Key { note: MIDINote::from(data[1]) },
+            },
             vel_sw: VelocitySwitchSettings::from_bytes(&[data[2]])?,
             effect_path: data[3],
             volume: Volume::from(data[4]),
@@ -197,7 +220,7 @@ impl Source {
 
     /// Makes a new ADD source with default values.
     pub fn additive() -> Source {
-        Source {
+        Self {
             oscillator: Oscillator::additive(),
             filter: Default::default(),
             amplifier: Default::default(),
@@ -238,7 +261,7 @@ impl SystemExclusiveData for Source {
             + filter_size + lfo_size;
         eprintln!("Total = {} bytes", total_size);
 
-        Ok(Source {
+        Ok(Self {
             control: SourceControl::from_bytes(&data[..28])?,
             oscillator: Oscillator::from_bytes(&data[28..40])?,
             filter: Filter::from_bytes(&data[40..60])?,
@@ -275,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_key_name() {
-        let key = Key { note: 60 };
+        let key = Key { note: MIDINote::new(60) };
         assert_eq!(key.name(), "C4");
     }
 
@@ -297,8 +320,8 @@ mod tests {
         ];
 
         let source_control = SourceControl::from_bytes(&data);
-        assert_eq!(source_control.as_ref().unwrap().zone.low.note, 0x00);
-        assert_eq!(source_control.as_ref().unwrap().zone.high.note, 0x7f);
+        assert_eq!(source_control.as_ref().unwrap().zone.low.note.value(), 0x00);
+        assert_eq!(source_control.as_ref().unwrap().zone.high.note.value(), 0x7f);
         assert_eq!(source_control.as_ref().unwrap().volume.value(), 0x78);
     }
 

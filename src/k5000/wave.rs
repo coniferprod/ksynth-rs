@@ -503,9 +503,7 @@ pub struct Wave {
 
 impl Default for Wave {
     fn default() -> Self {
-        Wave {
-            number: 411
-        }
+        Self { number: 411 }
     }
 }
 
@@ -549,10 +547,10 @@ impl SystemExclusiveData for Wave {
         eprintln!("Wave = {}", n);
 
         if n == 512 {
-            Ok(Wave { number: 512 })
+            Ok(Self { number: 512 })
         }
         else {
-            Ok(Wave { number: n + 1 })
+            Ok(Self { number: n + 1 })
         }
     }
 
