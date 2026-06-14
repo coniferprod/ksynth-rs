@@ -11,27 +11,20 @@ use crate::k5000::control::{
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged,
-    MIDINote,
 };
-use crate::k5000::osc::*;
+use crate::k5000::{ByteValue, DESCRIPTORS, osc::*};
 use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
-use crate::k5000::{
-    Volume,
-    BenderPitch,
-    BenderCutoff,
-    KeyOnDelay
-};
 
 use pretty_hex::*;
+use serde::{Deserialize, Serialize};
 
 /// Key in a keyboard zone.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Key {
     /// MIDI note number for the key.
-    pub note: MIDINote,
+    pub note: i32, // MIDINote,
 }
 
 static NOTE_NAMES: &str = "C C#D D#E F F#G G#A A#B ";
@@ -41,8 +34,8 @@ impl Key {
 
     pub fn name(&self) -> String {
         // Adapted from RIMD:
-        let octave = (self.note.value() as f32 / 12 as f32).floor() - 1.0;
-        let name_index = (self.note.value() as usize % 12) * 2;
+        let octave = (self.note as f32 / 12 as f32).floor() - 1.0;
+        let name_index = (self.note as usize % 12) * 2;
         let slice = if NOTE_NAMES.as_bytes()[name_index + 1] == ' ' as u8 {
             &NOTE_NAMES[name_index..(name_index + 1)]
         } else {
@@ -59,7 +52,7 @@ impl fmt::Display for Key {
 }
 
 /// Keyboard zone.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Zone {
     /// Low key of the zone.
     pub low: Key,
@@ -71,8 +64,8 @@ pub struct Zone {
 impl Default for Zone {
     fn default() -> Self {
         Self {
-            low: Key { note: MIDINote::new(0) },
-            high: Key { note: MIDINote::from(127) },
+            low: Key { note: 0 },
+            high: Key { note: 127 },
         }
     }
 }
@@ -87,18 +80,18 @@ impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self { 
             low: Key { 
-                note: MIDINote::from(data[0])
+                note: data[0] as i32,
             }, 
             high: Key { 
-                note: MIDINote::from(data[1]) 
+                note: data[1] as i32,
             } 
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.low.note.into(),
-            self.high.note.into(),
+            self.low.note as u8,
+            self.high.note as u8,
         ]
     }
 
@@ -106,29 +99,26 @@ impl SystemExclusiveData for Zone {
 }
 
 /// Source control settings.
-#[derive(Debug)]
-pub struct SourceControl {
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Control {
     pub zone: Zone,
     pub vel_sw: VelocitySwitchSettings,
     pub effect_path: u8,
-    pub volume: Volume,
-    pub bender_pitch: BenderPitch,
-    pub bender_cutoff: BenderCutoff,
+    pub volume: i32, // Volume,
+    pub bender_pitch: i32, // BenderPitch,
+    pub bender_cutoff: i32, // BenderCutoff,
     pub modulation: ModulationSettings,
-    pub key_on_delay: KeyOnDelay,
+    pub key_on_delay: i32, // KeyOnDelay,
     pub pan: PanSettings,
 }
 
-impl Default for SourceControl {
+impl Default for Control {
     fn default() -> Self {
         Self {
-            zone: Zone { 
-                low: Key { note: MIDINote::new(MIDINote::FIRST) }, 
-                high: Key { note: MIDINote::new(MIDINote::LAST) },
-            },
+            zone: Default::default(),
             vel_sw: Default::default(),
             effect_path: 0,
-            volume: Volume::new(100),
+            volume: 100,
             bender_pitch: Default::default(),
             bender_cutoff: Default::default(),
             modulation: Default::default(),
@@ -138,45 +128,55 @@ impl Default for SourceControl {
     }
 }
 
-impl fmt::Display for SourceControl {
+impl fmt::Display for Control {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Zone={}\nVel. switch: {}\nEffect Path={}\nVolume={}\nBender: Pitch={} Cutoff={}\nKey On Delay={}\nPan: Type={} Value={}\n",
-            self.zone, self.vel_sw, self.effect_path, self.volume, self.bender_pitch, self.bender_cutoff, self.key_on_delay, self.pan.pan_type, self.pan.pan_value
+            self.zone, self.vel_sw, self.effect_path, self.volume, self.bender_pitch, self.bender_cutoff, self.key_on_delay, self.pan.kind, self.pan.value
         )
     }
 }
 
-impl SystemExclusiveData for SourceControl {
+impl SystemExclusiveData for Control {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Source control data = {}", simple_hex(&data));
 
+        let volume_desc = DESCRIPTORS.get(&ByteValue::Volume).unwrap();
+        let bp_desc = DESCRIPTORS.get(&ByteValue::BenderPitch).unwrap();
+        let bc_desc = DESCRIPTORS.get(&ByteValue::BenderCutoff).unwrap();
+        let k_desc = DESCRIPTORS.get(&ByteValue::KeyOnDelay).unwrap();
+        
         Ok(Self {
             zone: Zone { 
-                low: Key { note: MIDINote::from(data[0]) }, 
-                high: Key { note: MIDINote::from(data[1]) },
+                low: Key { note: data[0] as i32 }, 
+                high: Key { note: data[1] as i32 },
             },
             vel_sw: VelocitySwitchSettings::from_bytes(&[data[2]])?,
             effect_path: data[3],
-            volume: Volume::from(data[4]),
-            bender_pitch: BenderPitch::from(data[5]),
-            bender_cutoff: BenderCutoff::from(data[6]),
+            volume: (volume_desc.incoming)(data[4]),
+            bender_pitch: (bp_desc.incoming)(data[5]),
+            bender_cutoff: (bc_desc.incoming)(data[6]),
             modulation: ModulationSettings::from_bytes(&data[7..25])?,
-            key_on_delay: KeyOnDelay::from(data[25]),
+            key_on_delay: (k_desc.incoming)(data[25]),
             pan: PanSettings::from_bytes(&data[26..28])?,
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let volume_desc = DESCRIPTORS.get(&ByteValue::Volume).unwrap();
+        let bp_desc = DESCRIPTORS.get(&ByteValue::BenderPitch).unwrap();
+        let bc_desc = DESCRIPTORS.get(&ByteValue::BenderCutoff).unwrap();
+        let k_desc = DESCRIPTORS.get(&ByteValue::KeyOnDelay).unwrap();
+
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_sw.to_bytes());
         result.push(self.effect_path);
-        result.push(self.volume.into());
-        result.push(self.bender_pitch.into());
-        result.push(self.bender_cutoff.into());
+        result.push((volume_desc.outgoing)(self.volume));
+        result.push((bp_desc.outgoing)(self.bender_pitch));
+        result.push((bc_desc.outgoing)(self.bender_cutoff));
         result.extend(self.modulation.to_bytes());
-        result.push(self.key_on_delay.into());
+        result.push((k_desc.outgoing)(self.key_on_delay));
         result.extend(self.pan.to_bytes());
 
         result
@@ -193,13 +193,13 @@ impl SystemExclusiveData for SourceControl {
 }
 
 /// Source.
-#[derive(Default, Debug)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Source {
     pub oscillator: Oscillator,
     pub filter: Filter,
     pub amplifier: Amplifier,
     pub lfo: Lfo,
-    pub control: SourceControl,
+    pub control: Control,
 }
 
 impl Source {
@@ -219,7 +219,7 @@ impl Source {
     }
 
     /// Makes a new ADD source with default values.
-    pub fn additive() -> Source {
+    pub fn additive() -> Self {
         Self {
             oscillator: Oscillator::additive(),
             filter: Default::default(),
@@ -242,7 +242,7 @@ impl SystemExclusiveData for Source {
         //eprintln!("Source data ({} bytes): {:?}", data.len(), data);
         eprintln!("Source data size = {} bytes", data.len());
         eprintln!("Reported sizes:");
-        let source_control_size = SourceControl::data_size();
+        let source_control_size = Control::data_size();
         eprintln!("Source control = {} bytes",
             source_control_size);
         let amplifier_size = Amplifier::data_size();
@@ -262,7 +262,7 @@ impl SystemExclusiveData for Source {
         eprintln!("Total = {} bytes", total_size);
 
         Ok(Self {
-            control: SourceControl::from_bytes(&data[..28])?,
+            control: Control::from_bytes(&data[..28])?,
             oscillator: Oscillator::from_bytes(&data[28..40])?,
             filter: Filter::from_bytes(&data[40..60])?,
             amplifier: Amplifier::from_bytes(&data[60..75])?,
@@ -283,7 +283,7 @@ impl SystemExclusiveData for Source {
     }
 
     fn data_size() -> usize {
-        SourceControl::data_size()
+        Control::data_size()
         + Oscillator::data_size()
         + Filter::data_size()
         + Amplifier::data_size()
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_key_name() {
-        let key = Key { note: MIDINote::new(60) };
+        let key = Key { note: 60 };
         assert_eq!(key.name(), "C4");
     }
 
@@ -319,10 +319,10 @@ mod tests {
             0x00, 0x40,  // pan type and value
         ];
 
-        let source_control = SourceControl::from_bytes(&data);
-        assert_eq!(source_control.as_ref().unwrap().zone.low.note.value(), 0x00);
-        assert_eq!(source_control.as_ref().unwrap().zone.high.note.value(), 0x7f);
-        assert_eq!(source_control.as_ref().unwrap().volume.value(), 0x78);
+        let source_control = Control::from_bytes(&data);
+        assert_eq!(source_control.as_ref().unwrap().zone.low.note, 0x00);
+        assert_eq!(source_control.as_ref().unwrap().zone.high.note, 0x7f);
+        assert_eq!(source_control.as_ref().unwrap().volume, 0x78);
     }
 
     #[test]
@@ -377,6 +377,6 @@ mod tests {
         ];
 
         let source = Source::from_bytes(&data);
-        assert_eq!(source.unwrap().lfo.speed.value(), 0x5d);
+        assert_eq!(source.unwrap().lfo.speed, 0x5d);
     }
 }

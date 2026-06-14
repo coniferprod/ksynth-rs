@@ -6,6 +6,7 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use rand::Rng;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
@@ -14,11 +15,9 @@ use crate::{
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::{
-    EnvelopeRate,
-    EnvelopeLevel,
-    EnvelopeDepth,
+    ByteValue, DESCRIPTORS,
 };
-use crate::k5000::lfo::{Depth, Speed};
+use crate::k5000::lfo::Speed;
 
 /// FF bias (-63...63, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -38,7 +37,7 @@ impl From<Bias> for u8 {
 }
 
 /// Formant filter envelope mode.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Mode {
     #[default]
@@ -48,10 +47,10 @@ pub enum Mode {
 }
 
 /// Envelope segment.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnvelopeSegment {
-    pub rate: EnvelopeRate,  // 0~127
-    pub level: EnvelopeLevel, // -63(1)~+63(127)
+    pub rate: i32, // EnvelopeRate,  // 0~127
+    pub level: i32 // EnvelopeLevel, // -63(1)~+63(127)
 }
 
 impl Default for EnvelopeSegment {
@@ -65,29 +64,38 @@ impl Default for EnvelopeSegment {
 
 impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let rate_desc = DESCRIPTORS.get(&ByteValue::EnvelopeRate).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::EnvelopeLevel).unwrap();
+
         Ok(Self {
-            rate: EnvelopeRate::from(data[0]),
-            level: EnvelopeLevel::from(data[1]),
+            rate: (rate_desc.incoming)(data[0]),
+            level: (level_desc.incoming)(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.rate.into(), self.level.into()]
+        let rate_desc = DESCRIPTORS.get(&ByteValue::EnvelopeRate).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::EnvelopeLevel).unwrap();
+
+        vec![
+            (rate_desc.outgoing)(self.rate), 
+            (level_desc.outgoing)(self.level),
+        ]
     }
 
     fn data_size() -> usize { 2 }
 }
 
 /// Formant filter envelope.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Envelope {
     pub attack: EnvelopeSegment,
     pub decay1: EnvelopeSegment,
     pub decay2: EnvelopeSegment,
     pub release: EnvelopeSegment,
     pub decay_loop: Loop,
-    pub velocity_depth: EnvelopeDepth,
-    pub ks_depth: EnvelopeDepth,
+    pub velocity_depth: i32, // EnvelopeDepth,
+    pub ks_depth: i32, // EnvelopeDepth,
 }
 
 impl Default for Envelope {
@@ -106,18 +114,22 @@ impl Default for Envelope {
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+
         Ok(Self {
             attack: EnvelopeSegment::from_bytes(&data[..2])?,
             decay1: EnvelopeSegment::from_bytes(&data[2..4])?,
             decay2: EnvelopeSegment::from_bytes(&data[4..6])?,
             release: EnvelopeSegment::from_bytes(&data[6..8])?,
             decay_loop: Loop::try_from(data[8]).unwrap(),
-            velocity_depth: EnvelopeDepth::from(data[9]),
-            ks_depth: EnvelopeDepth::from(data[10]),
+            velocity_depth: (depth_desc.incoming)(data[9]),
+            ks_depth: (depth_desc.incoming)(data[10]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.attack.to_bytes());
@@ -127,8 +139,8 @@ impl SystemExclusiveData for Envelope {
         result.extend(
             vec![
                 self.decay_loop as u8,
-                self.velocity_depth.into(),
-                self.ks_depth.into()
+                (depth_desc.outgoing)(self.velocity_depth),
+                (depth_desc.outgoing)(self.ks_depth),
             ]
         );
 
@@ -146,7 +158,8 @@ impl SystemExclusiveData for Envelope {
     Debug, Copy, Clone,
     Eq, PartialEq, 
     Default,
-    TryFromPrimitive
+    TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum Shape {
@@ -158,11 +171,11 @@ pub enum Shape {
 }
 
 /// Formant filter LFO.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Lfo {
-    pub speed: Speed,
+    pub speed: i32, // Speed,
     pub shape: Shape,
-    pub depth: Depth,
+    pub depth: i32 // Depth,
 }
 
 impl Default for Lfo {
@@ -177,18 +190,24 @@ impl Default for Lfo {
 
 impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let speed_desc = DESCRIPTORS.get(&ByteValue::LFOSpeed).unwrap();
+        let depth_desc = DESCRIPTORS.get(&ByteValue::Depth).unwrap();
+
         Ok(Self {
-            speed: Speed::from(data[0]),
+            speed: (speed_desc.incoming)(data[0]),
             shape: Shape::try_from(data[1]).unwrap(),
-            depth: Depth::from(data[2]),
+            depth: (depth_desc.incoming)(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let speed_desc = DESCRIPTORS.get(&ByteValue::LFOSpeed).unwrap();
+        let depth_desc = DESCRIPTORS.get(&ByteValue::Depth).unwrap();
+
         vec![
-            self.speed.into(), 
+            (speed_desc.outgoing)(self.speed), 
             self.shape as u8, 
-            self.depth.into()
+            (depth_desc.outgoing)(self.depth)
         ]
     }
 
@@ -196,10 +215,11 @@ impl SystemExclusiveData for Lfo {
 }
 
 /// Formant filter settings.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FormantFilter {
-    pub bias: Bias,
+    pub bias: i32, // Bias,
     pub mode: Mode,
-    pub envelope_depth: EnvelopeDepth,
+    pub envelope_depth: i32, // EnvelopeDepth,
     pub envelope: Envelope,
     pub lfo: Lfo,
 }
@@ -226,23 +246,29 @@ impl fmt::Display for FormantFilter {
 
 impl SystemExclusiveData for FormantFilter {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let bias_desc = DESCRIPTORS.get(&ByteValue::Bias).unwrap();
+        let ed_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+
         Ok(Self {
-            bias: Bias::from(data[0]),
+            bias: (bias_desc.incoming)(data[0]),
             mode: Mode::try_from(data[1]).unwrap(),
-            envelope_depth: EnvelopeDepth::from(data[2]),
+            envelope_depth: (ed_desc.incoming)(data[2]),
             envelope: Envelope::from_bytes(&data[3..14])?,
             lfo: Lfo::from_bytes(&data[14..])?,
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let bias_desc = DESCRIPTORS.get(&ByteValue::Bias).unwrap();
+        let ed_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(
             vec![
-                self.bias.into(),
+                (bias_desc.outgoing)(self.bias),
                 self.mode as u8,
-                self.envelope_depth.into()
+                (ed_desc.outgoing)(self.envelope_depth),
             ]
         );
         result.extend(self.envelope.to_bytes());

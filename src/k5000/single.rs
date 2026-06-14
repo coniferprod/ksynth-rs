@@ -7,12 +7,18 @@ use std::fmt;
 use std::collections::BTreeMap;
 
 use bit::BitIndex;
+use xml_builder::{XMLBuilder, XMLElement, XMLVersion};
+use serde::{Deserialize, Serialize};
+use serde_xml_rs::{from_str, to_string};
 
+use crate::k5000::ByteValue;
+use crate::k5000::DESCRIPTORS;
 use crate::{
     SystemExclusiveData,
     ParseError,
     Checksum,
-    Ranged,
+    XMLData,
+    make_xml_element,
 };
 use crate::k5000::control::{
     Polyphony,
@@ -28,17 +34,12 @@ use crate::k5000::effect::{
 };
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
-use crate::k5000::{
-    Volume,
-    MacroParameterDepth,
-    PortamentoLevel
-};
 
 /// Portamento setting.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Portamento {
     Off,
-    On(PortamentoLevel)
+    On(i32), // PortamentoLevel
 }
 
 impl fmt::Display for Portamento {
@@ -51,11 +52,11 @@ impl fmt::Display for Portamento {
 }
 
 /// Single patch common data.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Common {
     pub effects: EffectSettings,
     pub name: String,
-    pub volume: Volume,
+    pub volume: i32, // Volume,
     pub polyphony: Polyphony,
     pub source_count: u8,
     pub source_mutes: [bool; 6],
@@ -72,14 +73,19 @@ impl Default for Common {
         Self {
             effects: Default::default(),
             name: "NewSound".to_string(),
-            volume: Volume::new(99),
+            volume: 99,
             polyphony: Polyphony::Poly,
             source_count: 2,
             source_mutes: [false, false, true, true, true, true],
             amplitude_modulation: Default::default(),
             effect_control: Default::default(),
             portamento: Portamento::Off,
-            macros: [Default::default(), Default::default(), Default::default(), Default::default()],
+            macros: [
+                Default::default(), 
+                Default::default(), 
+                Default::default(), 
+                Default::default()
+            ],
             switches: Default::default(),
             geq: [0, 0, 0, 0, 0, 0, 0],
         }
@@ -136,7 +142,8 @@ impl SystemExclusiveData for Common {
         eprintln!("Name = {}", name);
         offset += size;
 
-        let volume = Volume::from(data[offset]);
+        let volume_desc = DESCRIPTORS.get(&ByteValue::Volume).unwrap();
+        let volume = (volume_desc.incoming)(data[offset]);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
@@ -170,8 +177,10 @@ impl SystemExclusiveData for Common {
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
 
+        let por_desc = DESCRIPTORS.get(&ByteValue::PortamentoLevel).unwrap();
+
         let portamento = if data[offset] == 1 {
-            Portamento::On(PortamentoLevel::from(data[offset + 1]))
+            Portamento::On((por_desc.incoming)(data[offset + 1]))
         } else {
             Portamento::Off
         };
@@ -191,33 +200,35 @@ impl SystemExclusiveData for Common {
             offset += 1;
         }
 
+        let depth_desc = DESCRIPTORS.get(&ByteValue::MacroParameterDepth).unwrap();
+        
         let macros: [MacroController; 4] = [
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[0]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[0]),
+                depth1: (depth_desc.incoming)(macro_depths[0]),
                 destination2: ControlDestination::try_from(macro_destinations[1]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[1]),
+                depth2: (depth_desc.incoming)(macro_depths[1]),
             },
 
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[2]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[2]),
+                depth1: (depth_desc.incoming)(macro_depths[2]),
                 destination2: ControlDestination::try_from(macro_destinations[3]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[3]),
+                depth2: (depth_desc.incoming)(macro_depths[3]),
             },
 
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[4]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[4]),
+                depth1: (depth_desc.incoming)(macro_depths[4]),
                 destination2: ControlDestination::try_from(macro_destinations[5]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[5]),
+                depth2: (depth_desc.incoming)(macro_depths[5]),
             },
 
             MacroController {
                 destination1: ControlDestination::try_from(macro_destinations[6]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[6]),
+                depth1: (depth_desc.incoming)(macro_depths[6]),
                 destination2: ControlDestination::try_from(macro_destinations[7]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[7]),
+                depth2: (depth_desc.incoming)(macro_depths[7]),
             },
         ];
 
@@ -246,13 +257,15 @@ impl SystemExclusiveData for Common {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let volume_desc = DESCRIPTORS.get(&ByteValue::Volume).unwrap();
+
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.effects.to_bytes());
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.push(0);  // drum_mark
-        result.extend(self.name.clone().into_bytes());  // note clone()
-        result.push(self.volume.into());  // converts value to u8 on the fly
+        result.extend(self.name.clone().into_bytes());  // note: clone()
+        result.push((volume_desc.outgoing)(self.volume));
         result.push(self.polyphony as u8);
         result.push(0);  // "no use"
         result.push(self.source_count);
@@ -268,6 +281,8 @@ impl SystemExclusiveData for Common {
         result.push(self.amplitude_modulation as u8);
         result.extend(self.effect_control.to_bytes());
 
+        let por_desc = DESCRIPTORS.get(&ByteValue::PortamentoLevel).unwrap();
+
         match self.portamento {
             Portamento::Off => {
                 result.push(0);
@@ -275,7 +290,7 @@ impl SystemExclusiveData for Common {
             },
             Portamento::On(speed) => {
                 result.push(1);
-                result.push(speed.into());
+                result.push((por_desc.outgoing)(speed));
             }
         }
 
@@ -285,9 +300,11 @@ impl SystemExclusiveData for Common {
             result.push(m.destination2 as u8);
         }
 
+        let depth_desc = DESCRIPTORS.get(&ByteValue::MacroParameterDepth).unwrap();
+
         for m in &self.macros {
-            result.push(m.depth1.into()); // -31(33)~+31(95)
-            result.push(m.depth2.into());
+            result.push((depth_desc.outgoing)(m.depth1)); // -31(33)~+31(95)
+            result.push((depth_desc.outgoing)(m.depth2));
         }
 
         result.extend(self.switches.to_bytes());
@@ -298,7 +315,30 @@ impl SystemExclusiveData for Common {
     fn data_size() -> usize { 81 }
 }
 
+/*
+impl XMLData for Common {
+    fn to_xml_named(&self, name: &str) -> XMLElement {
+        let mut e = XMLElement::new(name);
+
+        let name_e = XMLElement::new("name");
+        name_e.add_text(self.name);
+
+        e.add_child(self.effects.to_xml());
+
+        e.add_child(make_xml_element("volume", &self.volume));
+        e.add_child(self.polyphony.to_xml());
+        
+        e
+    }
+
+    fn to_xml(&self) -> XMLElement {
+        self.to_xml_named("common")
+    }
+}
+ */
+
 /// Single patch.
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct SinglePatch {
     pub common: Common,
     pub sources: Vec<Source>,
@@ -358,6 +398,7 @@ impl SinglePatch {
 
         (82 + pcm_source_count * 86 + additive_source_count * 462).try_into().unwrap()
     }
+
 }
 
 impl Checksum for SinglePatch {
@@ -514,6 +555,24 @@ impl fmt::Display for SinglePatch {
 #[cfg(test)]
 mod tests {
     use super::{*};
+    use serde::{Deserialize, Serialize};
+    use serde_xml_rs::{from_str, to_string};
+
+    #[test]
+    fn single_patch_serialized() {
+        let patch: SinglePatch = Default::default();
+        //println!("{}", patch);
+
+        let s = to_string(&patch).unwrap();
+        println!("{}", s);
+    }
+
+    #[test]
+    fn common_serialized() {
+        let patch: SinglePatch = Default::default();
+        let s = to_string(&patch.common).unwrap();
+        println!("{}", s);  
+    }
 
     #[test]
     fn test_common_from_bytes() {

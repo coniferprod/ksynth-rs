@@ -5,6 +5,8 @@ use std::fmt;
 
 use bit::BitIndex;
 use rand::Rng;
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 
 use crate::{
     SystemExclusiveData,
@@ -14,7 +16,7 @@ use crate::{
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
 use crate::k5000::{
-    EnvelopeRate,
+    ByteValue, DESCRIPTORS
 };
 
 /// Harmonic envelope level (0...127, default 0)
@@ -34,12 +36,14 @@ impl From<EnvelopeLevel> for u8 {
     }
 }
 
-pub type Level = u8;
-
 /// Harmonic levels (soft and loud).
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Levels {
-    pub soft: [Level; HARMONIC_COUNT],
-    pub loud: [Level; HARMONIC_COUNT],
+    #[serde(with = "BigArray")]
+    pub soft: [u8; HARMONIC_COUNT],
+
+    #[serde(with = "BigArray")]
+    pub loud: [u8; HARMONIC_COUNT],
 }
 
 impl Default for Levels {
@@ -83,10 +87,10 @@ impl SystemExclusiveData for Levels {
 }
 
 /// Harmonic envelope segment.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnvelopeSegment {
-    pub rate: EnvelopeRate,
-    pub level: EnvelopeLevel,
+    pub rate: i32, // EnvelopeRate,
+    pub level: i32, // EnvelopeLevel,
 }
 
 impl Default for EnvelopeSegment {
@@ -100,21 +104,30 @@ impl Default for EnvelopeSegment {
 
 impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let rate_desc = DESCRIPTORS.get(&ByteValue::EnvelopeRate).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::HarmonicEnvelopeLevel).unwrap();
+
         Ok(Self {
-            rate: EnvelopeRate::from(data[0]),
-            level: EnvelopeLevel::from(data[1]),
+            rate: (rate_desc.incoming)(data[0]),
+            level: (level_desc.incoming)(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.rate.into(), self.level.into()]
+        let rate_desc = DESCRIPTORS.get(&ByteValue::EnvelopeRate).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::HarmonicEnvelopeLevel).unwrap();
+
+        vec![
+            (rate_desc.outgoing)(self.rate), 
+            (level_desc.outgoing)(self.level),
+        ]
     }
 
     fn data_size() -> usize { 2 }
 }
 
 /// Harmonic envelope with four segments and loop type.
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Envelope {
     pub attack: EnvelopeSegment,
     pub decay1: EnvelopeSegment,
@@ -143,18 +156,21 @@ impl Envelope {
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        let segment0_rate = EnvelopeRate::from(data[0]);
-        let segment0_level = EnvelopeLevel::from(data[1] & 0b0011_1111);
-        let segment1_rate = EnvelopeRate::from(data[2]);
-        let segment1_level = EnvelopeLevel::from(data[3] & 0b0011_1111);
+        let rate_desc = DESCRIPTORS.get(&ByteValue::EnvelopeRate).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::HarmonicEnvelopeLevel).unwrap();
+
+        let segment0_rate = (rate_desc.incoming)(data[0]);
+        let segment0_level = (level_desc.incoming)(data[1] & 0b0011_1111);
+        let segment1_rate = (rate_desc.incoming)(data[2]);
+        let segment1_level = (level_desc.incoming)(data[3] & 0b0011_1111);
         let segment1_level_bit6 = data[3].bit(6);
-        let segment2_rate = EnvelopeRate::from(data[4]);
+        let segment2_rate = (rate_desc.incoming)(data[4]);
         let mut segment2_level_byte = data[5];
         let segment2_level_bit6 = data[5].bit(6);
         segment2_level_byte.set_bit(6, false);
-        let segment2_level = EnvelopeLevel::from(segment2_level_byte & 0b0011_1111);
-        let segment3_rate = EnvelopeRate::from(data[6]);
-        let segment3_level = EnvelopeLevel::from(data[7] & 0b0011_1111);
+        let segment2_level = (level_desc.incoming)(segment2_level_byte & 0b0011_1111);
+        let segment3_rate = (rate_desc.incoming)(data[6]);
+        let segment3_level = (level_desc.incoming)(data[7] & 0b0011_1111);
 
         Ok(Self {
             attack: EnvelopeSegment {
@@ -185,6 +201,9 @@ impl SystemExclusiveData for Envelope {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let rate_desc = DESCRIPTORS.get(&ByteValue::EnvelopeRate).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::HarmonicEnvelopeLevel).unwrap();
+
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.attack.to_bytes());
@@ -192,8 +211,8 @@ impl SystemExclusiveData for Envelope {
         // When emitting decay1 and decay2 data,
         // we need to bake the loop type into the levels.
 
-        let mut decay1_level_byte: u8 = self.decay1.level.into();
-        let mut decay2_level_byte: u8 = self.decay2.level.into();
+        let mut decay1_level_byte: u8 = (level_desc.outgoing)(self.decay1.level);
+        let mut decay2_level_byte: u8 = (level_desc.outgoing)(self.decay2.level);
 
         match self.loop_type {
             Loop::Loop1 => {

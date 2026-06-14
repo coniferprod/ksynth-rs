@@ -6,24 +6,20 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use pretty_hex::*;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged,
-    MIDINote,
 };
 use crate::k5000::pitch::Envelope as PitchEnvelope;
-use crate::k5000::{
-    Coarse,
-    Fine
-};
 use crate::k5000::wave::Wave;
 use crate::k5000::source::Key;
 
-/// Fixed key for oscillator.
-#[derive(Debug)]
+/// Fixed key setting for oscillator.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum FixedKey {
+    #[default]
     Off,
     On(Key)
 }
@@ -44,7 +40,7 @@ impl SystemExclusiveData for FixedKey {
             Ok(FixedKey::Off)
         }
         else {
-            Ok(FixedKey::On(Key { note: MIDINote::from(data[0] - 21) }))
+            Ok(FixedKey::On(Key { note: data[0] as i32 - 21 }))
         }
     }
 
@@ -52,7 +48,7 @@ impl SystemExclusiveData for FixedKey {
         match self {
             FixedKey::Off => vec![0x00],
             FixedKey::On(key) => {
-                let b: u8 = key.note.into();
+                let b = key.note as u8;
                 vec![b + 21]
             },
         }
@@ -62,11 +58,11 @@ impl SystemExclusiveData for FixedKey {
 }
 
 /// PCM oscillator.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Oscillator {
     pub wave: Wave,
-    pub coarse: Coarse,
-    pub fine: Fine,
+    pub coarse: i32, // -24...24, default 0
+    pub fine: i32,   // -63...63, default 0
     pub ks_to_pitch: KeyScaling,
     pub fixed_key: FixedKey,
     pub pitch_envelope: PitchEnvelope,
@@ -76,7 +72,7 @@ impl Oscillator {
     /// Makes a new oscillator with default values for PCM.
     pub fn new() -> Oscillator {
         Self {
-            wave: Wave { number: 384 },
+            wave: Default::default(),
             coarse: Default::default(),
             fine: Default::default(),
             ks_to_pitch: KeyScaling::ZeroCent,
@@ -116,8 +112,8 @@ impl SystemExclusiveData for Oscillator {
         eprintln!("OSC data = {}", simple_hex(&data));
         Ok(Oscillator {
             wave: Wave::from_bytes(&[data[0], data[1]])?,
-            coarse: Coarse::from(data[2]),
-            fine: Fine::from(data[3]),
+            coarse: (data[2] as i32) - 64,
+            fine: (data[3] as i32) - 64,
             fixed_key: FixedKey::from_bytes(&[data[4]])?,
             ks_to_pitch: KeyScaling::try_from(data[5]).unwrap(),
             pitch_envelope: PitchEnvelope::from_bytes(&data[6..])?,
@@ -128,8 +124,8 @@ impl SystemExclusiveData for Oscillator {
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.wave.to_bytes());
-        result.push(self.coarse.into());
-        result.push(self.fine.into());
+        result.push((self.coarse + 64) as u8);
+        result.push((self.fine + 64) as u8);
         result.extend(self.fixed_key.to_bytes());
         result.push(self.ks_to_pitch as u8);
         result.extend(self.pitch_envelope.to_bytes());
@@ -145,10 +141,12 @@ impl SystemExclusiveData for Oscillator {
 }
 
 /// Key scaling type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Default, TryFromPrimitive, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum KeyScaling {
+    #[default]
     ZeroCent = 0,
+
     TwentyFiveCent = 1,
     ThirtyTreeCent = 2,
     FiftyCent = 3,

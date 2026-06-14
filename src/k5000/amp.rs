@@ -5,18 +5,14 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use rand::Rng;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
     ParseError,
     Ranged, ranged_impl,
 };
-use crate::k5000::{
-    EnvelopeTime,
-    ControlTime,
-    KeyScaling,
-    VelocityControlLevel
-};
+use crate::k5000::{DESCRIPTORS, ByteValue};
 use crate::k5000::control::VelocityCurve;
 
 // Amplifier envelope level is different from the other
@@ -42,14 +38,14 @@ impl From<EnvelopeLevel> for u8 {
 }
 
 /// Amplifier envelope.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Envelope {
-    pub attack_time: EnvelopeTime,
-    pub decay1_time: EnvelopeTime,
-    pub decay1_level: EnvelopeLevel,
-    pub decay2_time: EnvelopeTime,
-    pub decay2_level: EnvelopeLevel,
-    pub release_time: EnvelopeTime,
+    pub attack_time: i32, // EnvelopeTime,
+    pub decay1_time: i32, // EnvelopeTime,
+    pub decay1_level: i32, // EnvelopeLevel,
+    pub decay2_time: i32, // EnvelopeTime,
+    pub decay2_level: i32, // EnvelopeLevel,
+    pub release_time: i32, // EnvelopeTime,
 }
 
 impl Envelope {
@@ -82,24 +78,30 @@ impl fmt::Display for Envelope {
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let time_desc = DESCRIPTORS.get(&ByteValue::EnvelopeTime).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::AmplifierEnvelopeLevel).unwrap();
+
         Ok(Envelope {
-            attack_time: EnvelopeTime::from(data[0]),
-            decay1_time: EnvelopeTime::from(data[1]),
-            decay1_level: EnvelopeLevel::from(data[2]),
-            decay2_time: EnvelopeTime::from(data[3]),
-            decay2_level: EnvelopeLevel::from(data[4]),
-            release_time: EnvelopeTime::from(data[5]),
+            attack_time: (time_desc.incoming)(data[0]),
+            decay1_time: (time_desc.incoming)(data[1]),
+            decay1_level: (level_desc.incoming)(data[2]),
+            decay2_time: (time_desc.incoming)(data[3]),
+            decay2_level: (level_desc.incoming)(data[4]),
+            release_time: (time_desc.incoming)(data[5]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let time_desc = DESCRIPTORS.get(&ByteValue::EnvelopeTime).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::AmplifierEnvelopeLevel).unwrap();
+
         vec![
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.decay1_level.into(),
-            self.decay2_time.into(),
-            self.decay2_level.into(),
-            self.release_time.into()
+            (time_desc.outgoing)(self.attack_time),
+            (time_desc.outgoing)(self.decay1_time),
+            (level_desc.outgoing)(self.decay1_level),
+            (time_desc.outgoing)(self.decay2_time),
+            (level_desc.outgoing)(self.decay2_level),
+            (time_desc.outgoing)(self.release_time),
         ]
     }
 
@@ -107,12 +109,12 @@ impl SystemExclusiveData for Envelope {
 }
 
 /// Amplifier key scaling control.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeyScalingControl {
-    pub level: KeyScaling,
-    pub attack_time: ControlTime,
-    pub decay1_time: ControlTime,
-    pub release: ControlTime,
+    pub level: i32, // KeyScaling,
+    pub attack_time: i32, // ControlTime,
+    pub decay1_time: i32, // ControlTime,
+    pub release: i32, // ControlTime,
 }
 
 impl Default for KeyScalingControl {
@@ -136,20 +138,26 @@ impl fmt::Display for KeyScalingControl {
 
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(KeyScalingControl {
-            level: KeyScaling::from(data[0]),
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
-            release: ControlTime::from(data[3]),
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScaling).unwrap();
+        let ct_desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
+        Ok(Self {
+            level: (ks_desc.incoming)(data[0]),
+            attack_time: (ct_desc.incoming)(data[1]),
+            decay1_time: (ct_desc.incoming)(data[2]),
+            release: (ct_desc.incoming)(data[3]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScaling).unwrap();
+        let ct_desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
         vec![
-            self.level.into(),
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.release.into()
+            (ks_desc.outgoing)(self.level),
+            (ct_desc.outgoing)(self.attack_time),
+            (ct_desc.outgoing)(self.decay1_time),
+            (ct_desc.outgoing)(self.release),
         ]
     }
 
@@ -157,17 +165,17 @@ impl SystemExclusiveData for KeyScalingControl {
 }
 
 /// Amplifier velocity control.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VelocityControl {
-    pub level: VelocityControlLevel,
-    pub attack_time: ControlTime,
-    pub decay1_time: ControlTime,
-    pub release: ControlTime,
+    pub level: i32, // VelocityControlLevel,
+    pub attack_time: i32, // ControlTime,
+    pub decay1_time: i32, // ControlTime,
+    pub release: i32, // ControlTime,
 }
 
 impl Default for VelocityControl {
     fn default() -> Self {
-        VelocityControl {
+        Self {
             level: Default::default(),
             attack_time: Default::default(),
             decay1_time: Default::default(),
@@ -186,20 +194,26 @@ impl fmt::Display for VelocityControl {
 
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(VelocityControl {
-            level: VelocityControlLevel::from(data[0]),
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
-            release: ControlTime::from(data[3]),
+        let vcl_desc = DESCRIPTORS.get(&ByteValue::VelocityControlLevel).unwrap();
+        let ct_desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
+        Ok(Self {
+            level: (vcl_desc.incoming)(data[0]),
+            attack_time: (ct_desc.incoming)(data[1]),
+            decay1_time: (ct_desc.incoming)(data[2]),
+            release: (ct_desc.incoming)(data[3]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let vcl_desc = DESCRIPTORS.get(&ByteValue::VelocityControlLevel).unwrap();
+        let ct_desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
         vec![
-            self.level.into(),
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.release.into()
+            (vcl_desc.outgoing)(self.level),
+            (ct_desc.outgoing)(self.attack_time),
+            (ct_desc.outgoing)(self.decay1_time),
+            (ct_desc.outgoing)(self.release),
         ]
     }
 
@@ -207,7 +221,7 @@ impl SystemExclusiveData for VelocityControl {
 }
 
 /// Modulation settings for the amplifier section.
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_sens: VelocityControl,
@@ -245,7 +259,7 @@ impl SystemExclusiveData for Modulation {
 }
 
 /// Amplifier.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Amplifier {
     pub velocity_curve: VelocityCurve,  // 1...12 (stored as 0~11)
     pub envelope: Envelope,
@@ -254,7 +268,7 @@ pub struct Amplifier {
 
 impl Default for Amplifier {
     fn default() -> Self {
-        Amplifier {
+        Self {
             velocity_curve: VelocityCurve::Curve1,
             envelope: Default::default(),
             modulation: Default::default(),
@@ -272,7 +286,7 @@ impl fmt::Display for Amplifier {
 
 impl SystemExclusiveData for Amplifier {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Amplifier {
+        Ok(Self {
             velocity_curve: VelocityCurve::try_from(data[0]).unwrap(),  // 0-11 to enum
             envelope: Envelope::from_bytes(&data[1..7])?,
             modulation: Modulation::from_bytes(&data[7..15])?,

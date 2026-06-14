@@ -1,6 +1,9 @@
 //! Data model for the "additive kit" used by an ADD source.
 //!
 
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
+
 use crate::{
     SystemExclusiveData,
     ParseError,
@@ -23,12 +26,16 @@ pub const HARMONIC_COUNT: usize = 64;
 pub const BAND_COUNT: usize = 128;
 
 /// Additive kit.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AdditiveKit {
     pub common: HarmonicCommon,
     pub morf: MorfHarmonic,
     pub formant_filter: FormantFilter,
     pub levels: Levels,
+
+    #[serde(with = "BigArray")]
     pub bands: [u8; BAND_COUNT],
+
     pub envelopes: Vec::<HarmonicEnvelope>,
 }
 

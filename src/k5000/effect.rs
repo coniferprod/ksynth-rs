@@ -7,17 +7,17 @@ use std::collections::HashMap;
 
 use num_enum::TryFromPrimitive;
 use lazy_static::lazy_static;
+use xml_builder::{XMLBuilder, XMLElement, XMLVersion};
+use serde::{Serialize, Deserialize};
+use serde_big_array::BigArray;
 
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged,
+    XMLData,
+    make_xml_element,
 };
-use crate::k5000::control;
-use crate::k5000::{
-    EffectParameter,
-    Depth
-};
+use crate::k5000::{ByteValue, DESCRIPTORS, control};
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16
@@ -74,7 +74,8 @@ static EFFECT_NAMES: &[&str] = &[
 #[derive(
     Debug, Copy, Clone, 
     Eq, PartialEq, Hash,
-    Default, TryFromPrimitive
+    Default, TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum Effect {
@@ -195,11 +196,14 @@ lazy_static! {
 #[derive(
     Debug, Copy, Clone, 
     Eq, PartialEq, Hash,
-    TryFromPrimitive
+    Default, TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum EffectAlgorithm {
+    #[default]
     Algorithm1,
+
     Algorithm2,
     Algorithm3,
     Algorithm4,
@@ -216,29 +220,35 @@ impl fmt::Display for EffectAlgorithm {
     }
 }
 
+const PARAMETER_COUNT: usize = 4;
+
 /// Effect definition.
-#[derive(Debug)]
+#[derive(
+    Debug, Clone, Copy, 
+    PartialEq, Eq,
+    Serialize, Deserialize
+)]
 pub struct EffectDefinition {
     pub effect: Effect,  // reverb = 0~10, others = 11~47
-    pub depth: Depth,  // 0~100
-    pub parameter1: EffectParameter,  // 0~127
-    pub parameter2: EffectParameter,
-    pub parameter3: EffectParameter,
-    pub parameter4: EffectParameter,
+    pub depth: i32, // Depth,  // 0~100
+
+    pub parameters: [i32; PARAMETER_COUNT],  // EffectParameter,  // 0~127
 }
 
 impl fmt::Display for EffectDefinition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}, depth = {}, {} = {}, {} = {}, {} = {}, {} = {}",
+        let _ = write!(f, 
+            "{}, depth = {}",
             EFFECT_NAMES[self.effect as usize],
-            self.depth.value(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.parameter1.value(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.parameter2.value(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.parameter3.value(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[3], self.parameter4.value()
-        )
+            self.depth);
+
+        for i in 0..PARAMETER_COUNT {
+            let _ = write!(f, 
+                "{} = {}", 
+                EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[i],
+                self.parameters[i]);
+        }
+        writeln!(f, "")
     }
 }
 
@@ -246,11 +256,8 @@ impl Default for EffectDefinition {
     fn default() -> Self {
         Self {
             effect: Default::default(),
-            depth: Depth::new(0),
-            parameter1: EffectParameter::new(0),
-            parameter2: EffectParameter::new(0),
-            parameter3: EffectParameter::new(0),
-            parameter4: EffectParameter::new(0),
+            depth: Default::default(),
+            parameters: [Default::default(); PARAMETER_COUNT],
         }
     }
 }
@@ -258,45 +265,60 @@ impl Default for EffectDefinition {
 impl SystemExclusiveData for EffectDefinition {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectDefinition, data = {:02X?}", data);
-        Ok(EffectDefinition {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::Depth).unwrap();
+        let param_desc = DESCRIPTORS.get(&ByteValue::EffectParameter).unwrap();
+
+        Ok(Self {
             effect: Effect::try_from(data[0]).unwrap(),  // 11~47
-            depth: Depth::from(data[1]),
-            parameter1: EffectParameter::from(data[2]),
-            parameter2: EffectParameter::from(data[3]),
-            parameter3: EffectParameter::from(data[4]),
-            parameter4: EffectParameter::from(data[5]),
+            depth: (depth_desc.incoming)(data[1]),
+            parameters: [
+                (param_desc.incoming)(data[2]),
+                (param_desc.incoming)(data[3]),
+                (param_desc.incoming)(data[4]),
+                (param_desc.incoming)(data[5]),
+            ],
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::Depth).unwrap();
+        let param_desc = DESCRIPTORS.get(&ByteValue::EffectParameter).unwrap();
+
         vec![
             self.effect as u8,
-            self.depth.into(),
-            self.parameter1.into(),
-            self.parameter2.into(),
-            self.parameter3.into(),
-            self.parameter4.into()
+            (depth_desc.outgoing)(self.depth),
+            (param_desc.outgoing)(self.parameters[0]),
+            (param_desc.outgoing)(self.parameters[1]),
+            (param_desc.outgoing)(self.parameters[2]),
+            (param_desc.outgoing)(self.parameters[3]),
         ]
     }
 
     fn data_size() -> usize { 6 }
 }
 
+const EFFECT_COUNT: usize = 4;
+
 /// Effect settings.
-#[derive(Debug)]
+#[derive(
+    Debug, Copy, Clone, 
+    PartialEq, Eq,
+    Serialize, Deserialize,
+)]
 pub struct EffectSettings {
     pub algorithm: EffectAlgorithm,  // 0~3
     pub reverb: EffectDefinition,
-    pub effect1: EffectDefinition,
-    pub effect2: EffectDefinition,
-    pub effect3: EffectDefinition,
-    pub effect4: EffectDefinition,
+    pub effects: [EffectDefinition; EFFECT_COUNT],
 }
 
 impl fmt::Display for EffectSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Algorithm: {}\nReverb: {}\nEffect1: {}\nEffect2: {}\nEffect3: {}\nEffect 4: {}\n",
-            self.algorithm, self.reverb, self.effect1, self.effect2, self.effect3, self.effect4)
+        let _ = writeln!(f, "Algorithm: {}", self.algorithm);
+        let _ = writeln!(f, "Reverb: {}", self.reverb);
+        for i in 0..EFFECT_COUNT {
+            let _ = writeln!(f, "Effect{}: {}", i + 1, self.effects[i]);
+        }
+        write!(f, "")
     }
 }
 
@@ -305,10 +327,7 @@ impl Default for EffectSettings {
         Self {
             algorithm: EffectAlgorithm::Algorithm1,
             reverb: Default::default(),
-            effect1: Default::default(),
-            effect2: Default::default(),
-            effect3: Default::default(),
-            effect4: Default::default(),
+            effects: [Default::default(); EFFECT_COUNT],
         }
     }
 }
@@ -316,13 +335,16 @@ impl Default for EffectSettings {
 impl SystemExclusiveData for EffectSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectSettings, data = {:02X?}", data);
-        Ok(EffectSettings {
+        let effects = [
+            EffectDefinition::from_bytes(&data[7..13])?,
+            EffectDefinition::from_bytes(&data[13..19])?,
+            EffectDefinition::from_bytes(&data[19..25])?,
+            EffectDefinition::from_bytes(&data[25..31])?,
+        ];
+        Ok(Self {
             algorithm: EffectAlgorithm::try_from(data[0]).unwrap(),  // 0~3 to enum
             reverb: EffectDefinition::from_bytes(&data[1..7])?,
-            effect1: EffectDefinition::from_bytes(&data[7..13])?,
-            effect2: EffectDefinition::from_bytes(&data[13..19])?,
-            effect3: EffectDefinition::from_bytes(&data[19..25])?,
-            effect4: EffectDefinition::from_bytes(&data[25..31])?,
+            effects, 
         })
     }
 
@@ -332,10 +354,9 @@ impl SystemExclusiveData for EffectSettings {
         result.push(self.algorithm as u8); // enum raw value maps to 0~3
 
         result.extend(self.reverb.to_bytes());
-        result.extend(self.effect1.to_bytes());
-        result.extend(self.effect2.to_bytes());
-        result.extend(self.effect3.to_bytes());
-        result.extend(self.effect4.to_bytes());
+        for i in 0..EFFECT_COUNT {
+            result.extend(self.effects[i].to_bytes());
+        }
 
         result
     }
@@ -343,11 +364,38 @@ impl SystemExclusiveData for EffectSettings {
     fn data_size() -> usize { 31 }
 }
 
+/*
+impl XMLData for EffectSettings {
+    fn to_xml(&self) -> XMLElement {
+        self.to_xml_named("effect-settings")
+    }
+
+    fn to_xml_named(&self, name: &str) -> XMLElement {
+        let mut e = XMLElement::new(name);
+
+        let alg_e = XMLElement::new("algoritnm");
+        e.add_text(match self.algorithm {
+            EffectAlgorithm::Algorithm1 => "1".to_string(),
+            EffectAlgorithm::Algorithm2 => "2".to_string(),
+            EffectAlgorithm::Algorithm3 => "3".to_string(),
+            EffectAlgorithm::Algorithm4 => "4".to_string(),
+        });
+        e.add_child(alg_e);
+
+        let reverb_e = XMLElement::new("reverb");
+
+        e.add_child(reverb_e);
+        e
+    }
+}
+ */
+
 /// Effect destinations.
 #[derive(
     Debug, Copy, Clone, 
     Eq, PartialEq, 
-    Default, TryFromPrimitive
+    Default, TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum EffectDestination {
@@ -364,27 +412,31 @@ pub enum EffectDestination {
 }
 
 /// Effect control source.
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ControlSource {
     pub source: control::ControlSource,  // 0~13
     pub destination: EffectDestination,  // 0~9
-    pub depth: Depth, // (-31)33~(+31)95
+    pub depth: i32, // Depth, // (-31)33~(+31)95
 }
 
 impl SystemExclusiveData for ControlSource {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::Depth).unwrap();
+
         Ok(Self {
             source: control::ControlSource::try_from(data[0]).unwrap(),
             destination: EffectDestination::try_from(data[1]).unwrap(),
-            depth: Depth::from(data[2]),
+            depth: (depth_desc.incoming)(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::Depth).unwrap();
+
         vec![
             self.source as u8, 
             self.destination as u8, 
-            self.depth.into()
+            (depth_desc.outgoing)(self.depth),
         ]
     }
 
@@ -392,7 +444,7 @@ impl SystemExclusiveData for ControlSource {
 }
 
 /// Effect control with two sources.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EffectControl {
     pub source1: ControlSource,
     pub source2: ControlSource,
@@ -420,15 +472,52 @@ impl SystemExclusiveData for EffectControl {
 mod tests {
     use super::{*};
 
+    use serde::{Deserialize, Serialize};
+    use serde_xml_rs::{from_str, to_string};
+
+    #[test]
+    fn test_serialize_effect_settings() {
+        let e: EffectSettings = Default::default();
+        println!("{}", e);
+        match to_string(&e) {
+            Ok(s) => println!("EffectSettings as XML = {}", s),
+            Err(e) => eprintln!("error serializing EffectSettings: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_serialize_effect() {
+        let e: Effect = Default::default();
+        match to_string(&e) {
+            Ok(s) => println!("Effect as XML = {}", s),
+            Err(e) => eprintln!("error serializing Effect: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_serialize_effect_definition() {
+        let e: EffectDefinition = Default::default();
+        match to_string(&e) {
+            Ok(s) => println!("EffectDefinition as XML = {}", s),
+            Err(e) => eprintln!("error serializing EffectDefinition: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_serialize_effect_algorithm() {
+        let e: EffectAlgorithm = Default::default();
+        match to_string(&e) {
+            Ok(s) => println!("EffectAlgorithm as XML = {}", s),
+            Err(e) => eprintln!("error serializing EffectAlgorithm: {}", e),
+        }
+    }
+
     #[test]
     fn test_effect_parameter_names() {
         let effect = EffectDefinition {
             effect: Effect::Hall1,
-            depth: Depth::new(100),
-            parameter1: EffectParameter::new(7),
-            parameter2: EffectParameter::new(5),
-            parameter3: EffectParameter::new(31),
-            parameter4: EffectParameter::new(0),
+            depth: 100,
+            parameters: [7, 5, 31, 0],
         };
 
         if let Some(param_names) = EFFECT_PARAMETER_NAMES.get(&effect.effect) {
@@ -462,6 +551,6 @@ mod tests {
         ];
 
         let effect_settings = EffectSettings::from_bytes(&data);
-        assert_eq!(effect_settings.unwrap().effect4.parameter3.value(), 0x63);
+        assert_eq!(effect_settings.unwrap().effects[3].parameters[2], 0x63);
     }
 }

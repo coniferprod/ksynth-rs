@@ -20,3 +20,7 @@ pretty-hex = "0.4.1"  # https://crates.io/crates/pretty-hex
 nutype = "0.4.3"  # https://crates.io/crates/nutype
 strum = "0.27.2"  # https://crates.io/crates/strum
 strum_macros = "0.27.2"  # https://crates.io/crates/strum_macros
+xml-builder = "0.6.0" # https://crates.io/crates/xml-builder
+serde = { version = "1.0.228", features = ["derive"] } # https://crates.io/crates/serde
+serde-xml-rs = "0.8.2" # https://crates.io/crates/serde-xml-rs
+serde-big-array = "0.5.1"

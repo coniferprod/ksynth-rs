@@ -3,6 +3,8 @@
 
 use std::fmt;
 
+use serde::{Serialize, Deserialize};
+
 use crate::{
     SystemExclusiveData,
     ParseError
@@ -496,14 +498,15 @@ static WAVE_NAMES: &[&str] = &[
     /* 464 */ "Omnibus Loop 8"
 ];
 
-#[derive(Copy, Clone, Debug)]
+/// Oscillator waveform (additive or PCM).
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Wave {
-    pub number: u16,  // 1~512
+    pub number: u16,  // 1~512, but actually {1...464, 512}
 }
 
 impl Default for Wave {
     fn default() -> Self {
-        Self { number: 411 }
+        Self { number: 411 }  // "Syn Saw1 Cyc"
     }
 }
 
@@ -569,6 +572,9 @@ impl SystemExclusiveData for Wave {
 mod tests {
     use super::{*};
 
+    use serde::{Deserialize, Serialize};
+    use serde_xml_rs::{from_str, to_string};
+
     #[test]
     fn test_wave_name() {
         let wave = Wave { number: 411 };
@@ -597,5 +603,13 @@ mod tests {
     fn test_add_wave_to_bytes() {
         let wave = Wave { number: 512 };
         assert_eq!(wave.to_bytes(), vec![0x04, 0x00]);
+    }
+
+    #[test]
+    fn test_serialize_wave() {
+        let wave = Wave { number: 512 };
+        let s = to_string(&wave).unwrap();
+        println!("wave as XML = {}", s);
+        assert!(true);
     }
 }

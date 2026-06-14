@@ -5,20 +5,19 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    VelocityDepth,
-    EnvelopeTime,
-    KeyScalingToGain
+    ByteValue, DESCRIPTORS
 };
 use crate::k5000::control::VelocityCurve;
 
 /// Harmonic group.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum HarmonicGroup {
     #[default]
@@ -34,13 +33,14 @@ impl fmt::Display for HarmonicGroup {
 }
 
 /// Harmonic common settings.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HarmonicCommon {
     pub morf_enabled: bool,
     pub total_gain: u8,
     pub group: HarmonicGroup,
-    pub ks_to_gain: KeyScalingToGain,
+    pub ks_to_gain: i32, // KeyScalingToGain,
     pub velocity_curve: VelocityCurve,
-    pub velocity_depth: VelocityDepth,
+    pub velocity_depth: i32, // VelocityDepth,
 }
 
 impl Default for HarmonicCommon {
@@ -66,24 +66,30 @@ impl fmt::Display for HarmonicCommon {
 
 impl SystemExclusiveData for HarmonicCommon {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScalingToGain).unwrap();
+        let vd_desc = DESCRIPTORS.get(&ByteValue::VelocityDepth).unwrap();
+
         Ok(Self {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
             group: HarmonicGroup::try_from(data[2]).unwrap(),
-            ks_to_gain: KeyScalingToGain::from(data[3]),
+            ks_to_gain: (ks_desc.incoming)(data[3]),
             velocity_curve: VelocityCurve::try_from(data[4]).unwrap(), // 0~11 maps to enum
-            velocity_depth: VelocityDepth::from(data[5]),
+            velocity_depth: (vd_desc.incoming)(data[5]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScalingToGain).unwrap();
+        let vd_desc = DESCRIPTORS.get(&ByteValue::VelocityDepth).unwrap();
+
         vec![
             if self.morf_enabled { 1 } else { 0 },
             self.total_gain,
             self.group as u8,
-            self.ks_to_gain.into(),
+            (ks_desc.outgoing)(self.ks_to_gain),
             self.velocity_curve as u8,
-            self.velocity_depth.into(),
+            (vd_desc.outgoing)(self.velocity_depth),
         ]
     }
 
@@ -91,7 +97,7 @@ impl SystemExclusiveData for HarmonicCommon {
 }
 
 /// MORF harmonic copy parameters.
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct MorfHarmonicCopyParameters {
     pub patch_number: u8,
     pub source_number: u8,
@@ -120,7 +126,7 @@ impl SystemExclusiveData for MorfHarmonicCopyParameters {
 }
 
 /// MORF harmonic envelope loop type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Loop {
     #[default]
@@ -141,21 +147,28 @@ impl fmt::Display for Loop {
 }
 
 /// MORF harmonic envelope.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MorfHarmonicEnvelope {
+    pub times: [i32; 4], // EnvelopeTime
+    /*
     pub time1: EnvelopeTime,
     pub time2: EnvelopeTime,
     pub time3: EnvelopeTime,
     pub time4: EnvelopeTime,
+     */
     pub loop_type: Loop,
 }
 
 impl Default for MorfHarmonicEnvelope {
     fn default() -> Self {
         Self {
+            times: [Default::default(); 4],
+            /*
             time1: Default::default(),
             time2: Default::default(),
             time3: Default::default(),
             time4: Default::default(),
+             */
             loop_type: Default::default(),
         }
     }
@@ -164,28 +177,32 @@ impl Default for MorfHarmonicEnvelope {
 impl fmt::Display for MorfHarmonicEnvelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Time1={} Time2={} Time3={} Time4={} Loop={}",
-            self.time1, self.time2, self.time3, self.time4,
+            self.times[0], self.times[1], self.times[2], self.times[3],
             self.loop_type)
     }
 }
 
 impl SystemExclusiveData for MorfHarmonicEnvelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let time_desc = DESCRIPTORS.get(&ByteValue::EnvelopeTime).unwrap();
         Ok(Self {
-            time1: EnvelopeTime::from(data[0]),
-            time2: EnvelopeTime::from(data[1]),
-            time3: EnvelopeTime::from(data[2]),
-            time4: EnvelopeTime::from(data[3]),
+            times: [
+                (time_desc.incoming)(data[0]),
+                (time_desc.incoming)(data[1]),
+                (time_desc.incoming)(data[2]),
+                (time_desc.incoming)(data[3]),
+            ],
             loop_type: Loop::try_from(data[4]).unwrap(),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let time_desc = DESCRIPTORS.get(&ByteValue::EnvelopeTime).unwrap();
         vec![
-            self.time1.into(),
-            self.time2.into(),
-            self.time3.into(),
-            self.time4.into(),
+            (time_desc.outgoing)(self.times[0]),
+            (time_desc.outgoing)(self.times[1]),
+            (time_desc.outgoing)(self.times[2]),
+            (time_desc.outgoing)(self.times[3]),
             self.loop_type as u8,
         ]
     }
@@ -194,7 +211,7 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
 }
 
 /// MORF harmonic settings.
-#[derive(Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct MorfHarmonic {
     pub copy1: MorfHarmonicCopyParameters,
     pub copy2: MorfHarmonicCopyParameters,

@@ -7,15 +7,14 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 use strum_macros;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    MacroParameterDepth,
-    Pan,
-    ControlDepth
+    ByteValue, DESCRIPTORS,
 };
 
 /// Velocity switch settings.
@@ -23,7 +22,8 @@ use crate::k5000::{
     Debug, Eq, PartialEq, Copy, Clone, 
     Default,
     TryFromPrimitive, 
-    strum_macros::Display
+    strum_macros::Display,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum VelocitySwitch {
@@ -36,7 +36,7 @@ pub enum VelocitySwitch {
 }
 
 /// Velocity switch settings.
-#[derive(Default, Debug)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VelocitySwitchSettings {
     pub switch_type: VelocitySwitch,
     pub threshold: u8,
@@ -100,7 +100,8 @@ impl SystemExclusiveData for VelocitySwitchSettings {
     Copy, Clone,
     TryFromPrimitive,
     Default,
-    strum_macros::Display
+    strum_macros::Display,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum ControlSource {
@@ -154,7 +155,8 @@ pub enum ControlSource {
     Copy, Clone,
     TryFromPrimitive,
     Default,
-    strum_macros::Display
+    strum_macros::Display,
+    Serialize, Deserialize
 )]
 #[repr(u8)]
 pub enum ControlDestination {
@@ -221,12 +223,12 @@ pub enum ControlDestination {
 }
 
 /// Macro controller.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MacroController {
     pub destination1: ControlDestination,
-    pub depth1: MacroParameterDepth,
+    pub depth1: i32, // MacroParameterDepth,
     pub destination2: ControlDestination,
-    pub depth2: MacroParameterDepth,
+    pub depth2: i32, // MacroParameterDepth,
 }
 
 impl Default for MacroController {
@@ -252,20 +254,24 @@ impl SystemExclusiveData for MacroController {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("MacroController from bytes {:?}", data);
 
+        let mpd_desc = DESCRIPTORS.get(&ByteValue::MacroParameterDepth).unwrap();
+        
         Ok(MacroController {
             destination1: ControlDestination::try_from(data[0]).unwrap(),
-            depth1: MacroParameterDepth::from(data[1]),
+            depth1: (mpd_desc.incoming)(data[1]),
             destination2: ControlDestination::try_from(data[2]).unwrap(),
-            depth2: MacroParameterDepth::from(data[3]),
+            depth2: (mpd_desc.incoming)(data[3]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let mpd_desc = DESCRIPTORS.get(&ByteValue::MacroParameterDepth).unwrap();
+
         vec![
             self.destination1 as u8,
-            self.depth1.into(),
+            (mpd_desc.outgoing)(self.depth1),
             self.destination2 as u8,
-            self.depth2.into()
+            (mpd_desc.outgoing)(self.depth2),
         ]
     }
 
@@ -273,27 +279,31 @@ impl SystemExclusiveData for MacroController {
 }
 
 /// Assignable controller.
-#[derive(Default, Debug)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AssignableController {
     pub source: ControlSource,
     pub destination: ControlDestination,
-    pub depth: ControlDepth,
+    pub depth: i32, // ControlDepth,
 }
 
 impl SystemExclusiveData for AssignableController {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(AssignableController {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::ControlDepth).unwrap();
+
+        Ok(Self {
             source: ControlSource::try_from(data[0]).unwrap(),
             destination: ControlDestination::try_from(data[1]).unwrap(),
-            depth: ControlDepth::from(data[2]),
+            depth: (depth_desc.incoming)(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::ControlDepth).unwrap();
+
         vec![
             self.source as u8, 
             self.destination as u8, 
-            self.depth.into()
+            (depth_desc.outgoing)(self.depth)
         ]
     }
 
@@ -301,7 +311,7 @@ impl SystemExclusiveData for AssignableController {
 }
 
 /// Modulation settings.
-#[derive(Default, Debug)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModulationSettings {
     pub pressure: MacroController,
     pub wheel: MacroController,
@@ -344,7 +354,9 @@ impl SystemExclusiveData for ModulationSettings {
     Debug, Eq, PartialEq, Copy, Clone,
     Default,
     TryFromPrimitive,
-    strum_macros::Display
+    strum_macros::Display,
+    Serialize,
+    Deserialize,
 )]
 #[repr(u8)]
 pub enum PanKind {
@@ -361,31 +373,38 @@ pub enum PanKind {
 }
 
 /// Pan settings.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PanSettings {
-    pub pan_type: PanKind,
-    pub pan_value: Pan,
+    pub kind: PanKind,
+    pub value: i32, // Pan,
 }
 
 impl Default for PanSettings {
     fn default() -> Self {
         PanSettings {
-            pan_type: Default::default(),
-            pan_value: Default::default(),
+            kind: Default::default(),
+            value: Default::default(),
         }
     }
 }
 
 impl SystemExclusiveData for PanSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(PanSettings {
-            pan_type: PanKind::try_from(data[0]).unwrap(),
-            pan_value: Pan::from(data[1]),
+        let pan_desc = DESCRIPTORS.get(&ByteValue::Pan).unwrap();
+
+        Ok(Self {
+            kind: PanKind::try_from(data[0]).unwrap(),
+            value: (pan_desc.incoming)(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.pan_type as u8, self.pan_value.into()]
+        let pan_desc = DESCRIPTORS.get(&ByteValue::Pan).unwrap();
+
+        vec![
+            self.kind as u8, 
+            (pan_desc.outgoing)(self.value)
+        ]
     }
 
     fn data_size() -> usize { 2 }
@@ -394,7 +413,8 @@ impl SystemExclusiveData for PanSettings {
 /// Switch kind.
 #[derive(
     Debug, Eq, PartialEq, Copy, Clone, Default,
-    TryFromPrimitive
+    TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum Switch {
@@ -444,7 +464,7 @@ impl fmt::Display for Switch {
 }
 
 /// Switch control settings.
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SwitchControl {
     pub switch1: Switch,
     pub switch2: Switch,
@@ -473,7 +493,8 @@ impl SystemExclusiveData for SwitchControl {
 #[derive(
     Debug, Copy, Clone,
     Eq, PartialEq, 
-    TryFromPrimitive
+    TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum Polyphony {
@@ -495,7 +516,8 @@ impl fmt::Display for Polyphony {
 /// Amplitude modulation kind.
 #[derive(
     Debug, Copy, Clone, Eq, PartialEq, Default, 
-    TryFromPrimitive
+    TryFromPrimitive,
+    Serialize, Deserialize,
 )]
 #[repr(u8)]
 pub enum AmplitudeModulation {
@@ -523,7 +545,7 @@ impl fmt::Display for AmplitudeModulation {
 }
 
 /// Velocity curve.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum VelocityCurve {
     Curve1,

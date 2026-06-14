@@ -1,7 +1,10 @@
 use std::fmt;
-use rand::Rng;
+use std::collections::HashMap;
 
-use crate::{Ranged, ranged_impl};
+use rand::Rng;
+use lazy_static::lazy_static;
+
+//use crate::{Ranged, ranged_impl};
 
 pub mod filter;
 pub mod amp;
@@ -23,6 +26,7 @@ pub mod sysex;
 /// Length of patch name
 pub const NAME_LENGTH: usize = 8;
 
+/*
 /// Volume of patch (0...127, default 0).
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Volume(i32);
@@ -514,6 +518,441 @@ impl From<KeyScaling> for u8 {
     fn from(value: KeyScaling) -> Self {
         (value.value() + 64) as u8
     }
+}
+*/
+
+/// Byte-sized values from and to SysEx.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum ByteValue {
+    Volume, // 0...127, default 0
+    BenderPitch, // 0...24, default 0
+    BenderCutoff,
+    EnvelopeTime,
+    EnvelopeLevel,
+    EnvelopeRate,
+    ControlTime,
+    EnvelopeDepth,
+    EffectParameter,
+    Cutoff,
+    Resonance,
+    Level,
+    PitchEnvelopeLevel,
+    PitchEnvelopeTime,
+    VelocityDepth,
+    VelocityControlLevel,
+    PortamentoLevel,
+    KeyOnDelay,
+    VelocitySensitivity,
+    ControlDepth,
+    Depth,
+    Pan,
+    KeyScalingToGain,
+    Coarse,
+    Fine,
+    MacroParameterDepth,
+    PatchNumber,
+    Transpose,
+    KeyScaling,
+    AmplifierEnvelopeLevel,
+    Bias,
+    HarmonicEnvelopeLevel,
+    LFOSpeed,
+    LFODepth,
+}
+
+type IncomingFn = fn(u8) -> i32;
+type OutgoingFn = fn(i32) -> u8;
+
+/// Descriptors of byte values.
+pub struct ByteValueDescriptor {
+    pub name: String,  // XML element name (kebab-cased)
+    pub first: i32,
+    pub last: i32,
+    pub default: i32,
+    pub incoming: IncomingFn,
+    pub outgoing: OutgoingFn,
+}
+
+lazy_static! {
+    static ref DESCRIPTORS: HashMap<ByteValue, ByteValueDescriptor> = {
+        let mut m = HashMap::new();
+
+        m.insert(ByteValue::Volume,
+            ByteValueDescriptor { 
+                name: "volume".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::BenderPitch,
+            ByteValueDescriptor { 
+                name: "bender-pitch".to_string(),
+                first: 0,
+                last: 24,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::BenderCutoff,
+            ByteValueDescriptor { 
+                name: "bender-cutoff".to_string(),
+                first: 0,
+                last: 31,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::EnvelopeTime,
+            ByteValueDescriptor { 
+                name: "time".to_string(),
+                first: 0,
+                last: 31,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::EnvelopeLevel,
+            ByteValueDescriptor { 
+                name: "level".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::EnvelopeRate,
+            ByteValueDescriptor { 
+                name: "rate".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::ControlTime,
+            ByteValueDescriptor { 
+                name: "control-time".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::EnvelopeDepth,
+            ByteValueDescriptor { 
+                name: "envelope-depth".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::EffectParameter,
+            ByteValueDescriptor { 
+                name: "parameter".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::Cutoff,
+            ByteValueDescriptor { 
+                name: "cutoff".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::Resonance,
+            ByteValueDescriptor { 
+                name: "resonance".to_string(),
+                first: 0,
+                last: 31,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::Level,
+            ByteValueDescriptor { 
+                name: "level".to_string(),
+                first: 0,
+                last: 31,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::PitchEnvelopeLevel,
+            ByteValueDescriptor { 
+                name: "level".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::PitchEnvelopeTime,
+            ByteValueDescriptor { 
+                name: "time".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::VelocityDepth,
+            ByteValueDescriptor { 
+                name: "velocity-depth".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::VelocityControlLevel,
+            ByteValueDescriptor { 
+                name: "velocity-control-level".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::PortamentoLevel,
+            ByteValueDescriptor { 
+                name: "portamento-level".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::KeyOnDelay,
+            ByteValueDescriptor { 
+                name: "key-on-delay".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::VelocitySensitivity,
+            ByteValueDescriptor { 
+                name: "velocity-sensitivity".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::ControlDepth,
+            ByteValueDescriptor { 
+                name: "control-depth".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::Depth,
+            ByteValueDescriptor { 
+                name: "depth".to_string(),
+                first: 0,
+                last: 100,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::Pan,
+            ByteValueDescriptor { 
+                name: "pan".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::KeyScalingToGain,
+            ByteValueDescriptor { 
+                name: "key-scaling-to-gain".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::Coarse,
+            ByteValueDescriptor { 
+                name: "coarse".to_string(),
+                first: -24,
+                last: 24,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::Fine,
+            ByteValueDescriptor { 
+                name: "fine".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::MacroParameterDepth,
+            ByteValueDescriptor { 
+                name: "coarse".to_string(),
+                first: -31,
+                last: 31,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::PatchNumber,
+            ByteValueDescriptor { 
+                name: "number".to_string(),
+                first: 0,
+                last: 127,
+                default: 0,
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::Transpose,
+            ByteValueDescriptor { 
+                name: "transpose".to_string(),
+                first: -24,
+                last: 24,
+                default: 0,
+                incoming: |n| n as i32,  // TODO: what/how?
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::KeyScaling,
+            ByteValueDescriptor { 
+                name: "key-scaling".to_string(),
+                first: -63,
+                last: 63,
+                default: 0,
+                incoming: |n| (n as i32) - 64,
+                outgoing: |n| (n + 64) as u8,
+            }
+        );
+
+        m.insert(ByteValue::AmplifierEnvelopeLevel,
+            ByteValueDescriptor { 
+                name: "level".to_string(), 
+                first: 0, 
+                last: 127, 
+                default: 0, 
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::Bias,  // FF bias (-63...63, default 0)
+            ByteValueDescriptor { 
+                name: "bias".to_string(), 
+                first: -63, 
+                last: 63, 
+                default: 0, 
+                incoming: |n| n as i32,  // TODO: adjustment?
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::HarmonicEnvelopeLevel,  // Harmonic envelope level (0...127, default 0)
+            ByteValueDescriptor { 
+                name: "harmonic-envelope-level".to_string(), 
+                first: 0, 
+                last: 127, 
+                default: 0, 
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::LFOSpeed, // LFO speed (0...127, default 0)
+            ByteValueDescriptor { 
+                name: "speed".to_string(), 
+                first: 0, 
+                last: 127, 
+                default: 0, 
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+
+        m.insert(ByteValue::LFODepth, // LFO depth (0...63, default 0)        
+            ByteValueDescriptor { 
+                name: "depth".to_string(), 
+                first: 0, 
+                last: 63, 
+                default: 0, 
+                incoming: |n| n as i32,
+                outgoing: |n| n as u8,
+            }
+        );
+        
+        m
+    };
 }
 
 #[cfg(test)]

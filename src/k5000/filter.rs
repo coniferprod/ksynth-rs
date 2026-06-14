@@ -5,24 +5,20 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    EnvelopeTime,
-    EnvelopeLevel,
-    ControlTime,
-    EnvelopeDepth,
-    Cutoff,
-    Resonance,
-    Level
+    ByteValue,
+    DESCRIPTORS,
 };
 use crate::k5000::control::VelocityCurve;
 
 /// Filter mode.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum FilterMode {
     LowPass = 0,
@@ -39,14 +35,14 @@ impl fmt::Display for FilterMode {
 }
 
 /// Filter envelope.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Envelope {
-    pub attack_time: EnvelopeTime,
-    pub decay1_time: EnvelopeTime,
-    pub decay1_level: EnvelopeLevel,
-    pub decay2_time: EnvelopeTime,
-    pub decay2_level: EnvelopeLevel,
-    pub release_time: EnvelopeTime,
+    pub attack_time: i32, // EnvelopeTime,
+    pub decay1_time: i32, // EnvelopeTime,
+    pub decay1_level: i32, // EnvelopeLevel,
+    pub decay2_time: i32, // EnvelopeTime,
+    pub decay2_level: i32, // EnvelopeLevel,
+    pub release_time: i32, // EnvelopeTime,
 }
 
 impl Envelope {
@@ -79,24 +75,30 @@ impl fmt::Display for Envelope {
 
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let time_desc = DESCRIPTORS.get(&ByteValue::EnvelopeTime).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::PitchEnvelopeLevel).unwrap();
+
         Ok(Self {
-            attack_time: EnvelopeTime::from(data[0]),
-            decay1_time: EnvelopeTime::from(data[1]),
-            decay1_level: EnvelopeLevel::from(data[2]),
-            decay2_time: EnvelopeTime::from(data[3]),
-            decay2_level: EnvelopeLevel::from(data[4]),
-            release_time: EnvelopeTime::from(data[5]),
+            attack_time: (time_desc.incoming)(data[0]),
+            decay1_time: (time_desc.incoming)(data[1]),
+            decay1_level: (level_desc.incoming)(data[2]),
+            decay2_time: (time_desc.incoming)(data[3]),
+            decay2_level: (level_desc.incoming)(data[4]),
+            release_time: (time_desc.incoming)(data[5]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let time_desc = DESCRIPTORS.get(&ByteValue::EnvelopeTime).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::PitchEnvelopeLevel).unwrap();
+
         vec![
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.decay1_level.into(),
-            self.decay2_time.into(),
-            self.decay2_level.into(),
-            self.release_time.into(),
+            (time_desc.outgoing)(self.attack_time),
+            (time_desc.outgoing)(self.decay1_time),
+            (level_desc.outgoing)(self.decay1_level),
+            (time_desc.outgoing)(self.decay2_time),
+            (level_desc.outgoing)(self.decay2_level),
+            (time_desc.outgoing)(self.release_time),
         ]
     }
 
@@ -104,10 +106,10 @@ impl SystemExclusiveData for Envelope {
 }
 
 /// Filter key scaling control.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeyScalingControl {
-    pub attack_time: ControlTime,
-    pub decay1_time: ControlTime,
+    pub attack_time: i32, // ControlTime,
+    pub decay1_time: i32, // ControlTime,
 }
 
 impl Default for KeyScalingControl {
@@ -127,16 +129,20 @@ impl fmt::Display for KeyScalingControl {
 
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
         Ok(Self {
-            attack_time: ControlTime::from(data[0]),
-            decay1_time: ControlTime::from(data[1]),
+            attack_time: (desc.incoming)(data[0]),
+            decay1_time: (desc.incoming)(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
         vec![
-            self.attack_time.into(),
-            self.decay1_time.into(),
+            (desc.outgoing)(self.attack_time),
+            (desc.outgoing)(self.decay1_time),
         ]
     }
 
@@ -144,11 +150,11 @@ impl SystemExclusiveData for KeyScalingControl {
 }
 
 /// Filter velocity control.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct VelocityControl {
-    pub depth: EnvelopeDepth,
-    pub attack_time: ControlTime,
-    pub decay1_time: ControlTime,
+    pub depth: i32, // EnvelopeDepth,
+    pub attack_time: i32, // ControlTime,
+    pub decay1_time: i32, // ControlTime,
 }
 
 impl Default for VelocityControl {
@@ -170,18 +176,24 @@ impl fmt::Display for VelocityControl {
 
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let e_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+        let ct_desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
         Ok(Self {
-            depth: EnvelopeDepth::from(data[0]),
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
+            depth: (e_desc.incoming)(data[0]),
+            attack_time: (ct_desc.incoming)(data[1]),
+            decay1_time: (ct_desc.incoming)(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
+        let e_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+        let ct_desc = DESCRIPTORS.get(&ByteValue::ControlTime).unwrap();
+
         vec![
-            self.depth.into(),
-            self.attack_time.into(),
-            self.decay1_time.into(),
+            (e_desc.outgoing)(self.depth),
+            (ct_desc.outgoing)(self.attack_time),
+            (ct_desc.outgoing)(self.decay1_time),
         ]
     }
 
@@ -189,7 +201,7 @@ impl SystemExclusiveData for VelocityControl {
 }
 
 /// Modulation settings for the filter.
-#[derive(Default, Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Modulation {
     pub ks_to_env: KeyScalingControl,
     pub vel_to_env: VelocityControl,
@@ -223,19 +235,18 @@ impl SystemExclusiveData for Modulation {
     }
 }
 
-
 /// Filter settings.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Filter {
     pub is_active: bool,
     pub mode: FilterMode,
     pub velocity_curve: VelocityCurve,
-    pub resonance: Resonance,
-    pub level: Level,
-    pub cutoff: Cutoff,
-    pub ks_to_cutoff: EnvelopeDepth,
-    pub vel_to_cutoff: EnvelopeDepth,
-    pub envelope_depth: EnvelopeDepth,
+    pub resonance: i32, // Resonance,
+    pub level: i32, // Level,
+    pub cutoff: i32, // Cutoff,
+    pub ks_to_cutoff: i32, // EnvelopeDepth,
+    pub vel_to_cutoff: i32, // EnvelopeDepth,
+    pub envelope_depth: i32, // EnvelopeDepth,
     pub envelope: Envelope,
     pub modulation: Modulation,
 }
@@ -253,7 +264,7 @@ impl Filter {
             vel_to_cutoff: Default::default(),
             envelope_depth: Default::default(),
             envelope: Envelope::new(),
-            modulation: Modulation::default()
+            modulation: Default::default()
         }
     }
 }
@@ -277,16 +288,21 @@ impl fmt::Display for Filter {
 
 impl SystemExclusiveData for Filter {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let res_desc = DESCRIPTORS.get(&ByteValue::Resonance).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::Level).unwrap();
+        let cutoff_desc = DESCRIPTORS.get(&ByteValue::Cutoff).unwrap();
+        let ed_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+
         Ok(Self {
             is_active: data[0] != 1,  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
             velocity_curve: VelocityCurve::try_from(data[2]).unwrap(),  // from 0 ~ 11 to enum
-            resonance: Resonance::from(data[3]),
-            level: Level::from(data[4]),
-            cutoff: Cutoff::from(data[5]),
-            ks_to_cutoff: EnvelopeDepth::from(data[6]),
-            vel_to_cutoff: EnvelopeDepth::from(data[7]),
-            envelope_depth: EnvelopeDepth::from(data[8]),
+            resonance: (res_desc.incoming)(data[3]),
+            level: (level_desc.incoming)(data[4]),
+            cutoff: (cutoff_desc.incoming)(data[5]),
+            ks_to_cutoff: (ed_desc.incoming)(data[6]),
+            vel_to_cutoff: (ed_desc.incoming)(data[7]),
+            envelope_depth: (ed_desc.incoming)(data[8]),
             envelope: Envelope::from_bytes(&data[9..15])?,
             modulation: Modulation::from_bytes(&data[15..20])?,
         })
@@ -295,16 +311,21 @@ impl SystemExclusiveData for Filter {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
+        let res_desc = DESCRIPTORS.get(&ByteValue::Resonance).unwrap();
+        let level_desc = DESCRIPTORS.get(&ByteValue::Level).unwrap();
+        let cutoff_desc = DESCRIPTORS.get(&ByteValue::Cutoff).unwrap();
+        let ed_desc = DESCRIPTORS.get(&ByteValue::EnvelopeDepth).unwrap();
+
         let bs = vec![
             if self.is_active { 0 } else { 1 },  // is this the right way around?
             self.mode as u8,
             self.velocity_curve as u8,  // raw enum values map to 0~11
-            self.resonance.into(),
-            self.level.into(),
-            self.cutoff.into(),
-            self.ks_to_cutoff.into(),
-            self.vel_to_cutoff.into(),
-            self.envelope_depth.into(),
+            (res_desc.outgoing)(self.resonance),
+            (level_desc.outgoing)(self.level),
+            (cutoff_desc.outgoing)(self.cutoff),
+            (ed_desc.outgoing)(self.ks_to_cutoff),
+            (ed_desc.outgoing)(self.vel_to_cutoff),
+            (ed_desc.outgoing)(self.envelope_depth),
         ];
         result.extend(bs);
         result.extend(self.envelope.to_bytes());

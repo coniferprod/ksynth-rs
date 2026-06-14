@@ -6,7 +6,9 @@ pub mod k5000;
 pub mod k4;
 
 use std::fmt;
+
 use rand::Rng;
+use xml_builder::{XMLBuilder, XMLElement, XMLVersion};
 
 /// Error type for parsing data from MIDI System Exclusive bytes.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -168,6 +170,17 @@ fn every_nth_byte(v: &[u8], n: usize, start: usize) -> Vec<u8> {
     }
 
     buf
+}
+
+trait XMLData {
+    fn to_xml(&self) -> XMLElement;
+    fn to_xml_named(&self, name: &str) -> XMLElement;
+}
+
+pub fn make_xml_element(name: &str, value: &impl Ranged) -> XMLElement {
+    let mut e = XMLElement::new(name);
+    e.add_text(value.value().to_string());
+    e
 }
 
 #[cfg(test)]

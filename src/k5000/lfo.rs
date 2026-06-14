@@ -6,13 +6,14 @@ use std::convert::TryFrom;
 
 use rand::Rng;
 use num_enum::TryFromPrimitive;
+use serde::{Serialize, Deserialize};
 
 use crate::{
     SystemExclusiveData,
     ParseError
 };
 use crate::k5000::{
-    KeyScaling
+    ByteValue, DESCRIPTORS,
 };
 
 use crate::{Ranged, ranged_impl};
@@ -52,7 +53,7 @@ impl From<Depth> for u8 {
 }
 
 /// LFO waveform type.
-#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default, Serialize, Deserialize)]
 #[repr(u8)]
 pub enum Waveform {
     #[default]
@@ -77,10 +78,10 @@ impl fmt::Display for Waveform {
 }
 
 /// LFO control settings.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Control {
-    pub depth: Depth,
-    pub key_scaling: KeyScaling,
+    pub depth: i32, // LFODepth,
+    pub key_scaling: i32, // KeyScaling,
 }
 
 impl Default for Control {
@@ -100,27 +101,36 @@ impl fmt::Display for Control {
 
 impl SystemExclusiveData for Control {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let depth_desc = DESCRIPTORS.get(&ByteValue::LFODepth).unwrap();
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScaling).unwrap();
+
         Ok(Self {
-            depth: Depth::from(data[0]),
-            key_scaling: KeyScaling::from(data[1]),
+            depth: (depth_desc.incoming)(data[0]),
+            key_scaling: (ks_desc.incoming)(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.depth.into(), self.key_scaling.into()]
+        let depth_desc = DESCRIPTORS.get(&ByteValue::LFODepth).unwrap();
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScaling).unwrap();
+
+        vec![
+            (depth_desc.outgoing)(self.depth), 
+            (ks_desc.outgoing)(self.key_scaling),
+        ]
     }
 
     fn data_size() -> usize { 2 }
 }
 
 /// LFO settings.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Lfo {
     pub waveform: Waveform,
-    pub speed: Speed,
-    pub fade_in_time: Speed,
-    pub fade_in_to_speed: Depth,
-    pub delay_onset: Speed,
+    pub speed: i32, // LFOSpeed,
+    pub fade_in_time: i32, // LFOSpeed,
+    pub fade_in_to_speed: i32, // LFODepth,
+    pub delay_onset: i32, // LFOSpeed,
     pub vibrato: Control,
     pub growl: Control,
     pub tremolo: Control,
@@ -152,36 +162,56 @@ impl fmt::Display for Lfo {
 
 impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+        let speed_desc = DESCRIPTORS.get(&ByteValue::LFOSpeed).unwrap();
+        let depth_desc = DESCRIPTORS.get(&ByteValue::LFODepth).unwrap();
+        let ks_desc = DESCRIPTORS.get(&ByteValue::KeyScaling).unwrap();
+
         Ok(Self {
             waveform: Waveform::try_from(data[0]).unwrap(),
-            speed: Speed::from(data[1]),
-            fade_in_time: Speed::from(data[2]),
-            fade_in_to_speed: Depth::from(data[3]),
-            delay_onset: Speed::from(data[4]),
-            vibrato: Control {
-                depth: Depth::from(data[5]),
-                key_scaling: KeyScaling::from(data[6]),
+            speed: (speed_desc.incoming)(data[1]),
+            fade_in_time: (speed_desc.incoming)(data[2]),
+            fade_in_to_speed: (depth_desc.incoming)(data[3]),
+            delay_onset: (speed_desc.incoming)(data[4]),
+
+            vibrato: Control::from_bytes(&data[5..7])?,
+            /*
+            vibrato: Control::from_bytes() {
+                depth: (depth_desc.incoming)(data[5]),
+                key_scaling: (ks_desc.incoming)(data[6]),
             },
+             */
+
+            growl: Control::from_bytes(&data[7..9])?,
+
+            /*
             growl: Control {
-                depth: Depth::from(data[7]),
-                key_scaling: KeyScaling::from(data[8]),
+                depth: (depth_desc.incoming)(data[7]),
+                key_scaling: (ks_desc.incoming)(data[8]),
             },
+             */
+
+            tremolo: Control::from_bytes(&data[9..11])?,
+            /*
             tremolo: Control {
-                depth: Depth::from(data[9]),
-                key_scaling: KeyScaling::from(data[10]),
+                depth: (depth_desc.incoming)(data[9]),
+                key_scaling: (ks_desc.incoming)(data[10]),
             },
+             */
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
+        let speed_desc = DESCRIPTORS.get(&ByteValue::LFOSpeed).unwrap();
+        let depth_desc = DESCRIPTORS.get(&ByteValue::LFODepth).unwrap();
+
         result.extend(vec![
             self.waveform as u8,
-            self.speed.into(),
-            self.delay_onset.into(),
-            self.fade_in_time.into(),
-            self.fade_in_to_speed.into()
+            (speed_desc.outgoing)(self.speed),
+            (speed_desc.outgoing)(self.delay_onset),
+            (speed_desc.outgoing)(self.fade_in_time),
+            (depth_desc.outgoing)(self.fade_in_to_speed)
         ]);
         result.extend(self.vibrato.to_bytes());
         result.extend(self.growl.to_bytes());
@@ -191,4 +221,23 @@ impl SystemExclusiveData for Lfo {
     }
 
     fn data_size() -> usize { 11 }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    use serde::{Deserialize, Serialize};
+    use serde_xml_rs::{from_str, to_string};
+
+    #[test]
+    fn test_serialize_lfo() {
+        let lfo: Lfo = Default::default();
+        println!("{}", lfo);
+        match to_string(&lfo) {
+            Ok(s) => eprintln!("LFO as XML = {}", s),
+            Err(e) => eprintln!("error: {}", e),
+        }
+    }
+
 }
