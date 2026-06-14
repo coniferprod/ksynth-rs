@@ -24,12 +24,13 @@ pub mod sysex;
 pub const NAME_LENGTH: usize = 8;
 
 /// Volume of patch (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Volume(i32);
 ranged_impl!(Volume, 0, 127, 0);
 
 impl From<u8> for Volume {
-    fn from(value: u8) -> Volume {
+    fn from(value: u8) -> Self {
         Self::new(value as i32)
     }
 }
@@ -41,6 +42,7 @@ impl From<Volume> for u8 {
 }
 
 /// Bender pitch (0...24, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct BenderPitch(i32);
 ranged_impl!(BenderPitch, 0, 24, 0);
@@ -58,6 +60,7 @@ impl From<BenderPitch> for u8 {
 }
 
 /// Bender cutoff (0...31, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct BenderCutoff(i32);
 ranged_impl!(BenderCutoff, 0, 31, 0);
@@ -68,13 +71,14 @@ impl From<u8> for BenderCutoff {
     }
 }
 
-impl From<BenderCutoff> for u8{
+impl From<BenderCutoff> for u8 {
     fn from(value: BenderCutoff) -> Self {
         value.value() as u8
     }
 }
 
 /// Envelope time (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct EnvelopeTime(i32);
 ranged_impl!(EnvelopeTime, 0, 127, 0);
@@ -92,6 +96,8 @@ impl From<EnvelopeTime> for u8 {
 }
 
 /// Envelope level (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, -63, 63, 0);
@@ -109,6 +115,7 @@ impl From<EnvelopeLevel> for u8{
 }
 
 /// Envelope rate (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct EnvelopeRate(i32);
 ranged_impl!(EnvelopeRate, 0, 127, 0);
@@ -126,6 +133,8 @@ impl From<EnvelopeRate> for u8 {
 }
 
 /// Control time (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ControlTime(i32);
 ranged_impl!(ControlTime, -63, 63, 0);
@@ -143,6 +152,8 @@ impl From<ControlTime> for u8 {
 }
 
 /// Envelope depth (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct EnvelopeDepth(i32);
 ranged_impl!(EnvelopeDepth, -63, 63, 0);
@@ -160,6 +171,7 @@ impl From<EnvelopeDepth> for u8 {
 }
 
 /// Effect parameter (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct EffectParameter(i32);
 ranged_impl!(EffectParameter, 0, 127, 0);
@@ -177,6 +189,7 @@ impl From<EffectParameter> for u8 {
 }
 
 /// Cutoff (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Cutoff(i32);
 ranged_impl!(Cutoff, 0, 127, 0);
@@ -187,13 +200,14 @@ impl From<u8> for Cutoff {
     }
 }
 
-impl From<Cutoff> for u8{
+impl From<Cutoff> for u8 {
     fn from(value: Cutoff) -> Self {
         value.value() as u8
     }
 }
 
 /// Resonance (0...31, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Resonance(i32);
 ranged_impl!(Resonance, 0, 31, 0);
@@ -204,13 +218,14 @@ impl From<u8> for Resonance {
     }
 }
 
-impl From<Resonance> for u8{
+impl From<Resonance> for u8 {
     fn from(value: Resonance) -> Self {
         value.value() as u8
     }
 }
 
 /// Level (0...31, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Level(i32);
 ranged_impl!(Level, 0, 31, 0);
@@ -221,13 +236,15 @@ impl From<u8> for Level {
     }
 }
 
-impl From<Level> for u8{
+impl From<Level> for u8 {
     fn from(value: Level) -> Self {
         value.value() as u8
     }
 }
 
 /// Pitch envelope level (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct PitchEnvelopeLevel(i32);
 ranged_impl!(PitchEnvelopeLevel, -63, 63, 0);
@@ -245,6 +262,7 @@ impl From<PitchEnvelopeLevel> for u8 {
 }
 
 /// Pitch envelope time (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct PitchEnvelopeTime(i32);
 ranged_impl!(PitchEnvelopeTime, 0, 127, 0);
@@ -255,13 +273,14 @@ impl From<u8> for PitchEnvelopeTime {
     }
 }
 
-impl From<PitchEnvelopeTime> for u8{
+impl From<PitchEnvelopeTime> for u8 {
     fn from(value: PitchEnvelopeTime) -> Self {
         value.value() as u8
     }
 }
 
 /// Velocity depth (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct VelocityDepth(i32);
 ranged_impl!(VelocityDepth, 0, 127, 0);
@@ -272,13 +291,14 @@ impl From<u8> for VelocityDepth {
     }
 }
 
-impl From<VelocityDepth> for u8{
+impl From<VelocityDepth> for u8 {
     fn from(value: VelocityDepth) -> Self {
         value.value() as u8
     }
 }
 
 /// Velocity control level (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct VelocityControlLevel(i32);
 ranged_impl!(VelocityControlLevel, 0, 127, 0);
@@ -289,13 +309,14 @@ impl From<u8> for VelocityControlLevel {
     }
 }
 
-impl From<VelocityControlLevel> for u8{
+impl From<VelocityControlLevel> for u8 {
     fn from(value: VelocityControlLevel) -> Self {
         value.value() as u8
     }
 }
 
 /// Portamento level (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct PortamentoLevel(i32);
 ranged_impl!(PortamentoLevel, 0, 127, 0);
@@ -306,13 +327,14 @@ impl From<u8> for PortamentoLevel {
     }
 }
 
-impl From<PortamentoLevel> for u8{
+impl From<PortamentoLevel> for u8 {
     fn from(value: PortamentoLevel) -> Self {
         value.value() as u8
     }
 }
 
 /// Key on delay (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct KeyOnDelay(i32);
 ranged_impl!(KeyOnDelay, 0, 127, 0);
@@ -323,13 +345,15 @@ impl From<u8> for KeyOnDelay {
     }
 }
 
-impl From<KeyOnDelay> for u8{
+impl From<KeyOnDelay> for u8 {
     fn from(value: KeyOnDelay) -> Self {
         value.value() as u8
     }
 }
 
 /// Velocity sensitivity (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct VelocitySensitivity(i32);
 ranged_impl!(VelocitySensitivity, -63, 63, 0);
@@ -347,6 +371,8 @@ impl From<VelocitySensitivity> for u8 {
 }
 
 /// ControlDepth (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct ControlDepth(i32);
 ranged_impl!(ControlDepth, -63, 63, 0);
@@ -364,6 +390,7 @@ impl From<ControlDepth> for u8 {
 }
 
 /// Depth (0...100, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Depth(i32);
 ranged_impl!(Depth, 0, 100, 0);
@@ -374,13 +401,15 @@ impl From<u8> for Depth {
     }
 }
 
-impl From<Depth> for u8{
+impl From<Depth> for u8 {
     fn from(value: Depth) -> Self {
         value.value() as u8
     }
 }
 
 /// Pan (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Pan(i32);
 ranged_impl!(Pan, -63, 63, 0);
@@ -398,6 +427,8 @@ impl From<Pan> for u8 {
 }
 
 /// KeyScalingToGain (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct KeyScalingToGain(i32);
 ranged_impl!(KeyScalingToGain, -63, 63, 0);
@@ -415,6 +446,8 @@ impl From<KeyScalingToGain> for u8 {
 }
 
 /// Coarse (-24...24, default 0).
+/// SysEx storage: one byte, (-24)40~(+24)88.
+/// Adjustment: incoming -64, outgoing +64.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Coarse(i32);
 ranged_impl!(Coarse, -24, 24, 0);
@@ -432,6 +465,8 @@ impl From<Coarse> for u8 {
 }
 
 /// Fine (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Fine(i32);
 ranged_impl!(Fine, -63, 63, 0);
@@ -449,13 +484,15 @@ impl From<Fine> for u8 {
 }
 
 /// Macro parameter depth (-31...31, default 0).
+/// SysEx storage: one byte, (-31)33~(+31)95. (K5000W=64)
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct MacroParameterDepth(i32);
 ranged_impl!(MacroParameterDepth, -31, 31, 0);
 
 impl From<u8> for MacroParameterDepth {
     fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)  // (-31)33~(+31)95 (K5000W=64)
+        Self::new((value as i32) - 64)
     }
 }
 
@@ -466,6 +503,7 @@ impl From<MacroParameterDepth> for u8 {
 }
 
 /// Patch number (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct PatchNumber(i32);
 ranged_impl!(PatchNumber, 0, 127, 0);
@@ -476,30 +514,34 @@ impl From<u8> for PatchNumber {
     }
 }
 
-impl From<PatchNumber> for u8{
+impl From<PatchNumber> for u8 {
     fn from(value: PatchNumber) -> Self {
         value.value() as u8
     }
 }
 
-/// Transpose (-24...24, default 0).
+/// Transpose (-24...24, default 0) for combi sections.
+/// SysEx storage: one byte, 40(-24)~88(+24)
+/// Adjustment: incoming -64, outgoing +64
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Transpose(i32);
 ranged_impl!(Transpose, -24, 24, 0);
 
 impl From<u8> for Transpose {
     fn from(value: u8) -> Self {
-        Self::new(value as i32)
+        Self::new((value as i32) - 64)
     }
 }
 
-impl From<Transpose> for u8{
+impl From<Transpose> for u8 {
     fn from(value: Transpose) -> Self {
-        value.value() as u8
+        (value.value() as u8) + 64
     }
 }
 
 /// Key scaling (-63...63, default 0)
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct KeyScaling(i32);
 ranged_impl!(KeyScaling, -63, 63, 0);
