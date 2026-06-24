@@ -1,11 +1,11 @@
 //! Data model for multi patches ("combi" on K5000W).
 //!
 
-use std::convert::TryFrom;
-use std::convert::TryInto;
 use std::fmt;
-use std::collections::BTreeMap;
+
 use bit::BitIndex;
+use rand::Rng;
+
 use crate::k5000::control::VelocitySwitchSettings;
 use crate::{
     SystemExclusiveData, 
@@ -13,26 +13,71 @@ use crate::{
     Checksum,
     MIDINote,
     MIDIChannel,
+    Ranged,
+    ranged_impl,
 };
 use crate::k5000::Volume;
-use crate::k5000::control::{
-    Polyphony, AmplitudeModulation, MacroController, SwitchControl,
-    ControlDestination, Switch,
-};
 use crate::k5000::effect::{EffectSettings, EffectControl};
-use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::{
-    Source,
     Zone,
     Key,
 };
 
 pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
 
+/// Patch number (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct PatchNumber(i32);
+ranged_impl!(PatchNumber, 0, 127, 0);
+
+impl From<u8> for PatchNumber {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+/// Transpose (-24...24, default 0) for combi sections.
+/// SysEx storage: one byte, 40(-24)~88(+24)
+/// Adjustment: incoming -64, outgoing +64
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Transpose(i32);
+ranged_impl!(Transpose, -24, 24, 0);
+
+impl From<u8> for Transpose {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Transpose {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+/// GEQ value: -6 ... +6, default 0.
+/// SysEx storage: one byte, 58(-6)...70(+6).
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Frequency(i32);
+ranged_impl!(Frequency, -6, 6, 0);
+
+impl From<u8> for Frequency {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Frequency {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
 /// Multi patch common settings.
 pub struct Common {
     pub effects: EffectSettings,
-    pub geq: [i8; 7],
+    pub geq: [Frequency; 7],
     pub name: String,
     pub volume: Volume,
     pub section_mutes: [bool; SECTION_COUNT],
@@ -43,8 +88,9 @@ impl Default for Common {
     fn default() -> Self {
         Common {
             effects: Default::default(),
-            geq: [0; 7],
+            geq: [Default::default(); 7],
             name: "NewMulti".to_string(),
+            volume: Default::default(),
             section_mutes: [false, false, false, false],  // all sections muted by default
             effect_control: Default::default(),
         }
@@ -73,7 +119,13 @@ impl SystemExclusiveData for Common {
         size = 7;
         end = start + size;
         let geq_data = &data[start..end];
-        let geq_values = geq_data.iter().map(|n| *n as i8 - 64).collect();  // 58(-6) ~ 70(+6), so 64 is zero
+        let mut frequencies: [Frequency; 7] = [Default::default(); 7];
+        let mut f_i = 0;
+        for b in geq_data {
+            frequencies[f_i] = Frequency::from(*b);
+            f_i += 1
+        }
+        //let geq_values = geq_data.iter().map(|n| Frequency::from(*n));  // 58(-6) ~ 70(+6), so 64 is zero
         offset += size;
 
         size = 8;
@@ -101,15 +153,15 @@ impl SystemExclusiveData for Common {
         let effect_control_data = &data[start..end];
         let effect_control = EffectControl::from_bytes(effect_control_data);
         eprintln!("Effect control = {:?}", effect_control);
-        offset += size;
+        //offset += size;
 
         Ok(Common {
-            effects,
-            geq,
+            effects: effects.unwrap(),
+            geq: frequencies,
             name,
             volume,
             section_mutes,
-            effect_control
+            effect_control: effect_control.unwrap(),
         })
     }
 
@@ -117,7 +169,12 @@ impl SystemExclusiveData for Common {
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.effects.to_bytes());
-        result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
+
+        for i in 0..7 {
+            result.push(self.geq[i].into());
+        }
+        //result.extend(self.geq.to_vec().iter().map(|n| n.into()));
+
         result.extend(self.name.clone().into_bytes());  // note the use of clone() here
         result.push(self.volume.into());
 
@@ -133,6 +190,8 @@ impl SystemExclusiveData for Common {
 
         result
     }
+
+    fn data_size() -> usize { todo!("data size") }
 }
 
 /// Multi section.
@@ -165,7 +224,7 @@ impl Default for Section {
             tune: 0,
             zone: Default::default(),
             vel_switch: Default::default(),
-            receive_channel: 0,
+            receive_channel: MIDIChannel::new(1),
         }
     }
 }
@@ -206,7 +265,7 @@ impl SystemExclusiveData for Section {
         };
         offset += 2;
 
-        let vel_switch = VelocitySwitchSettings::from_bytes(vec![data[offset]]);
+        let vel_switch = VelocitySwitchSettings::from_bytes(&vec![data[offset]]);
         offset += 2;
 
         // Stored as 0...15, scale to 1...16, but on the K50000W it is zero.
@@ -221,7 +280,7 @@ impl SystemExclusiveData for Section {
             transpose,
             tune,
             zone,
-            vel_switch,
+            vel_switch: vel_switch.unwrap(),
             receive_channel,
         })
     }
@@ -243,9 +302,13 @@ impl SystemExclusiveData for Section {
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_switch.to_bytes());
 
-        result.push(self.receive_channel as u8);
+        result.push(self.receive_channel.into());
 
         result
+    }
+
+    fn data_size() -> usize {
+        todo!("section data size")
     }
 }
 
@@ -267,19 +330,19 @@ impl Default for MultiPatch {
 }
 
 impl SystemExclusiveData for MultiPatch {
-    fn from_bytes(data: &[u8]) -> Self {
+    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Multi");
 
-        MultiPatch {
+        Ok(MultiPatch {
             checksum: data[0],
-            common: Common::from_bytes(data[1..55]),
+            common: Common::from_bytes(&data[1..55]).unwrap(),
             sections: [
-                Section::from_bytes(data[55..67]),
-                Section::from_bytes(data[67..79]),
-                Section::from_bytes(data[79..91]),
-                Section::from_bytes(data[91..103]),
+                Section::from_bytes(&data[55..67]).unwrap(),
+                Section::from_bytes(&data[67..79]).unwrap(),
+                Section::from_bytes(&data[79..91]).unwrap(),
+                Section::from_bytes(&data[91..103]).unwrap(),
             ]
-        }
+        })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
@@ -295,28 +358,36 @@ impl SystemExclusiveData for MultiPatch {
 
         result
     }
+
+    fn data_size() -> usize {
+        todo!("multi data size")
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{*};
 
+    /*
     #[test]
     fn test_common_from_bytes() {
         let data = vec![
 
         ];
     }
+ */
 
     #[test]
     fn test_section_from_bytes() {
 
     }
 
+    /*
     #[test]
     fn test_multi_patch_from_bytes() {
         let data: [u8; 1070] = include!("WizooIni.in");
         let multi_patch = MultiPatch::from_bytes(data[9..].to_vec());  // skip sysex header but not checksum
         assert_eq!(multi_patch.common.name, "WizooIni");
     }
+     */
 }

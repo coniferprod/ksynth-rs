@@ -6,17 +6,52 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
-use strum_macros;
+use strum_macros::{self, AsRefStr};
+use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged, ranged_impl,
 };
-use crate::k5000::{
-    MacroParameterDepth,
-    Pan,
-    ControlDepth
-};
+
+/// Macro parameter depth (-31...31, default 0).
+/// SysEx storage: one byte, (-31)33~(+31)95. (K5000W=64)
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct ParameterDepth(i32);
+ranged_impl!(ParameterDepth, -31, 31, 0);
+
+impl From<u8> for ParameterDepth {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for ParameterDepth {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+/// ControlDepth (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct ControlDepth(i32);
+ranged_impl!(ControlDepth, -63, 63, 0);
+
+impl From<u8> for ControlDepth {
+    fn from(value: u8) -> Self {
+        ControlDepth::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for ControlDepth {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
 
 /// Velocity switch settings.
 #[derive(
@@ -100,10 +135,11 @@ impl SystemExclusiveData for VelocitySwitchSettings {
     Copy, Clone,
     TryFromPrimitive,
     Default,
-    strum_macros::Display
+    strum_macros::Display,
+    AsRefStr,
 )]
 #[repr(u8)]
-pub enum ControlSource {
+pub enum Source {
     #[default]
     #[strum(to_string = "Bender")]
     Bender,
@@ -157,7 +193,7 @@ pub enum ControlSource {
     strum_macros::Display
 )]
 #[repr(u8)]
-pub enum ControlDestination {
+pub enum Destination {
     #[default]
     #[strum(to_string = "Pitch offset")]
     PitchOffset,
@@ -220,22 +256,32 @@ pub enum ControlDestination {
     HarmonicOddOffset,
 }
 
-/// Macro controller.
+/// User control for a macro.
+#[derive(Debug)]
+pub struct UserControl {
+    pub destination: Destination,
+    pub depth: ParameterDepth,
+}
+
+/// Macro controller with two user controls.
 #[derive(Debug)]
 pub struct MacroController {
-    pub destination1: ControlDestination,
-    pub depth1: MacroParameterDepth,
-    pub destination2: ControlDestination,
-    pub depth2: MacroParameterDepth,
+    pub uc1: UserControl,
+    pub uc2: UserControl,
 }
 
 impl Default for MacroController {
     fn default() -> Self {
         MacroController {
-            destination1: Default::default(),
-            depth1: Default::default(),
-            destination2: Default::default(),
-            depth2: Default::default(),
+            uc1: UserControl {
+                destination: Default::default(),
+                depth: Default::default(),
+            },
+
+            uc2: UserControl {
+                destination: Default::default(),
+                depth: Default::default(),
+            },
         }
     }
 }
@@ -243,7 +289,8 @@ impl Default for MacroController {
 impl fmt::Display for MacroController {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Dest1={} Depth={}\nDest2={} Depth={}",
-            self.destination1, self.depth1, self.destination2, self.depth2
+            self.uc1.destination, self.uc1.depth, 
+            self.uc2.destination, self.uc2.depth
         )
     }
 }
@@ -253,19 +300,23 @@ impl SystemExclusiveData for MacroController {
         eprintln!("MacroController from bytes {:?}", data);
 
         Ok(MacroController {
-            destination1: ControlDestination::try_from(data[0]).unwrap(),
-            depth1: MacroParameterDepth::from(data[1]),
-            destination2: ControlDestination::try_from(data[2]).unwrap(),
-            depth2: MacroParameterDepth::from(data[3]),
+            uc1: UserControl {
+                destination: Destination::try_from(data[0]).unwrap(),
+                depth: ParameterDepth::from(data[1]),
+            },
+            uc2: UserControl {
+                destination: Destination::try_from(data[2]).unwrap(),
+                depth: ParameterDepth::from(data[3]),
+            }
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.destination1 as u8,
-            self.depth1.into(),
-            self.destination2 as u8,
-            self.depth2.into()
+            self.uc1.destination as u8,
+            self.uc1.depth.into(),
+            self.uc2.destination as u8,
+            self.uc2.depth.into()
         ]
     }
 
@@ -275,16 +326,16 @@ impl SystemExclusiveData for MacroController {
 /// Assignable controller.
 #[derive(Default, Debug)]
 pub struct AssignableController {
-    pub source: ControlSource,
-    pub destination: ControlDestination,
+    pub source: Source,
+    pub destination: Destination,
     pub depth: ControlDepth,
 }
 
 impl SystemExclusiveData for AssignableController {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(AssignableController {
-            source: ControlSource::try_from(data[0]).unwrap(),
-            destination: ControlDestination::try_from(data[1]).unwrap(),
+            source: Source::try_from(data[0]).unwrap(),
+            destination: Destination::try_from(data[1]).unwrap(),
             depth: ControlDepth::from(data[2]),
         })
     }
@@ -339,6 +390,25 @@ impl SystemExclusiveData for ModulationSettings {
     }
 }
 
+/// Pan (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Pan(i32);
+ranged_impl!(Pan, -63, 63, 0);
+
+impl From<u8> for Pan {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Pan {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
 /// Pan type.
 #[derive(
     Debug, Eq, PartialEq, Copy, Clone,
@@ -363,15 +433,15 @@ pub enum PanKind {
 /// Pan settings.
 #[derive(Debug)]
 pub struct PanSettings {
-    pub pan_type: PanKind,
-    pub pan_value: Pan,
+    pub kind: PanKind,
+    pub value: Pan,
 }
 
 impl Default for PanSettings {
     fn default() -> Self {
         PanSettings {
-            pan_type: Default::default(),
-            pan_value: Default::default(),
+            kind: Default::default(),
+            value: Default::default(),
         }
     }
 }
@@ -379,13 +449,13 @@ impl Default for PanSettings {
 impl SystemExclusiveData for PanSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(PanSettings {
-            pan_type: PanKind::try_from(data[0]).unwrap(),
-            pan_value: Pan::from(data[1]),
+            kind: PanKind::try_from(data[0]).unwrap(),
+            value: Pan::from(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.pan_type as u8, self.pan_value.into()]
+        vec![self.kind as u8, self.value.into()]
     }
 
     fn data_size() -> usize { 2 }
@@ -567,7 +637,7 @@ mod tests {
     fn test_macro_controller_from_bytes() {
         let data = vec![0x01, 0x4f, 0x03, 0x40];
         let mac = MacroController::from_bytes(&data);
-        assert_eq!(mac.unwrap().destination1, ControlDestination::CutoffOffset);
+        assert_eq!(mac.unwrap().uc1.destination, Destination::CutoffOffset);
     }
 
     #[test]
@@ -578,7 +648,7 @@ mod tests {
 
     #[test]
     fn test_control_destination_strum_display() {
-        let cd = ControlDestination::VelocityOffset;
+        let cd = Destination::VelocityOffset;
         assert_eq!(String::from("Velocity offset"), format!("{}", cd));
     }
 
@@ -603,9 +673,9 @@ mod tests {
         assert_eq!(modulation_settings.pressure,
             MacroController {
                 destination1: ControlDestination::CutoffOffset,
-                depth1: MacroParameterDepth::from(0x4f),
+                depth1: ParameterDepth::from(0x4f),
                 destination2: ControlDestination::VibratoDepthOffset,
-                depth2: MacroParameterDepth::from(0x40),
+                depth2: ParameterDepth::from(0x40),
              }
         );
     }

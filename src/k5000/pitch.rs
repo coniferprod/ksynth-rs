@@ -3,31 +3,85 @@
 
 use std::fmt;
 
+use rand::Rng;
+
 use crate::{
     SystemExclusiveData,
     ParseError,
     Ranged,
+    ranged_impl,
 };
-use crate::k5000::{
-    PitchEnvelopeLevel,
-    PitchEnvelopeTime,
-    VelocitySensitivity
-};
+
+/// Velocity sensitivity (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct VelocitySensitivity(i32);
+ranged_impl!(VelocitySensitivity, -63, 63, 0);
+
+impl From<u8> for VelocitySensitivity {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for VelocitySensitivity {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+/// Pitch envelope level (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeLevel(i32);
+ranged_impl!(EnvelopeLevel, -63, 63, 0);
+
+impl From<u8> for EnvelopeLevel {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for EnvelopeLevel {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+/// Pitch envelope time (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EnvelopeTime(i32);
+ranged_impl!(EnvelopeTime, 0, 127, 0);
+
+impl From<u8> for EnvelopeTime {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for EnvelopeTime {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
 
 /// Pitch envelope.
 #[derive(Debug)]
 pub struct Envelope {
     /// Envelope start level.
-    pub start: PitchEnvelopeLevel,
+    pub start: EnvelopeLevel,
 
     /// Envelope attack time.
-    pub attack_time: PitchEnvelopeTime,
+    pub attack_time: EnvelopeTime,
 
     /// Envelope attack level.
-    pub attack_level: PitchEnvelopeLevel,
+    pub attack_level: EnvelopeLevel,
 
     /// Envelope decay time.
-    pub decay_time: PitchEnvelopeTime,
+    pub decay_time: EnvelopeTime,
 
     /// Time velocity sensitivity.
     pub time_vel_sens: VelocitySensitivity,
@@ -40,10 +94,10 @@ impl Envelope {
     /// Creates a new envelope with default values.
     pub fn new() -> Envelope {
         Self {
-            start: PitchEnvelopeLevel::new(0),
-            attack_time: PitchEnvelopeTime::new(0),
-            attack_level: PitchEnvelopeLevel::new(0),
-            decay_time: PitchEnvelopeTime::new(0),
+            start: EnvelopeLevel::new(0),
+            attack_time: EnvelopeTime::new(0),
+            attack_level: EnvelopeLevel::new(0),
+            decay_time: EnvelopeTime::new(0),
             time_vel_sens: VelocitySensitivity::new(0),
             level_vel_sens: VelocitySensitivity::new(0),
         }
@@ -67,10 +121,10 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            start: PitchEnvelopeLevel::from(data[0]),
-            attack_time: PitchEnvelopeTime::from(data[1]),
-            attack_level: PitchEnvelopeLevel::from(data[2]),
-            decay_time: PitchEnvelopeTime::from(data[3]),
+            start: EnvelopeLevel::from(data[0]),
+            attack_time: EnvelopeTime::from(data[1]),
+            attack_level: EnvelopeLevel::from(data[2]),
+            decay_time: EnvelopeTime::from(data[3]),
             time_vel_sens: VelocitySensitivity::from(data[4]),
             level_vel_sens: VelocitySensitivity::from(data[5]),
         })

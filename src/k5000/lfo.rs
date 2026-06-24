@@ -23,16 +23,24 @@ pub struct Speed(i32);
 ranged_impl!(Speed, 0, 127, 0);
 
 impl From<u8> for Speed {
-    fn from(value: u8) -> Speed {
-        Speed::new(value as i32)
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
     }
 }
 
+impl Into<u8> for Speed {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/*
 impl From<Speed> for u8 {
     fn from(value: Speed) -> Self {
         value.value() as u8 // value can be used as such in SysEx
     }
 }
+ */
 
 /// LFO depth (0...63, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -45,11 +53,19 @@ impl From<u8> for Depth {
     }
 }
 
+impl Into<u8> for Depth {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/*
 impl From<Depth> for u8 {
     fn from(value: Depth) -> Self {
         value.value() as u8 // value can be used as such in SysEx
     }
 }
+ */
 
 /// LFO waveform type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]

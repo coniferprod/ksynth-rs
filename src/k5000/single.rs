@@ -7,19 +7,23 @@ use std::fmt;
 use std::collections::BTreeMap;
 
 use bit::BitIndex;
+use xml_builder::{XML, XMLBuilder, XMLElement, XMLVersion};
+use strum_macros::{Display, AsRefStr};
+use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
     ParseError,
     Checksum,
     Ranged,
+    ranged_impl,
 };
 use crate::k5000::control::{
     Polyphony,
     AmplitudeModulation,
     MacroController,
     SwitchControl,
-    ControlDestination,
+    Destination,
     Switch
 };
 use crate::k5000::effect::{
@@ -28,25 +32,36 @@ use crate::k5000::effect::{
 };
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
-use crate::k5000::{
-    Volume,
-    MacroParameterDepth,
-    PortamentoLevel
-};
+use crate::k5000::Volume;
+
+/// Portamento speed (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct PortamentoSpeed(i32);
+ranged_impl!(PortamentoSpeed, 0, 127, 0);
+
+impl From<u8> for PortamentoSpeed {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for PortamentoSpeed {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
 
 /// Portamento setting.
 #[derive(Debug)]
-pub enum Portamento {
-    Off,
-    On(PortamentoLevel)
+pub struct Portamento {
+    pub is_on: bool,
+    pub speed: PortamentoSpeed,
 }
 
 impl fmt::Display for Portamento {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Portamento::Off => write!(f, "OFF"),
-            Portamento::On(speed) => write!(f, "{}", speed),
-        }
+        write!(f, "{} {}", self.is_on, self.speed.value())
     }
 }
 
@@ -78,7 +93,7 @@ impl Default for Common {
             source_mutes: [false, false, true, true, true, true],
             amplitude_modulation: Default::default(),
             effect_control: Default::default(),
-            portamento: Portamento::Off,
+            portamento: Portamento { is_on: false, speed: Default::default() },
             macros: [Default::default(), Default::default(), Default::default(), Default::default()],
             switches: Default::default(),
             geq: [0, 0, 0, 0, 0, 0, 0],
@@ -170,10 +185,9 @@ impl SystemExclusiveData for Common {
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
 
-        let portamento = if data[offset] == 1 {
-            Portamento::On(PortamentoLevel::from(data[offset + 1]))
-        } else {
-            Portamento::Off
+        let portamento = Portamento { 
+            is_on: data[offset] == 1,
+            speed: PortamentoSpeed::from(data[offset + 1])
         };
         eprintln!("Portamento: {}", portamento);
         offset += 2;
@@ -191,34 +205,36 @@ impl SystemExclusiveData for Common {
             offset += 1;
         }
 
+        let m1_data = vec![
+            macro_destinations[0],
+            macro_depths[0],
+            macro_destinations[1],
+            macro_depths[1]
+        ];
+        let m2_data = vec![
+            macro_destinations[2],
+            macro_depths[2],
+            macro_destinations[3],
+            macro_depths[3]
+        ];
+        let m3_data = vec![
+            macro_destinations[4],
+            macro_depths[4],
+            macro_destinations[5],
+            macro_depths[5]
+        ];
+        let m4_data = vec![
+            macro_destinations[6],
+            macro_depths[6],
+            macro_destinations[7],
+            macro_depths[7]
+        ];
+
         let macros: [MacroController; 4] = [
-            MacroController {
-                destination1: ControlDestination::try_from(macro_destinations[0]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[0]),
-                destination2: ControlDestination::try_from(macro_destinations[1]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[1]),
-            },
-
-            MacroController {
-                destination1: ControlDestination::try_from(macro_destinations[2]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[2]),
-                destination2: ControlDestination::try_from(macro_destinations[3]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[3]),
-            },
-
-            MacroController {
-                destination1: ControlDestination::try_from(macro_destinations[4]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[4]),
-                destination2: ControlDestination::try_from(macro_destinations[5]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[5]),
-            },
-
-            MacroController {
-                destination1: ControlDestination::try_from(macro_destinations[6]).unwrap(),
-                depth1: MacroParameterDepth::from(macro_depths[6]),
-                destination2: ControlDestination::try_from(macro_destinations[7]).unwrap(),
-                depth2: MacroParameterDepth::from(macro_depths[7]),
-            },
+            MacroController::from_bytes(&m1_data).unwrap(),
+            MacroController::from_bytes(&m2_data).unwrap(),
+            MacroController::from_bytes(&m3_data).unwrap(),
+            MacroController::from_bytes(&m4_data).unwrap(),
         ];
 
         let switches = SwitchControl {
@@ -268,26 +284,19 @@ impl SystemExclusiveData for Common {
         result.push(self.amplitude_modulation as u8);
         result.extend(self.effect_control.to_bytes());
 
-        match self.portamento {
-            Portamento::Off => {
-                result.push(0);
-                result.push(0);
-            },
-            Portamento::On(speed) => {
-                result.push(1);
-                result.push(speed.into());
-            }
-        }
+        // Portamento status and speed
+        result.push(if self.portamento.is_on { 1 } else { 0 });
+        result.push(self.portamento.speed.into());
 
         // Pick out the destinations and depths as the SysEx spec wants them.
         for m in &self.macros {
-            result.push(m.destination1 as u8);
-            result.push(m.destination2 as u8);
+            result.push(m.uc1.destination as u8);
+            result.push(m.uc2.destination as u8);
         }
 
         for m in &self.macros {
-            result.push(m.depth1.into()); // -31(33)~+31(95)
-            result.push(m.depth2.into());
+            result.push(m.uc1.depth.into()); // -31(33)~+31(95)
+            result.push(m.uc2.depth.into());
         }
 
         result.extend(self.switches.to_bytes());
@@ -357,6 +366,45 @@ impl SinglePatch {
         let additive_source_count = sources.iter().filter(|s| s.is_additive()).count();
 
         (82 + pcm_source_count * 86 + additive_source_count * 462).try_into().unwrap()
+    }
+
+    pub fn as_xml_document(&self) -> Vec<u8> {
+        let mut xml = XMLBuilder::new()
+            .version(XMLVersion::XML1_0)
+            .encoding("UTF-8".into())
+            .build();
+
+        let mut single_element = XMLElement::new("single");
+        single_element.add_attribute("name", &self.common.name);
+        single_element.add_attribute("volume", &self.common.volume.value().to_string());
+        single_element.add_attribute("polyphony", &format!("{}", self.common.polyphony));
+        single_element.add_attribute("am", &format!("{}", self.common.amplitude_modulation));
+
+        let mut common_element = XMLElement::new("common");
+
+        let mut effect_control_element = XMLElement::new("effect-control");
+        let control_source1_string = format!("{:?}", self.common.effect_control.source1);
+        let mut control_source1_element = XMLElement::new("control-source");
+        control_source1_element.add_text(control_source1_string).unwrap();
+        effect_control_element.add_child(control_source1_element).unwrap();
+
+        common_element.add_child(effect_control_element).unwrap();
+
+        let mut portamento_element = XMLElement::new("portamento");
+        let mut p_status_element = XMLElement::new("status");
+        p_status_element.add_text(if self.common.portamento.is_on { "on".to_string() } else { "off".to_string() }).unwrap();
+        let mut p_speed_element = XMLElement::new("speed");
+        p_speed_element.add_text(format!("{}", self.common.portamento.speed.value())).unwrap();
+        portamento_element.add_child(p_status_element).unwrap();
+        portamento_element.add_child(p_speed_element).unwrap();
+        common_element.add_child(portamento_element).unwrap();
+
+        single_element.add_child(common_element).unwrap();
+
+        xml.set_root_element(single_element);
+        let mut result: Vec<u8> = Vec::new();
+        xml.generate(&mut result).unwrap();
+        result
     }
 }
 
@@ -573,5 +621,13 @@ mod tests {
         // Skip sysex header but not the checksum
         let single_patch = SinglePatch::from_bytes(&data[9..]);
         assert_eq!(single_patch.unwrap().common.name, "WizooIni");
+    }
+
+    #[test]
+    fn test_single_patch_xml() {
+        let single_patch: SinglePatch = Default::default();
+        let document = single_patch.as_xml_document();
+        let string = String::from_utf8(document).unwrap();
+        assert_eq!(string, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><single></single>");
     }
 }

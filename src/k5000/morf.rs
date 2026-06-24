@@ -5,17 +5,52 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use rand::Rng;
 
 use crate::{
+    Ranged, ranged_impl,
     SystemExclusiveData,
-    ParseError
+    ParseError,
 };
-use crate::k5000::{
-    VelocityDepth,
-    EnvelopeTime,
-    KeyScalingToGain
-};
+use crate::k5000::EnvelopeTime;
 use crate::k5000::control::VelocityCurve;
+
+/// Velocity depth (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct VelocityDepth(i32);
+ranged_impl!(VelocityDepth, 0, 127, 0);
+
+impl From<u8> for VelocityDepth {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for VelocityDepth {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/// KeyScalingToGain (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct KeyScalingToGain(i32);
+ranged_impl!(KeyScalingToGain, -63, 63, 0);
+
+impl From<u8> for KeyScalingToGain {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for KeyScalingToGain {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
 
 /// Harmonic group.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]

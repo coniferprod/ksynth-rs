@@ -2,10 +2,11 @@
 //!
 //! Patch manipulation helpers for Kawai digital synths.
 
-pub mod k5000;
 pub mod k4;
+pub mod k5000;
 
 use std::fmt;
+
 use rand::Rng;
 
 /// Error type for parsing data from MIDI System Exclusive bytes.
@@ -115,6 +116,19 @@ macro_rules! ranged_impl {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct MIDIChannel(i32);
 crate::ranged_impl!(MIDIChannel, 1, 16, 1);
+
+impl From<u8> for MIDIChannel {
+    fn from(item: u8) -> Self {
+        //Self((item + 1).into())  // bring into 1...16
+        Self((item as i32) + 1)
+    }
+}
+
+impl Into<u8> for MIDIChannel {
+    fn into(self) -> u8 {
+        (self.value() as u8) - 1
+    }
+}
 
 /// MIDI note (0...127)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

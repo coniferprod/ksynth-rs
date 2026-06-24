@@ -5,21 +5,74 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
+use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
-    ParseError
+    ParseError,
+    Ranged, ranged_impl,
 };
 use crate::k5000::{
     EnvelopeTime,
     EnvelopeLevel,
     ControlTime,
     EnvelopeDepth,
-    Cutoff,
-    Resonance,
-    Level
 };
 use crate::k5000::control::VelocityCurve;
+
+/// Cutoff (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Cutoff(i32);
+ranged_impl!(Cutoff, 0, 127, 0);
+
+impl From<u8> for Cutoff {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for Cutoff {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/// Resonance (0...31, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Resonance(i32);
+ranged_impl!(Resonance, 0, 31, 0);
+
+impl From<u8> for Resonance {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for Resonance {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/// Level (0...31, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Level(i32);
+ranged_impl!(Level, 0, 31, 0);
+
+impl From<u8> for Level {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for Level {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
 
 /// Filter mode.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]

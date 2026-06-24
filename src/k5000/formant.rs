@@ -27,13 +27,13 @@ ranged_impl!(Bias, -63, 63, 0);
 
 impl From<u8> for Bias {
     fn from(value: u8) -> Self {
-        Self::new(value as i32)
+        Self::new((value as i32) - 64)
     }
 }
 
-impl From<Bias> for u8 {
-    fn from(value: Bias) -> Self {
-        value.value() as u8 // value can be used as such in SysEx
+impl Into<u8> for Bias {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
     }
 }
 

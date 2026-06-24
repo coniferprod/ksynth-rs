@@ -6,20 +6,56 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use pretty_hex::*;
+use rand::Rng;
 
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged,
     MIDINote,
+    Ranged,
+    ranged_impl,
 };
 use crate::k5000::pitch::Envelope as PitchEnvelope;
-use crate::k5000::{
-    Coarse,
-    Fine
-};
 use crate::k5000::wave::Wave;
 use crate::k5000::source::Key;
+
+/// Coarse (-24...24, default 0).
+/// SysEx storage: one byte, (-24)40~(+24)88.
+/// Adjustment: incoming -64, outgoing +64.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Coarse(i32);
+ranged_impl!(Coarse, -24, 24, 0);
+
+impl From<u8> for Coarse {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Coarse {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
+/// Fine (-63...63, default 0).
+/// SysEx storage: one byte, (-63)1~(+63)127.
+/// Adjustment: incoming -64, outgoing +64. 
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Fine(i32);
+ranged_impl!(Fine, -63, 63, 0);
+
+impl From<u8> for Fine {
+    fn from(value: u8) -> Self {
+        Self::new((value as i32) - 64)
+    }
+}
+
+impl Into<u8> for Fine {
+    fn into(self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
 
 /// Fixed key for oscillator.
 #[derive(Debug)]

@@ -3,29 +3,44 @@
 
 use std::fmt;
 
-use crate::k5000::control::{
-    VelocitySwitchSettings,
-    ModulationSettings,
-    PanSettings
-};
+use rand::Rng;
+use pretty_hex::*;
+
 use crate::{
     SystemExclusiveData,
     ParseError,
     Ranged,
     MIDINote,
+    ranged_impl,
 };
+use crate::k5000::control::{
+    VelocitySwitchSettings,
+    ModulationSettings,
+    PanSettings
+};
+use crate::k5000::Volume;
 use crate::k5000::osc::*;
 use crate::k5000::filter::*;
 use crate::k5000::amp::*;
 use crate::k5000::lfo::*;
-use crate::k5000::{
-    Volume,
-    BenderPitch,
-    BenderCutoff,
-    KeyOnDelay
-};
 
-use pretty_hex::*;
+/// Key on delay (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct KeyOnDelay(i32);
+ranged_impl!(KeyOnDelay, 0, 127, 0);
+
+impl From<u8> for KeyOnDelay {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for KeyOnDelay {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
 
 /// Key in a keyboard zone.
 #[derive(Debug, Eq, PartialEq)]
@@ -105,6 +120,42 @@ impl SystemExclusiveData for Zone {
     fn data_size() -> usize { 2 }
 }
 
+/// Bender pitch (0...24, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct BenderPitch(i32);
+ranged_impl!(BenderPitch, 0, 24, 0);
+
+impl From<u8> for BenderPitch {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for BenderPitch {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/// Bender cutoff (0...31, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct BenderCutoff(i32);
+ranged_impl!(BenderCutoff, 0, 31, 0);
+
+impl From<u8> for BenderCutoff {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for BenderCutoff {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
 /// Source control settings.
 #[derive(Debug)]
 pub struct SourceControl {
@@ -141,7 +192,9 @@ impl Default for SourceControl {
 impl fmt::Display for SourceControl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Zone={}\nVel. switch: {}\nEffect Path={}\nVolume={}\nBender: Pitch={} Cutoff={}\nKey On Delay={}\nPan: Type={} Value={}\n",
-            self.zone, self.vel_sw, self.effect_path, self.volume, self.bender_pitch, self.bender_cutoff, self.key_on_delay, self.pan.pan_type, self.pan.pan_value
+            self.zone, self.vel_sw, self.effect_path, self.volume, 
+            self.bender_pitch, self.bender_cutoff, self.key_on_delay, 
+            self.pan.kind, self.pan.value
         )
     }
 }

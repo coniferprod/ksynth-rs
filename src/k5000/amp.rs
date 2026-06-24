@@ -9,13 +9,13 @@ use rand::Rng;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged, ranged_impl,
+    Ranged, 
+    ranged_impl,
 };
 use crate::k5000::{
     EnvelopeTime,
     ControlTime,
     KeyScaling,
-    VelocityControlLevel
 };
 use crate::k5000::control::VelocityCurve;
 
@@ -35,9 +35,27 @@ impl From<u8> for EnvelopeLevel {
     }
 }
 
-impl From<EnvelopeLevel> for u8 {
-    fn from(value: EnvelopeLevel) -> Self {
-        value.value() as u8
+impl Into<u8> for EnvelopeLevel {
+    fn into(self) -> u8 {
+        self.value() as u8
+    }
+}
+
+/// Velocity control level (0...127, default 0).
+/// SysEx storage: one byte, no adjustment.
+#[derive (Debug, Clone, Copy, Eq, PartialEq)]
+pub struct VelocityControlLevel(i32);
+ranged_impl!(VelocityControlLevel, 0, 127, 0);
+
+impl From<u8> for VelocityControlLevel {
+    fn from(value: u8) -> Self {
+        Self::new(value as i32)
+    }
+}
+
+impl Into<u8> for VelocityControlLevel {
+    fn into(self) -> u8 {
+        self.value() as u8
     }
 }
 

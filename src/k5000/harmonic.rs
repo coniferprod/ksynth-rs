@@ -28,9 +28,9 @@ impl From<u8> for EnvelopeLevel {
     }
 }
 
-impl From<EnvelopeLevel> for u8 {
-    fn from(value: EnvelopeLevel) -> Self {
-        value.value() as u8 // value can be used as such in SysEx
+impl Into<u8> for EnvelopeLevel {
+    fn into(self) -> u8 {
+        self.value() as u8
     }
 }
 
