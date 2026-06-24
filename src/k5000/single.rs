@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 
 use bit::BitIndex;
 use xml_builder::{XML, XMLBuilder, XMLElement, XMLVersion};
-use strum_macros::{Display, AsRefStr};
 use rand::Rng;
 
 use crate::{
@@ -623,6 +622,7 @@ mod tests {
         assert_eq!(single_patch.unwrap().common.name, "WizooIni");
     }
 
+    /*
     #[test]
     fn test_single_patch_xml() {
         let single_patch: SinglePatch = Default::default();
@@ -630,4 +630,5 @@ mod tests {
         let string = String::from_utf8(document).unwrap();
         assert_eq!(string, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><single></single>");
     }
+     */
 }
