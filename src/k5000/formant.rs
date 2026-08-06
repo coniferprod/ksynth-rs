@@ -10,7 +10,10 @@ use rand::Rng;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged, ranged_impl,
+    Ranged,
+    ranged_impl,
+    Adjustment,
+    parse_or_default,
 };
 use crate::k5000::morf::Loop;
 use crate::k5000::{
@@ -25,15 +28,13 @@ use crate::k5000::lfo::{Depth, Speed};
 pub struct Bias(i32);
 ranged_impl!(Bias, -63, 63, 0);
 
-impl From<u8> for Bias {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for Bias {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for Bias {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -66,13 +67,16 @@ impl Default for EnvelopeSegment {
 impl SystemExclusiveData for EnvelopeSegment {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            rate: EnvelopeRate::from(data[0]),
-            level: EnvelopeLevel::from(data[1]),
+            rate: parse_or_default::<EnvelopeRate>(data[0]),
+            level: parse_or_default::<EnvelopeLevel>(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.rate.into(), self.level.into()]
+        vec![
+            self.rate.outgoing(), 
+            self.level.outgoing()
+        ]
     }
 
     fn data_size() -> usize { 2 }
@@ -112,8 +116,8 @@ impl SystemExclusiveData for Envelope {
             decay2: EnvelopeSegment::from_bytes(&data[4..6])?,
             release: EnvelopeSegment::from_bytes(&data[6..8])?,
             decay_loop: Loop::try_from(data[8]).unwrap(),
-            velocity_depth: EnvelopeDepth::from(data[9]),
-            ks_depth: EnvelopeDepth::from(data[10]),
+            velocity_depth: parse_or_default::<EnvelopeDepth>(data[9]),
+            ks_depth: parse_or_default::<EnvelopeDepth>(data[10]),
         })
     }
 
@@ -127,8 +131,8 @@ impl SystemExclusiveData for Envelope {
         result.extend(
             vec![
                 self.decay_loop as u8,
-                self.velocity_depth.into(),
-                self.ks_depth.into()
+                self.velocity_depth.outgoing(),
+                self.ks_depth.outgoing()
             ]
         );
 
@@ -178,17 +182,17 @@ impl Default for Lfo {
 impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            speed: Speed::from(data[0]),
+            speed: parse_or_default::<Speed>(data[0]),
             shape: Shape::try_from(data[1]).unwrap(),
-            depth: Depth::from(data[2]),
+            depth: parse_or_default::<Depth>(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.speed.into(), 
+            self.speed.outgoing(), 
             self.shape as u8, 
-            self.depth.into()
+            self.depth.outgoing()
         ]
     }
 
@@ -227,9 +231,9 @@ impl fmt::Display for FormantFilter {
 impl SystemExclusiveData for FormantFilter {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            bias: Bias::from(data[0]),
+            bias: parse_or_default::<Bias>(data[0]),
             mode: Mode::try_from(data[1]).unwrap(),
-            envelope_depth: EnvelopeDepth::from(data[2]),
+            envelope_depth: parse_or_default::<EnvelopeDepth>(data[2]),
             envelope: Envelope::from_bytes(&data[3..14])?,
             lfo: Lfo::from_bytes(&data[14..])?,
         })
@@ -240,9 +244,9 @@ impl SystemExclusiveData for FormantFilter {
 
         result.extend(
             vec![
-                self.bias.into(),
+                self.bias.outgoing(),
                 self.mode as u8,
-                self.envelope_depth.into()
+                self.envelope_depth.outgoing()
             ]
         );
         result.extend(self.envelope.to_bytes());

@@ -12,6 +12,8 @@ use crate::{
     Ranged,
     MIDINote,
     ranged_impl,
+    Adjustment,
+    parse_or_default,
 };
 use crate::k5000::control::{
     VelocitySwitchSettings,
@@ -30,17 +32,7 @@ use crate::k5000::lfo::*;
 pub struct KeyOnDelay(i32);
 ranged_impl!(KeyOnDelay, 0, 127, 0);
 
-impl From<u8> for KeyOnDelay {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for KeyOnDelay {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for KeyOnDelay { }  // use the default implementations
 
 /// Key in a keyboard zone.
 #[derive(Debug, Eq, PartialEq)]
@@ -102,18 +94,18 @@ impl SystemExclusiveData for Zone {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self { 
             low: Key { 
-                note: MIDINote::from(data[0])
+                note: parse_or_default::<MIDINote>(data[0]),
             }, 
             high: Key { 
-                note: MIDINote::from(data[1]) 
+                note: parse_or_default::<MIDINote>(data[1]),
             } 
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.low.note.into(),
-            self.high.note.into(),
+            self.low.note.outgoing(),
+            self.high.note.outgoing(),
         ]
     }
 
@@ -126,17 +118,7 @@ impl SystemExclusiveData for Zone {
 pub struct BenderPitch(i32);
 ranged_impl!(BenderPitch, 0, 24, 0);
 
-impl From<u8> for BenderPitch {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for BenderPitch {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for BenderPitch { }  // use the default implementations
 
 /// Bender cutoff (0...31, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -144,17 +126,7 @@ impl Into<u8> for BenderPitch {
 pub struct BenderCutoff(i32);
 ranged_impl!(BenderCutoff, 0, 31, 0);
 
-impl From<u8> for BenderCutoff {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for BenderCutoff {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for BenderCutoff { }  // use the default implementations
 
 /// Source control settings.
 #[derive(Debug)]
@@ -205,16 +177,20 @@ impl SystemExclusiveData for SourceControl {
 
         Ok(Self {
             zone: Zone { 
-                low: Key { note: MIDINote::from(data[0]) }, 
-                high: Key { note: MIDINote::from(data[1]) },
+                low: Key { 
+                    note: parse_or_default::<MIDINote>(data[0])
+                }, 
+                high: Key { 
+                    note: parse_or_default::<MIDINote>(data[1])
+                },
             },
             vel_sw: VelocitySwitchSettings::from_bytes(&[data[2]])?,
             effect_path: data[3],
-            volume: Volume::from(data[4]),
-            bender_pitch: BenderPitch::from(data[5]),
-            bender_cutoff: BenderCutoff::from(data[6]),
+            volume: parse_or_default::<Volume>(data[4]),
+            bender_pitch: parse_or_default::<BenderPitch>(data[5]),
+            bender_cutoff: parse_or_default::<BenderCutoff>(data[6]),
             modulation: ModulationSettings::from_bytes(&data[7..25])?,
-            key_on_delay: KeyOnDelay::from(data[25]),
+            key_on_delay: parse_or_default::<KeyOnDelay>(data[25]),
             pan: PanSettings::from_bytes(&data[26..28])?,
         })
     }
@@ -225,11 +201,11 @@ impl SystemExclusiveData for SourceControl {
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_sw.to_bytes());
         result.push(self.effect_path);
-        result.push(self.volume.into());
-        result.push(self.bender_pitch.into());
-        result.push(self.bender_cutoff.into());
+        result.push(self.volume.outgoing());
+        result.push(self.bender_pitch.outgoing());
+        result.push(self.bender_cutoff.outgoing());
         result.extend(self.modulation.to_bytes());
-        result.push(self.key_on_delay.into());
+        result.push(self.key_on_delay.outgoing());
         result.extend(self.pan.to_bytes());
 
         result

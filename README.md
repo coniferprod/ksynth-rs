@@ -67,7 +67,7 @@ at caret_ command.
 For a longer explanation of the `Ranged` trait, see 
 Flecks of Rust #12, [Subrange types in Rust](https://coniferproductions.com/rust/flecks/12/).
 
-### Leaning on the `From` and `Into` traits
+### Converting between SysEx bytes and domain types
 
 Most synthesizer parameters appear as one byte in the System Exclusive data.
 However, they often need a little adjustment to get them from the
@@ -76,55 +76,7 @@ value is 1...16, but it is stored as zero-based in the SysEx data, so it
 actually appears as 0...15. Many other parameters are expressed similarly,
 with a varying offset that needs to be added or subtracted.
 
-The `std::convert::From` trait is used to make these conversions nicer.
-A `From<u8>` trait implementation on a newtype implementing the `Ranged` trait
-adjusts an incoming System Exclusive data byte of type `u8` to the domain value. For example,
-for the `MIDIChannel` type shown above the `From<u8>` implementation is:
-
-```rust
-impl From<u8> for MIDIChannel {
-    fn from(item: u8) -> Self {
-        Self((item as i32) + 1)  // bring into 1...16
-    }
-}
-```
-
-A `MIDIChannel` value is constructed from a System Exclusive data byte like this:
-
-```rust
-let b = 9u8;
-let channel = MIDIChannel::from(b);
-```
-
-Similarly, the `Into` trait is used to convert the wrapped value of a newtype
-implementing the `Ranged` trait into a System Exclusive data byte. For example,
-for the `MIDIChannel` type this involves subtracting one from the value:
-
-```rust
-impl Into<u8> for MIDIChannel {
-    fn into(self) -> u8 {
-        (self.value() as u8) - 1
-    }
-}
-```
-
-Unfortunately it is necessary to add `From` and `Into` implementations also for
-those newtypes that don't require an incoming or outgoing adjustment.
-The `ranged_impl!` macro could
-create default implementations for these traits, but they can't be overridden.
-You could always create another macro that creates the boilerplate for these
-implementations. The output of that macro should look something like this:
-
-```rust
-impl From<u8> for KeyOnDelay {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for KeyOnDelay {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
-```
+The `Adjustment` trait is used to make these conversions nicer.
+It has two methods: `incoming` and `outgoing`, which adjust the incoming SysEx bytes
+as they are converted into domain types, and adjust the domain type values as they
+are emitted into SysEx.

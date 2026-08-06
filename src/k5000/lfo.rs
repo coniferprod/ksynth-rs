@@ -15,57 +15,26 @@ use crate::k5000::{
     KeyScaling
 };
 
-use crate::{Ranged, ranged_impl};
+use crate::{
+    Ranged, 
+    ranged_impl,
+    Adjustment,
+    parse_or_default,
+};
 
 /// LFO speed (0...127, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Speed(i32);
 ranged_impl!(Speed, 0, 127, 0);
 
-impl From<u8> for Speed {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Speed {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
-
-/*
-impl From<Speed> for u8 {
-    fn from(value: Speed) -> Self {
-        value.value() as u8 // value can be used as such in SysEx
-    }
-}
- */
+impl Adjustment for Speed { }
 
 /// LFO depth (0...63, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Depth(i32);
 ranged_impl!(Depth, 0, 63, 0);
 
-impl From<u8> for Depth {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Depth {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
-
-/*
-impl From<Depth> for u8 {
-    fn from(value: Depth) -> Self {
-        value.value() as u8 // value can be used as such in SysEx
-    }
-}
- */
+impl Adjustment for Depth { }
 
 /// LFO waveform type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
@@ -117,13 +86,16 @@ impl fmt::Display for Control {
 impl SystemExclusiveData for Control {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            depth: Depth::from(data[0]),
-            key_scaling: KeyScaling::from(data[1]),
+            depth: parse_or_default::<Depth>(data[0]),
+            key_scaling: parse_or_default::<KeyScaling>(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.depth.into(), self.key_scaling.into()]
+        vec![
+            self.depth.outgoing(), 
+            self.key_scaling.outgoing()
+        ]
     }
 
     fn data_size() -> usize { 2 }
@@ -170,21 +142,21 @@ impl SystemExclusiveData for Lfo {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             waveform: Waveform::try_from(data[0]).unwrap(),
-            speed: Speed::from(data[1]),
-            fade_in_time: Speed::from(data[2]),
-            fade_in_to_speed: Depth::from(data[3]),
-            delay_onset: Speed::from(data[4]),
+            speed: parse_or_default::<Speed>(data[1]),
+            fade_in_time: parse_or_default::<Speed>(data[2]),
+            fade_in_to_speed: parse_or_default::<Depth>(data[3]),
+            delay_onset: parse_or_default::<Speed>(data[4]),
             vibrato: Control {
-                depth: Depth::from(data[5]),
-                key_scaling: KeyScaling::from(data[6]),
+                depth: parse_or_default::<Depth>(data[5]),
+                key_scaling: parse_or_default::<KeyScaling>(data[6]),
             },
             growl: Control {
-                depth: Depth::from(data[7]),
-                key_scaling: KeyScaling::from(data[8]),
+                depth: parse_or_default::<Depth>(data[7]),
+                key_scaling: parse_or_default::<KeyScaling>(data[8]),
             },
             tremolo: Control {
-                depth: Depth::from(data[9]),
-                key_scaling: KeyScaling::from(data[10]),
+                depth: parse_or_default::<Depth>(data[9]),
+                key_scaling: parse_or_default::<KeyScaling>(data[10]),
             },
         })
     }
@@ -194,10 +166,10 @@ impl SystemExclusiveData for Lfo {
 
         result.extend(vec![
             self.waveform as u8,
-            self.speed.into(),
-            self.delay_onset.into(),
-            self.fade_in_time.into(),
-            self.fade_in_to_speed.into()
+            self.speed.outgoing(),
+            self.delay_onset.outgoing(),
+            self.fade_in_time.outgoing(),
+            self.fade_in_to_speed.outgoing()
         ]);
         result.extend(self.vibrato.to_bytes());
         result.extend(self.growl.to_bytes());

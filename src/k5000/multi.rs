@@ -15,9 +15,14 @@ use crate::{
     MIDIChannel,
     Ranged,
     ranged_impl,
+    Adjustment,
+    parse_or_default,
 };
 use crate::k5000::Volume;
-use crate::k5000::effect::{EffectSettings, EffectControl};
+use crate::k5000::effect::{
+    EffectSettings, 
+    EffectControl
+};
 use crate::k5000::source::{
     Zone,
     Key,
@@ -31,11 +36,7 @@ pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
 pub struct PatchNumber(i32);
 ranged_impl!(PatchNumber, 0, 127, 0);
 
-impl From<u8> for PatchNumber {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
+impl Adjustment for PatchNumber { }
 
 /// Transpose (-24...24, default 0) for combi sections.
 /// SysEx storage: one byte, 40(-24)~88(+24)
@@ -44,15 +45,13 @@ impl From<u8> for PatchNumber {
 pub struct Transpose(i32);
 ranged_impl!(Transpose, -24, 24, 0);
 
-impl From<u8> for Transpose {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for Transpose {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for Transpose {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -62,15 +61,13 @@ impl Into<u8> for Transpose {
 pub struct Frequency(i32);
 ranged_impl!(Frequency, -6, 6, 0);
 
-impl From<u8> for Frequency {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for Frequency {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for Frequency {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -122,7 +119,7 @@ impl SystemExclusiveData for Common {
         let mut frequencies: [Frequency; 7] = [Default::default(); 7];
         let mut f_i = 0;
         for b in geq_data {
-            frequencies[f_i] = Frequency::from(*b);
+            frequencies[f_i] = parse_or_default::<Frequency>(*b);
             f_i += 1
         }
         //let geq_values = geq_data.iter().map(|n| Frequency::from(*n));  // 58(-6) ~ 70(+6), so 64 is zero
@@ -143,7 +140,7 @@ impl SystemExclusiveData for Common {
         }
         offset += 1;
 
-        let volume = Volume::from(data[offset]);
+        let volume = parse_or_default::<Volume>(data[offset]);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
@@ -171,12 +168,12 @@ impl SystemExclusiveData for Common {
         result.extend(self.effects.to_bytes());
 
         for i in 0..7 {
-            result.push(self.geq[i].into());
+            result.push(self.geq[i].outgoing());
         }
         //result.extend(self.geq.to_vec().iter().map(|n| n.into()));
 
         result.extend(self.name.clone().into_bytes());  // note the use of clone() here
-        result.push(self.volume.into());
+        result.push(self.volume.outgoing());
 
         let mut mute_byte = 0x00;
         for i in 0..SECTION_COUNT {

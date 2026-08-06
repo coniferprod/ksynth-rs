@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1">
+
+    <!-- Polyphony mode -->
+    <xs:simpleType name="polyphonyModeType">
+        <xs:restriction base="xsd:string">
+            <xs:enumeration value="poly"/>
+            <xs:enumeration value="solo1"/>
+            <xs:enumeration value="solo2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Amplitude modulation -->
+    <xs:simpleType name="amplitudeModulationType">
+        <xs:restriction base="xsd:string">
+            <xs:enumeration value="off"/>
+            <xs:enumeration value="source2"/>
+            <xs:enumeration value="source3"/>
+            <xs:enumeration value="source4"/>
+            <xs:enumeration value="source5"/>
+            <xs:enumeration value="source6"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Frequency -6...+6 -->
+    <xs:simpleType name="frequencyType">
+        <xs:restriction base="xsd:integer">
+            <xs:minInclusive value="-6"/>
+            <xs:maxInclusive value="6"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Effect Depth 0...100 -->
+    <xs:simpleType name="effectDepthType">
+        <xs:restriction base="xsd:nonNegativeInteger">
+            <xs:maxInclusive value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Positive level 0...127 -->
+    <xs:simpleType name="positiveLevelType">
+        <xs:restriction base="xsd:nonNegativeInteger">
+            <xs:maxInclusive value="127"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Volume -->
+    <xs:simpleType name="volumeType">
+        <xs:restriction base="xsd:nonNegativeInteger">
+            <xs:maxInclusive value="127"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="sourceType">
+        <xs:all>
+
+        </xs:all>
+
+    </xs:complexType>
+
+    <xs:element name="source" type="sourceType"/>
+
+    <!-- Sources -->
+    <xs:element name="sources">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="source" minOccurs="2" maxOccurs="2"/>
+
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Single patch -->
+    <xs:element name="single">
+        <xs:complexType>
+            <xs:all>
+                <xs:element ref="sources"/>
+
+
+            </xs:all>
+
+            <xs:attribute name="name" type="xs:string"/>
+            <xs:attribute name="volume" type="volumeType"/>
+            <xs:attribute name="polyphony" type="polyphonyModeType"/>
+
+
+        </xs:complexType>
+
+    </xs:element>
+
+    <xs:element name="single" type="singleType">
+
+    </xs:element>
+
+</xs:schema>

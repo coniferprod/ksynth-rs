@@ -38,6 +38,18 @@ pub trait SystemExclusiveData: Sized {
     fn data_size() -> usize;
 }
 
+pub trait Adjustment: Ranged {
+    // Default implementation: the u8 as i32
+    fn incoming(b: u8) -> i32 { b as i32 }
+
+    // Default implementation: the wrapped i32 value as u8
+    fn outgoing(&self) -> u8 { self.value() as u8 }
+}
+
+// No need to implement the Adjustment trait methods for values that need
+// no adjustment; just rely on the default method implementations.
+// Still need to provide the empty impl block for the trait.
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct ValueError(i32, i32, i32);  // expected low, expected high, actual
 
@@ -112,6 +124,24 @@ macro_rules! ranged_impl {
     }
 }
 
+/// Parse a byte value into a type implementing the Ranged trait.
+/// If the byte does not fit within the first and last of the range, uses the default.
+/// The type being parsed into must also implement the Adjustment and Default traits.
+pub fn parse_or_default<R: Ranged + Adjustment + Default>(b: u8) -> R {
+    // Adjust the byte value as necessary.
+    let value = R::incoming(b);
+
+    // If the adjusted value lies in the range of the type, use it.
+    // Otherwise show a message and use the default.
+    if R::contains(value) {
+        R::new(value)
+    } else {
+        eprintln!("Value {} not in range [{}..={}], using default", 
+            value, R::FIRST, R::LAST);
+        Default::default()
+    }
+}
+
 /// MIDI channel (1...16)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct MIDIChannel(i32);
@@ -126,6 +156,16 @@ impl From<u8> for MIDIChannel {
 
 impl Into<u8> for MIDIChannel {
     fn into(self) -> u8 {
+        (self.value() as u8) - 1
+    }
+}
+
+impl Adjustment for MIDIChannel {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) + 1
+    }
+
+    fn outgoing(&self) -> u8 {
         (self.value() as u8) - 1
     }
 }
@@ -146,6 +186,8 @@ impl From<MIDINote> for u8{
         value.value() as u8
     }
 }
+
+impl Adjustment for MIDINote {}   // using the default implementations
 
 impl MIDINote {
     pub fn name(&self) -> String {

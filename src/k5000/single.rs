@@ -16,6 +16,8 @@ use crate::{
     Checksum,
     Ranged,
     ranged_impl,
+    Adjustment,
+    parse_or_default,
 };
 use crate::k5000::control::{
     Polyphony,
@@ -39,17 +41,7 @@ use crate::k5000::Volume;
 pub struct PortamentoSpeed(i32);
 ranged_impl!(PortamentoSpeed, 0, 127, 0);
 
-impl From<u8> for PortamentoSpeed {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for PortamentoSpeed {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for PortamentoSpeed { }
 
 /// Portamento setting.
 #[derive(Debug)]
@@ -92,8 +84,16 @@ impl Default for Common {
             source_mutes: [false, false, true, true, true, true],
             amplitude_modulation: Default::default(),
             effect_control: Default::default(),
-            portamento: Portamento { is_on: false, speed: Default::default() },
-            macros: [Default::default(), Default::default(), Default::default(), Default::default()],
+            portamento: Portamento { 
+                is_on: false, 
+                speed: Default::default()
+            },
+            macros: [
+                Default::default(), 
+                Default::default(),
+                Default::default(), 
+                Default::default()
+            ],
             switches: Default::default(),
             geq: [0, 0, 0, 0, 0, 0, 0],
         }
@@ -150,7 +150,7 @@ impl SystemExclusiveData for Common {
         eprintln!("Name = {}", name);
         offset += size;
 
-        let volume = Volume::from(data[offset]);
+        let volume = parse_or_default::<Volume>(data[offset]);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
@@ -186,7 +186,7 @@ impl SystemExclusiveData for Common {
 
         let portamento = Portamento { 
             is_on: data[offset] == 1,
-            speed: PortamentoSpeed::from(data[offset + 1])
+            speed: parse_or_default::<PortamentoSpeed>(data[offset + 1])
         };
         eprintln!("Portamento: {}", portamento);
         offset += 2;
@@ -267,7 +267,7 @@ impl SystemExclusiveData for Common {
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.push(0);  // drum_mark
         result.extend(self.name.clone().into_bytes());  // note clone()
-        result.push(self.volume.into());  // converts value to u8 on the fly
+        result.push(self.volume.outgoing());
         result.push(self.polyphony as u8);
         result.push(0);  // "no use"
         result.push(self.source_count);
@@ -285,7 +285,7 @@ impl SystemExclusiveData for Common {
 
         // Portamento status and speed
         result.push(if self.portamento.is_on { 1 } else { 0 });
-        result.push(self.portamento.speed.into());
+        result.push(self.portamento.speed.outgoing());
 
         // Pick out the destinations and depths as the SysEx spec wants them.
         for m in &self.macros {

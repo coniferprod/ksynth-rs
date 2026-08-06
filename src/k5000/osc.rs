@@ -9,10 +9,12 @@ use pretty_hex::*;
 use rand::Rng;
 
 use crate::{
-    SystemExclusiveData,
-    ParseError,
-    MIDINote,
-    Ranged,
+    Adjustment,
+    MIDINote, 
+    ParseError, 
+    Ranged, 
+    SystemExclusiveData, 
+    parse_or_default, 
     ranged_impl,
 };
 use crate::k5000::pitch::Envelope as PitchEnvelope;
@@ -38,6 +40,16 @@ impl Into<u8> for Coarse {
     }
 }
 
+impl Adjustment for Coarse {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
+    }
+
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8
+    }
+}
+
 /// Fine (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
 /// Adjustment: incoming -64, outgoing +64. 
@@ -54,6 +66,16 @@ impl From<u8> for Fine {
 impl Into<u8> for Fine {
     fn into(self) -> u8 {
         (self.value() + 64) as u8
+    }
+}
+
+impl Adjustment for Fine {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64        
+    }
+
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -150,10 +172,11 @@ impl fmt::Display for Oscillator {
 impl SystemExclusiveData for Oscillator {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("OSC data = {}", simple_hex(&data));
+
         Ok(Oscillator {
             wave: Wave::from_bytes(&[data[0], data[1]])?,
-            coarse: Coarse::from(data[2]),
-            fine: Fine::from(data[3]),
+            coarse: parse_or_default::<Coarse>(data[2]),
+            fine: parse_or_default::<Fine>(data[3]),
             fixed_key: FixedKey::from_bytes(&[data[4]])?,
             ks_to_pitch: KeyScaling::try_from(data[5]).unwrap(),
             pitch_envelope: PitchEnvelope::from_bytes(&data[6..])?,
@@ -164,8 +187,8 @@ impl SystemExclusiveData for Oscillator {
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.wave.to_bytes());
-        result.push(self.coarse.into());
-        result.push(self.fine.into());
+        result.push(self.coarse.outgoing());
+        result.push(self.fine.outgoing());
         result.extend(self.fixed_key.to_bytes());
         result.push(self.ks_to_pitch as u8);
         result.extend(self.pitch_envelope.to_bytes());
@@ -198,5 +221,30 @@ impl fmt::Display for KeyScaling {
             KeyScaling::ThirtyTreeCent => String::from("33ct"),
             KeyScaling::FiftyCent => String::from("50ct")
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{*};
+
+    #[test]
+    fn test_parse_or_default_coarse_max() {
+        //let b = 100;  // invalid, SysEx should be 40...88
+        let coarse = parse_or_default::<Coarse>(88u8);
+        assert_eq!(coarse.value(), 24);
+    }
+
+    #[test]
+    fn test_parse_or_default_coarse_min() {
+        let coarse = parse_or_default::<Coarse>(40u8);
+        assert_eq!(coarse.value(), -24);
+    }
+
+    #[test]
+    fn test_parse_or_default_coarse_invalid() {
+        let b = 100;  // invalid, SysEx byte should be 40...88
+        let coarse = parse_or_default::<Coarse>(100u8);
+        assert_eq!(coarse.value(), 0);  // should revert to default
     }
 }

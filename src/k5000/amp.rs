@@ -11,6 +11,8 @@ use crate::{
     ParseError,
     Ranged, 
     ranged_impl,
+    parse_or_default,
+    Adjustment,
 };
 use crate::k5000::{
     EnvelopeTime,
@@ -29,17 +31,7 @@ use crate::k5000::control::VelocityCurve;
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, 0, 127, 0);
 
-impl From<u8> for EnvelopeLevel {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for EnvelopeLevel {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for EnvelopeLevel { }
 
 /// Velocity control level (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -47,17 +39,7 @@ impl Into<u8> for EnvelopeLevel {
 pub struct VelocityControlLevel(i32);
 ranged_impl!(VelocityControlLevel, 0, 127, 0);
 
-impl From<u8> for VelocityControlLevel {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for VelocityControlLevel {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for VelocityControlLevel { }
 
 /// Amplifier envelope.
 #[derive(Debug)]
@@ -101,23 +83,23 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
-            attack_time: EnvelopeTime::from(data[0]),
-            decay1_time: EnvelopeTime::from(data[1]),
-            decay1_level: EnvelopeLevel::from(data[2]),
-            decay2_time: EnvelopeTime::from(data[3]),
-            decay2_level: EnvelopeLevel::from(data[4]),
-            release_time: EnvelopeTime::from(data[5]),
+            attack_time: parse_or_default::<EnvelopeTime>(data[0]),
+            decay1_time: parse_or_default::<EnvelopeTime>(data[1]),
+            decay1_level: parse_or_default::<EnvelopeLevel>(data[2]),
+            decay2_time: parse_or_default::<EnvelopeTime>(data[3]),
+            decay2_level: parse_or_default::<EnvelopeLevel>(data[4]),
+            release_time: parse_or_default::<EnvelopeTime>(data[5]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.decay1_level.into(),
-            self.decay2_time.into(),
-            self.decay2_level.into(),
-            self.release_time.into()
+            self.attack_time.outgoing(),
+            self.decay1_time.outgoing(),
+            self.decay1_level.outgoing(),
+            self.decay2_time.outgoing(),
+            self.decay2_level.outgoing(),
+            self.release_time.outgoing()
         ]
     }
 
@@ -155,19 +137,19 @@ impl fmt::Display for KeyScalingControl {
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(KeyScalingControl {
-            level: KeyScaling::from(data[0]),
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
-            release: ControlTime::from(data[3]),
+            level: parse_or_default::<KeyScaling>(data[0]),
+            attack_time: parse_or_default::<ControlTime>(data[1]),
+            decay1_time: parse_or_default::<ControlTime>(data[2]),
+            release: parse_or_default::<ControlTime>(data[3]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.level.into(),
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.release.into()
+            self.level.outgoing(),
+            self.attack_time.outgoing(),
+            self.decay1_time.outgoing(),
+            self.release.outgoing(),
         ]
     }
 
@@ -205,19 +187,19 @@ impl fmt::Display for VelocityControl {
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(VelocityControl {
-            level: VelocityControlLevel::from(data[0]),
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
-            release: ControlTime::from(data[3]),
+            level: parse_or_default::<VelocityControlLevel>(data[0]),
+            attack_time: parse_or_default::<ControlTime>(data[1]),
+            decay1_time: parse_or_default::<ControlTime>(data[2]),
+            release: parse_or_default::<ControlTime>(data[3]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.level.into(),
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.release.into()
+            self.level.outgoing(),
+            self.attack_time.outgoing(),
+            self.decay1_time.outgoing(),
+            self.release.outgoing()
         ]
     }
 

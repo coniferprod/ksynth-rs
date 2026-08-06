@@ -10,7 +10,10 @@ use rand::Rng;
 use crate::{
     SystemExclusiveData,
     ParseError,
-    Ranged, ranged_impl,
+    Ranged,
+    ranged_impl,
+    Adjustment,
+    parse_or_default,
 };
 use crate::k5000::{
     EnvelopeTime,
@@ -26,17 +29,7 @@ use crate::k5000::control::VelocityCurve;
 pub struct Cutoff(i32);
 ranged_impl!(Cutoff, 0, 127, 0);
 
-impl From<u8> for Cutoff {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Cutoff {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for Cutoff { }
 
 /// Resonance (0...31, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -44,17 +37,7 @@ impl Into<u8> for Cutoff {
 pub struct Resonance(i32);
 ranged_impl!(Resonance, 0, 31, 0);
 
-impl From<u8> for Resonance {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Resonance {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for Resonance { }
 
 /// Level (0...31, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -62,17 +45,7 @@ impl Into<u8> for Resonance {
 pub struct Level(i32);
 ranged_impl!(Level, 0, 31, 0);
 
-impl From<u8> for Level {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Level {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for Level { }
 
 /// Filter mode.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]
@@ -133,23 +106,23 @@ impl fmt::Display for Envelope {
 impl SystemExclusiveData for Envelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            attack_time: EnvelopeTime::from(data[0]),
-            decay1_time: EnvelopeTime::from(data[1]),
-            decay1_level: EnvelopeLevel::from(data[2]),
-            decay2_time: EnvelopeTime::from(data[3]),
-            decay2_level: EnvelopeLevel::from(data[4]),
-            release_time: EnvelopeTime::from(data[5]),
+            attack_time: parse_or_default::<EnvelopeTime>(data[0]),
+            decay1_time: parse_or_default::<EnvelopeTime>(data[1]),
+            decay1_level: parse_or_default::<EnvelopeLevel>(data[2]),
+            decay2_time: parse_or_default::<EnvelopeTime>(data[3]),
+            decay2_level: parse_or_default::<EnvelopeLevel>(data[4]),
+            release_time: parse_or_default::<EnvelopeTime>(data[5]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.into(),
-            self.decay1_time.into(),
-            self.decay1_level.into(),
-            self.decay2_time.into(),
-            self.decay2_level.into(),
-            self.release_time.into(),
+            self.attack_time.outgoing(),
+            self.decay1_time.outgoing(),
+            self.decay1_level.outgoing(),
+            self.decay2_time.outgoing(),
+            self.decay2_level.outgoing(),
+            self.release_time.outgoing(),
         ]
     }
 
@@ -181,15 +154,15 @@ impl fmt::Display for KeyScalingControl {
 impl SystemExclusiveData for KeyScalingControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            attack_time: ControlTime::from(data[0]),
-            decay1_time: ControlTime::from(data[1]),
+            attack_time: parse_or_default::<ControlTime>(data[0]),
+            decay1_time: parse_or_default::<ControlTime>(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.into(),
-            self.decay1_time.into(),
+            self.attack_time.outgoing(),
+            self.decay1_time.outgoing(),
         ]
     }
 
@@ -224,17 +197,17 @@ impl fmt::Display for VelocityControl {
 impl SystemExclusiveData for VelocityControl {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            depth: EnvelopeDepth::from(data[0]),
-            attack_time: ControlTime::from(data[1]),
-            decay1_time: ControlTime::from(data[2]),
+            depth: parse_or_default::<EnvelopeDepth>(data[0]),
+            attack_time: parse_or_default::<ControlTime>(data[1]),
+            decay1_time: parse_or_default::<ControlTime>(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.depth.into(),
-            self.attack_time.into(),
-            self.decay1_time.into(),
+            self.depth.outgoing(),
+            self.attack_time.outgoing(),
+            self.decay1_time.outgoing(),
         ]
     }
 
@@ -334,12 +307,12 @@ impl SystemExclusiveData for Filter {
             is_active: data[0] != 1,  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
             velocity_curve: VelocityCurve::try_from(data[2]).unwrap(),  // from 0 ~ 11 to enum
-            resonance: Resonance::from(data[3]),
-            level: Level::from(data[4]),
-            cutoff: Cutoff::from(data[5]),
-            ks_to_cutoff: EnvelopeDepth::from(data[6]),
-            vel_to_cutoff: EnvelopeDepth::from(data[7]),
-            envelope_depth: EnvelopeDepth::from(data[8]),
+            resonance: parse_or_default::<Resonance>(data[3]),
+            level: parse_or_default::<Level>(data[4]),
+            cutoff: parse_or_default::<Cutoff>(data[5]),
+            ks_to_cutoff: parse_or_default::<EnvelopeDepth>(data[6]),
+            vel_to_cutoff: parse_or_default::<EnvelopeDepth>(data[7]),
+            envelope_depth: parse_or_default::<EnvelopeDepth>(data[8]),
             envelope: Envelope::from_bytes(&data[9..15])?,
             modulation: Modulation::from_bytes(&data[15..20])?,
         })
@@ -352,12 +325,12 @@ impl SystemExclusiveData for Filter {
             if self.is_active { 0 } else { 1 },  // is this the right way around?
             self.mode as u8,
             self.velocity_curve as u8,  // raw enum values map to 0~11
-            self.resonance.into(),
-            self.level.into(),
-            self.cutoff.into(),
-            self.ks_to_cutoff.into(),
-            self.vel_to_cutoff.into(),
-            self.envelope_depth.into(),
+            self.resonance.outgoing(),
+            self.level.outgoing(),
+            self.cutoff.outgoing(),
+            self.ks_to_cutoff.outgoing(),
+            self.vel_to_cutoff.outgoing(),
+            self.envelope_depth.outgoing(),
         ];
         result.extend(bs);
         result.extend(self.envelope.to_bytes());

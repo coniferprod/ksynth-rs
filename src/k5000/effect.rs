@@ -14,6 +14,8 @@ use crate::{
     ParseError,
     Ranged,
     ranged_impl,
+    parse_or_default,
+    Adjustment,
 };
 use crate::k5000::control::Source;
 use crate::k5000::Depth;
@@ -25,14 +27,12 @@ use crate::k5000::Depth;
 pub struct EffectAlgorithm(i32);
 ranged_impl!(EffectAlgorithm, 1, 4, 1);
 
-impl From<u8> for EffectAlgorithm {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) + 1)
+impl Adjustment for EffectAlgorithm {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) + 1
     }
-}
 
-impl Into<u8> for EffectAlgorithm {
-    fn into(self) -> u8 {
+    fn outgoing(&self) -> u8 {
         (self.value() - 1) as u8
     }
 }
@@ -94,17 +94,7 @@ static EFFECT_NAMES: &[&str] = &[
 pub struct EffectParameter(i32);
 ranged_impl!(EffectParameter, 0, 127, 0);
 
-impl From<u8> for EffectParameter {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for EffectParameter {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for EffectParameter { }
 
 /// Effect type.
 #[derive(
@@ -265,12 +255,12 @@ impl SystemExclusiveData for EffectDefinition {
         eprintln!("EffectDefinition, data = {:02X?}", data);
         Ok(EffectDefinition {
             effect: Effect::try_from(data[0]).unwrap(),  // 11~47
-            depth: Depth::from(data[1]),
+            depth: parse_or_default::<Depth>(data[1]),
             parameters: [
-                EffectParameter::from(data[2]),
-                EffectParameter::from(data[3]),
-                EffectParameter::from(data[4]),
-                EffectParameter::from(data[5]),
+                parse_or_default::<EffectParameter>(data[2]),
+                parse_or_default::<EffectParameter>(data[3]),
+                parse_or_default::<EffectParameter>(data[4]),
+                parse_or_default::<EffectParameter>(data[5]),
             ],
         })
     }
@@ -278,11 +268,11 @@ impl SystemExclusiveData for EffectDefinition {
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             self.effect as u8,
-            self.depth.into(),
-            self.parameters[0].into(),
-            self.parameters[1].into(),
-            self.parameters[2].into(),
-            self.parameters[3].into()
+            self.depth.outgoing(),
+            self.parameters[0].outgoing(),
+            self.parameters[1].outgoing(),
+            self.parameters[2].outgoing(),
+            self.parameters[3].outgoing()
         ]
     }
 
@@ -318,7 +308,7 @@ impl SystemExclusiveData for EffectSettings {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectSettings, data = {:02X?}", data);
         Ok(EffectSettings {
-            algorithm: EffectAlgorithm::from(data[0]),
+            algorithm: parse_or_default::<EffectAlgorithm>(data[0]),
             reverb: EffectDefinition::from_bytes(&data[1..7])?,
             effects: [
                 EffectDefinition::from_bytes(&data[7..13])?,
@@ -332,7 +322,7 @@ impl SystemExclusiveData for EffectSettings {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.push(self.algorithm.into());
+        result.push(self.algorithm.outgoing());
 
         result.extend(self.reverb.to_bytes());
 
@@ -379,7 +369,7 @@ impl SystemExclusiveData for ControlSource {
         Ok(Self {
             source: Source::try_from(data[0]).unwrap(),
             destination: Destination::try_from(data[1]).unwrap(),
-            depth: Depth::from(data[2]),
+            depth: parse_or_default::<Depth>(data[2]),
         })
     }
 
@@ -387,7 +377,7 @@ impl SystemExclusiveData for ControlSource {
         vec![
             self.source as u8, 
             self.destination as u8, 
-            self.depth.into()
+            self.depth.outgoing()
         ]
     }
 

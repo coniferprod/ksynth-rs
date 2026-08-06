@@ -1,7 +1,12 @@
 use std::fmt;
 use rand::Rng;
 
-use crate::{Ranged, ranged_impl};
+use crate::{
+    Ranged, 
+    ranged_impl, 
+    Adjustment, 
+    parse_or_default
+};
 
 pub mod filter;
 pub mod amp;
@@ -29,17 +34,7 @@ pub const NAME_LENGTH: usize = 8;
 pub struct Volume(i32);
 ranged_impl!(Volume, 0, 127, 0);
 
-impl From<u8> for Volume {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Volume {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for Volume { }  // use the default implementations
 
 /// Envelope time (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -47,17 +42,7 @@ impl Into<u8> for Volume {
 pub struct EnvelopeTime(i32);
 ranged_impl!(EnvelopeTime, 0, 127, 0);
 
-impl From<u8> for EnvelopeTime {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for EnvelopeTime {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for EnvelopeTime { }  // use the default implementations
 
 /// Envelope level (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -66,15 +51,13 @@ impl Into<u8> for EnvelopeTime {
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, -63, 63, 0);
 
-impl From<u8> for EnvelopeLevel {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for EnvelopeLevel {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for EnvelopeLevel {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -84,17 +67,7 @@ impl Into<u8> for EnvelopeLevel {
 pub struct EnvelopeRate(i32);
 ranged_impl!(EnvelopeRate, 0, 127, 0);
 
-impl From<u8> for EnvelopeRate {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for EnvelopeRate {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for EnvelopeRate { }  // use the default implementations
 
 /// Control time (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -103,14 +76,12 @@ impl Into<u8> for EnvelopeRate {
 pub struct ControlTime(i32);
 ranged_impl!(ControlTime, -63, 63, 0);
 
-impl From<u8> for ControlTime {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for ControlTime {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for ControlTime {
-    fn into(self) -> u8 {
+    fn outgoing(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -122,14 +93,12 @@ impl Into<u8> for ControlTime {
 pub struct EnvelopeDepth(i32);
 ranged_impl!(EnvelopeDepth, -63, 63, 0);
 
-impl From<u8> for EnvelopeDepth {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for EnvelopeDepth {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for EnvelopeDepth {
-    fn into(self) -> u8 {
+    fn outgoing(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -140,17 +109,7 @@ impl Into<u8> for EnvelopeDepth {
 pub struct Depth(i32);
 ranged_impl!(Depth, 0, 100, 0);
 
-impl From<u8> for Depth {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for Depth {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for Depth { }
 
 /// Key scaling (-63...63, default 0)
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -159,19 +118,12 @@ impl Into<u8> for Depth {
 pub struct KeyScaling(i32);
 ranged_impl!(KeyScaling, -63, 63, 0);
 
-impl From<u8> for KeyScaling {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for KeyScaling {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for KeyScaling {
-    fn into(self) -> u8 {
+    fn outgoing(&self) -> u8 {
         (self.value() + 64) as u8
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{*};
 }

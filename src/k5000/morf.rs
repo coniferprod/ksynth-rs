@@ -8,9 +8,7 @@ use num_enum::TryFromPrimitive;
 use rand::Rng;
 
 use crate::{
-    Ranged, ranged_impl,
-    SystemExclusiveData,
-    ParseError,
+    Adjustment, ParseError, Ranged, SystemExclusiveData, parse_or_default, ranged_impl,
 };
 use crate::k5000::EnvelopeTime;
 use crate::k5000::control::VelocityCurve;
@@ -21,17 +19,7 @@ use crate::k5000::control::VelocityCurve;
 pub struct VelocityDepth(i32);
 ranged_impl!(VelocityDepth, 0, 127, 0);
 
-impl From<u8> for VelocityDepth {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for VelocityDepth {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Adjustment for VelocityDepth { }
 
 /// KeyScalingToGain (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -40,15 +28,13 @@ impl Into<u8> for VelocityDepth {
 pub struct KeyScalingToGain(i32);
 ranged_impl!(KeyScalingToGain, -63, 63, 0);
 
-impl From<u8> for KeyScalingToGain {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Adjustment for KeyScalingToGain {
+    fn incoming(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for KeyScalingToGain {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn outgoing(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -105,9 +91,9 @@ impl SystemExclusiveData for HarmonicCommon {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
             group: HarmonicGroup::try_from(data[2]).unwrap(),
-            ks_to_gain: KeyScalingToGain::from(data[3]),
+            ks_to_gain: parse_or_default::<KeyScalingToGain>(data[3]),
             velocity_curve: VelocityCurve::try_from(data[4]).unwrap(), // 0~11 maps to enum
-            velocity_depth: VelocityDepth::from(data[5]),
+            velocity_depth: parse_or_default::<VelocityDepth>(data[5]),
         })
     }
 
@@ -116,9 +102,9 @@ impl SystemExclusiveData for HarmonicCommon {
             if self.morf_enabled { 1 } else { 0 },
             self.total_gain,
             self.group as u8,
-            self.ks_to_gain.into(),
+            self.ks_to_gain.outgoing(),
             self.velocity_curve as u8,
-            self.velocity_depth.into(),
+            self.velocity_depth.outgoing(),
         ]
     }
 
@@ -207,20 +193,20 @@ impl fmt::Display for MorfHarmonicEnvelope {
 impl SystemExclusiveData for MorfHarmonicEnvelope {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            time1: EnvelopeTime::from(data[0]),
-            time2: EnvelopeTime::from(data[1]),
-            time3: EnvelopeTime::from(data[2]),
-            time4: EnvelopeTime::from(data[3]),
+            time1: parse_or_default::<EnvelopeTime>(data[0]),
+            time2: parse_or_default::<EnvelopeTime>(data[1]),
+            time3: parse_or_default::<EnvelopeTime>(data[2]),
+            time4: parse_or_default::<EnvelopeTime>(data[3]),
             loop_type: Loop::try_from(data[4]).unwrap(),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.time1.into(),
-            self.time2.into(),
-            self.time3.into(),
-            self.time4.into(),
+            self.time1.outgoing(),
+            self.time2.outgoing(),
+            self.time3.outgoing(),
+            self.time4.outgoing(),
             self.loop_type as u8,
         ]
     }
