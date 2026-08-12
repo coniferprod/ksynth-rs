@@ -102,7 +102,8 @@ impl SystemExclusiveData for FixedKey {
             Ok(FixedKey::Off)
         }
         else {
-            Ok(FixedKey::On(Key { note: MIDINote::from(data[0] - 21) }))
+            let note = parse_or_default::<MIDINote>(data[0] - 21);
+            Ok(FixedKey::On(Key { note }))
         }
     }
 
@@ -110,7 +111,7 @@ impl SystemExclusiveData for FixedKey {
         match self {
             FixedKey::Off => vec![0x00],
             FixedKey::On(key) => {
-                let b: u8 = key.note.into();
+                let b: u8 = key.note.outgoing();
                 vec![b + 21]
             },
         }

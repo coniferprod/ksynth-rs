@@ -79,7 +79,7 @@ impl Default for Zone {
     fn default() -> Self {
         Self {
             low: Key { note: MIDINote::new(0) },
-            high: Key { note: MIDINote::from(127) },
+            high: Key { note: MIDINote::new(127) },
         }
     }
 }

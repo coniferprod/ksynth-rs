@@ -257,8 +257,8 @@ impl SystemExclusiveData for Section {
         offset += 1;
 
         let zone = Zone { 
-            low: Key { note: MIDINote::from(data[offset]) }, 
-            high: Key { note: MIDINote::from(data[offset + 1]) }, 
+            low: Key { note: parse_or_default::<MIDINote>(data[offset]) }, 
+            high: Key { note: parse_or_default::<MIDINote>(data[offset + 1]) }, 
         };
         offset += 2;
 
@@ -267,7 +267,7 @@ impl SystemExclusiveData for Section {
 
         // Stored as 0...15, scale to 1...16, but on the K50000W it is zero.
         // FIXME: Do we need to deal with this?
-        let receive_channel = MIDIChannel::from(data[offset]);
+        let receive_channel = parse_or_default::<MIDIChannel>(data[offset]);
 
         Ok(Section {
             single,
@@ -299,7 +299,7 @@ impl SystemExclusiveData for Section {
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_switch.to_bytes());
 
-        result.push(self.receive_channel.into());
+        result.push(self.receive_channel.outgoing());
 
         result
     }
@@ -321,7 +321,12 @@ impl Default for MultiPatch {
         MultiPatch {
             checksum: 0x00,
             common: Default::default(),
-            sections: [Default::default(), Default::default(), Default::default(), Default::default()]
+            sections: [
+                Default::default(), 
+                Default::default(), 
+                Default::default(), 
+                Default::default()
+            ],
         }
     }
 }
@@ -338,7 +343,7 @@ impl SystemExclusiveData for MultiPatch {
                 Section::from_bytes(&data[67..79]).unwrap(),
                 Section::from_bytes(&data[79..91]).unwrap(),
                 Section::from_bytes(&data[91..103]).unwrap(),
-            ]
+            ],
         })
     }
 

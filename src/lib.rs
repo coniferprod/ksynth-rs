@@ -38,6 +38,10 @@ pub trait SystemExclusiveData: Sized {
     fn data_size() -> usize;
 }
 
+/// Adjustments required for values of domain types when
+/// reading them from or writing them to a SysEx message.
+/// If no adjustment is required, the default implementations
+/// can be used.
 pub trait Adjustment: Ranged {
     // Default implementation: the u8 as i32
     fn incoming(b: u8) -> i32 { b as i32 }
@@ -147,19 +151,6 @@ pub fn parse_or_default<R: Ranged + Adjustment + Default>(b: u8) -> R {
 pub struct MIDIChannel(i32);
 crate::ranged_impl!(MIDIChannel, 1, 16, 1);
 
-impl From<u8> for MIDIChannel {
-    fn from(item: u8) -> Self {
-        //Self((item + 1).into())  // bring into 1...16
-        Self((item as i32) + 1)
-    }
-}
-
-impl Into<u8> for MIDIChannel {
-    fn into(self) -> u8 {
-        (self.value() as u8) - 1
-    }
-}
-
 impl Adjustment for MIDIChannel {
     fn incoming(b: u8) -> i32 {
         (b as i32) + 1
@@ -174,18 +165,6 @@ impl Adjustment for MIDIChannel {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct MIDINote(i32);
 crate::ranged_impl!(MIDINote, 0, 127, 60);
-
-impl From<u8> for MIDINote {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl From<MIDINote> for u8{
-    fn from(value: MIDINote) -> Self {
-        value.value() as u8
-    }
-}
 
 impl Adjustment for MIDINote {}   // using the default implementations
 
