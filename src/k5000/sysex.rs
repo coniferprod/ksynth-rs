@@ -7,12 +7,11 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 use strum_macros;
-
-use crate::{
+use syxpack::{
     Ranged,
     SystemExclusiveData,
     ParseError,
-    MIDIChannel
+    MidiChannel,
 };
 
 /// Kawai K5000 System Exclusive functions.
@@ -36,7 +35,7 @@ pub enum Function {
 
 /// K5000 System Exclusive message.
 pub struct Message {
-    pub channel: MIDIChannel,
+    pub channel: MidiChannel,
     pub function: Function,
     pub function_data: Vec<u8>,
     pub subdata: Vec<u8>,
@@ -46,7 +45,7 @@ pub struct Message {
 impl SystemExclusiveData for Message {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            channel: MIDIChannel::new(data[2].into()),
+            channel: MidiChannel::new(data[2].into()),
             function: Function::try_from(data[3]).unwrap(),
             function_data: Vec::<u8>::new(),  // TODO: fix this
             subdata: Vec::<u8>::new(),  // TODO: fix this
@@ -156,7 +155,7 @@ impl fmt::Display for PatchKind {
 /// System Exclusive dump header.
 #[derive(Debug, PartialEq)]
 pub struct Header {
-    pub channel: MIDIChannel,
+    pub channel: MidiChannel,
     pub cardinality: Cardinality,
     pub bank_identifier: Option<BankIdentifier>,
     pub kind: PatchKind,
@@ -173,7 +172,7 @@ impl Header {
     ///
     /// * `buf` - a byte vector with the header data
     pub fn identify_vec(buf: &[u8]) -> Option<Header> {
-        let channel = MIDIChannel::new((buf[0] + 1).into()); // use 1...16
+        let channel = MidiChannel::new((buf[0] + 1).into()); // use 1...16
         let result = match &buf[1..] {
             // One ADD Bank A (see 3.1.1b)
             [0x20, 0x00, 0x0A, 0x00, 0x00, sub1, ..] => {
@@ -527,7 +526,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::A),
                 kind: PatchKind::Single,
@@ -542,7 +541,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::D),
                 kind: PatchKind::Single,
@@ -557,7 +556,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::E),
                 kind: PatchKind::Single,
@@ -572,7 +571,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::F),
                 kind: PatchKind::Single,
@@ -587,7 +586,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: None,
                 kind: PatchKind::Multi,
@@ -606,7 +605,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::A),
                 kind: PatchKind::Single,
@@ -624,7 +623,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::D),
                 kind: PatchKind::Single,
@@ -642,7 +641,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::E),
                 kind: PatchKind::Single,
@@ -660,7 +659,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::F),
                 kind: PatchKind::Single,
@@ -675,7 +674,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: None,
                 kind: PatchKind::Multi,
@@ -690,7 +689,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: Some(BankIdentifier::B),
                 kind: PatchKind::Single,
@@ -705,7 +704,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: Some(BankIdentifier::B),
                 kind: PatchKind::Single,
@@ -720,7 +719,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: None,
                 kind: PatchKind::DrumKit,
@@ -735,7 +734,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::One,
                 bank_identifier: None,
                 kind: PatchKind::DrumInstrument,
@@ -750,7 +749,7 @@ mod tests {
         assert_eq!(
             Header::identify_vec(&cmd).unwrap(),
             Header {
-                channel: MIDIChannel::new(1),
+                channel: MidiChannel::new(1),
                 cardinality: Cardinality::Block,
                 bank_identifier: None,
                 kind: PatchKind::DrumInstrument,

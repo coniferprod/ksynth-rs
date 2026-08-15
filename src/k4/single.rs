@@ -7,15 +7,16 @@ use std::fmt;
 
 use bit::BitIndex;
 use num_enum::TryFromPrimitive;
-
-use crate::{
+use syxpack::{
     Ranged,
     SystemExclusiveData,
     ParseError,
+};
+
+use crate::{
     Checksum,
     every_nth_byte
 };
-
 use crate::k4::{
     Level,
     ModulationDepth,
@@ -515,7 +516,7 @@ impl Checksum for SinglePatch {
 mod tests {
     use super::{*};
 
-    use crate::Ranged;
+    use syxpack::Ranged;
 
     use crate::k4::{
         sysex::Header,

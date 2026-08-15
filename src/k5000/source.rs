@@ -3,18 +3,18 @@
 
 use std::fmt;
 
-use rand::Rng;
+use rand::RngExt;
 use pretty_hex::*;
-
-use crate::{
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged,
-    MIDINote,
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
 };
+
+use crate::MIDINote;
 use crate::k5000::control::{
     VelocitySwitchSettings,
     ModulationSettings,
@@ -32,7 +32,7 @@ use crate::k5000::lfo::*;
 pub struct KeyOnDelay(i32);
 ranged_impl!(KeyOnDelay, 0, 127, 0);
 
-impl Adjustment for KeyOnDelay { }  // use the default implementations
+impl Encoding for KeyOnDelay { }  // use the default implementations
 
 /// Key in a keyboard zone.
 #[derive(Debug, Eq, PartialEq)]
@@ -104,8 +104,8 @@ impl SystemExclusiveData for Zone {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.low.note.outgoing(),
-            self.high.note.outgoing(),
+            self.low.note.encode(),
+            self.high.note.encode(),
         ]
     }
 
@@ -118,7 +118,7 @@ impl SystemExclusiveData for Zone {
 pub struct BenderPitch(i32);
 ranged_impl!(BenderPitch, 0, 24, 0);
 
-impl Adjustment for BenderPitch { }  // use the default implementations
+impl Encoding for BenderPitch { }  // use the default implementations
 
 /// Bender cutoff (0...31, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -126,7 +126,7 @@ impl Adjustment for BenderPitch { }  // use the default implementations
 pub struct BenderCutoff(i32);
 ranged_impl!(BenderCutoff, 0, 31, 0);
 
-impl Adjustment for BenderCutoff { }  // use the default implementations
+impl Encoding for BenderCutoff { }  // use the default implementations
 
 /// Source control settings.
 #[derive(Debug)]
@@ -201,11 +201,11 @@ impl SystemExclusiveData for SourceControl {
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_sw.to_bytes());
         result.push(self.effect_path);
-        result.push(self.volume.outgoing());
-        result.push(self.bender_pitch.outgoing());
-        result.push(self.bender_cutoff.outgoing());
+        result.push(self.volume.encode());
+        result.push(self.bender_pitch.encode());
+        result.push(self.bender_cutoff.encode());
         result.extend(self.modulation.to_bytes());
-        result.push(self.key_on_delay.outgoing());
+        result.push(self.key_on_delay.encode());
         result.extend(self.pan.to_bytes());
 
         result
@@ -323,7 +323,7 @@ impl SystemExclusiveData for Source {
 #[cfg(test)]
 mod tests {
     use super::{*};
-    use crate::Ranged;
+    use syxpack::Ranged;
 
     #[test]
     fn test_key_name() {

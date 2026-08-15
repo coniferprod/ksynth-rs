@@ -7,18 +7,23 @@ use std::fmt;
 use std::collections::BTreeMap;
 
 use bit::BitIndex;
-use xml_builder::{XML, XMLBuilder, XMLElement, XMLVersion};
-use rand::Rng;
-
-use crate::{
+use xml_builder::{
+    XML, 
+    XMLBuilder, 
+    XMLElement, 
+    XMLVersion
+};
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
-    Checksum,
     Ranged,
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
 };
+
+use crate::Checksum;
 use crate::k5000::control::{
     Polyphony,
     AmplitudeModulation,
@@ -41,7 +46,7 @@ use crate::k5000::Volume;
 pub struct PortamentoSpeed(i32);
 ranged_impl!(PortamentoSpeed, 0, 127, 0);
 
-impl Adjustment for PortamentoSpeed { }
+impl Encoding for PortamentoSpeed { }
 
 /// Portamento setting.
 #[derive(Debug)]
@@ -267,7 +272,7 @@ impl SystemExclusiveData for Common {
         result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
         result.push(0);  // drum_mark
         result.extend(self.name.clone().into_bytes());  // note clone()
-        result.push(self.volume.outgoing());
+        result.push(self.volume.encode());
         result.push(self.polyphony as u8);
         result.push(0);  // "no use"
         result.push(self.source_count);
@@ -285,7 +290,7 @@ impl SystemExclusiveData for Common {
 
         // Portamento status and speed
         result.push(if self.portamento.is_on { 1 } else { 0 });
-        result.push(self.portamento.speed.outgoing());
+        result.push(self.portamento.speed.encode());
 
         // Pick out the destinations and depths as the SysEx spec wants them.
         for m in &self.macros {

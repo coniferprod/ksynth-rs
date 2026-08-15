@@ -2,12 +2,13 @@
 //!
 
 use std::fmt;
-use log;
 
-use crate::{
+use log;
+use syxpack::{
     SystemExclusiveData,
     ParseError
 };
+
 use crate::k4::{drum, single, multi, effect};
 
 /// Number of single patches in a bank.

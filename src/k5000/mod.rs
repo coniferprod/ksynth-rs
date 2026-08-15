@@ -1,11 +1,10 @@
 use std::fmt;
-use rand::Rng;
 
-use crate::{
+use rand::RngExt;
+use syxpack::{
     Ranged, 
     ranged_impl, 
-    Adjustment, 
-    parse_or_default
+    Encoding, 
 };
 
 pub mod filter;
@@ -34,7 +33,7 @@ pub const NAME_LENGTH: usize = 8;
 pub struct Volume(i32);
 ranged_impl!(Volume, 0, 127, 0);
 
-impl Adjustment for Volume { }  // use the default implementations
+impl Encoding for Volume { }  // use the default implementations
 
 /// Envelope time (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -42,7 +41,7 @@ impl Adjustment for Volume { }  // use the default implementations
 pub struct EnvelopeTime(i32);
 ranged_impl!(EnvelopeTime, 0, 127, 0);
 
-impl Adjustment for EnvelopeTime { }  // use the default implementations
+impl Encoding for EnvelopeTime { }  // use the default implementations
 
 /// Envelope level (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -51,12 +50,12 @@ impl Adjustment for EnvelopeTime { }  // use the default implementations
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, -63, 63, 0);
 
-impl Adjustment for EnvelopeLevel {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for EnvelopeLevel {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8        
     }
 }
@@ -67,7 +66,7 @@ impl Adjustment for EnvelopeLevel {
 pub struct EnvelopeRate(i32);
 ranged_impl!(EnvelopeRate, 0, 127, 0);
 
-impl Adjustment for EnvelopeRate { }  // use the default implementations
+impl Encoding for EnvelopeRate { }  // use the default implementations
 
 /// Control time (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -76,12 +75,12 @@ impl Adjustment for EnvelopeRate { }  // use the default implementations
 pub struct ControlTime(i32);
 ranged_impl!(ControlTime, -63, 63, 0);
 
-impl Adjustment for ControlTime {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for ControlTime {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -93,12 +92,12 @@ impl Adjustment for ControlTime {
 pub struct EnvelopeDepth(i32);
 ranged_impl!(EnvelopeDepth, -63, 63, 0);
 
-impl Adjustment for EnvelopeDepth {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for EnvelopeDepth {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -109,7 +108,7 @@ impl Adjustment for EnvelopeDepth {
 pub struct Depth(i32);
 ranged_impl!(Depth, 0, 100, 0);
 
-impl Adjustment for Depth { }
+impl Encoding for Depth { }
 
 /// Key scaling (-63...63, default 0)
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -118,12 +117,12 @@ impl Adjustment for Depth { }
 pub struct KeyScaling(i32);
 ranged_impl!(KeyScaling, -63, 63, 0);
 
-impl Adjustment for KeyScaling {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for KeyScaling {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }

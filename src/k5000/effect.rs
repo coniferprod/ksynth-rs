@@ -7,16 +7,16 @@ use std::collections::HashMap;
 
 use num_enum::TryFromPrimitive;
 use lazy_static::lazy_static;
-use rand::Rng;
-
-use crate::{
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged,
     ranged_impl,
     parse_or_default,
-    Adjustment,
+    Encoding,
 };
+
 use crate::k5000::control::Source;
 use crate::k5000::Depth;
 
@@ -27,12 +27,12 @@ use crate::k5000::Depth;
 pub struct EffectAlgorithm(i32);
 ranged_impl!(EffectAlgorithm, 1, 4, 1);
 
-impl Adjustment for EffectAlgorithm {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for EffectAlgorithm {
+    fn decode(b: u8) -> i32 {
         (b as i32) + 1
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() - 1) as u8
     }
 }
@@ -94,7 +94,7 @@ static EFFECT_NAMES: &[&str] = &[
 pub struct EffectParameter(i32);
 ranged_impl!(EffectParameter, 0, 127, 0);
 
-impl Adjustment for EffectParameter { }
+impl Encoding for EffectParameter { }
 
 /// Effect type.
 #[derive(
@@ -268,11 +268,11 @@ impl SystemExclusiveData for EffectDefinition {
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             self.effect as u8,
-            self.depth.outgoing(),
-            self.parameters[0].outgoing(),
-            self.parameters[1].outgoing(),
-            self.parameters[2].outgoing(),
-            self.parameters[3].outgoing()
+            self.depth.encode(),
+            self.parameters[0].encode(),
+            self.parameters[1].encode(),
+            self.parameters[2].encode(),
+            self.parameters[3].encode()
         ]
     }
 
@@ -322,7 +322,7 @@ impl SystemExclusiveData for EffectSettings {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::new();
 
-        result.push(self.algorithm.outgoing());
+        result.push(self.algorithm.encode());
 
         result.extend(self.reverb.to_bytes());
 
@@ -377,7 +377,7 @@ impl SystemExclusiveData for ControlSource {
         vec![
             self.source as u8, 
             self.destination as u8, 
-            self.depth.outgoing()
+            self.depth.encode()
         ]
     }
 

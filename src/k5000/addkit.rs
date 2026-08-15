@@ -1,11 +1,12 @@
 //! Data model for the "additive kit" used by an ADD source.
 //!
 
-use crate::{
+use syxpack::{
     SystemExclusiveData,
     ParseError,
-    Checksum
 };
+
+use crate::Checksum;
 use crate::k5000::formant::FormantFilter;
 use crate::k5000::harmonic::{
     Envelope as HarmonicEnvelope,

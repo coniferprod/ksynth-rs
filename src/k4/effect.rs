@@ -8,6 +8,11 @@ use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 use num_enum::TryFromPrimitive;
+use syxpack::{
+    Ranged,
+    SystemExclusiveData,
+    ParseError,
+};
 
 use crate::k4::{
     Level,
@@ -15,12 +20,7 @@ use crate::k4::{
     SmallEffectParameter,
     BigEffectParameter
 };
-use crate::{
-    Ranged,
-    SystemExclusiveData,
-    ParseError,
-    Checksum
-};
+use crate::Checksum;
 
 static EFFECT_NAMES: &[&str] = &[
     "None",  // just to align with 1...16

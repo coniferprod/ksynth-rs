@@ -4,11 +4,14 @@
 use std::fmt;
 
 use bit::BitIndex;
+use syxpack::{
+    Ranged, 
+    SystemExclusiveData, 
+    ParseError
+};
 
-use crate::{Ranged, SystemExclusiveData, ParseError};
 use crate::k4::{Level, Curve, Coarse, Fine};
 use crate::k4::wave::Wave;
-
 
 /// Source in a single patch.
 #[derive(Copy, Clone)]

@@ -4,16 +4,16 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use rand::Rng;
-
-use crate::{
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged, 
     ranged_impl,
     parse_or_default,
-    Adjustment,
+    Encoding,
 };
+
 use crate::k5000::{
     EnvelopeTime,
     ControlTime,
@@ -31,7 +31,7 @@ use crate::k5000::control::VelocityCurve;
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, 0, 127, 0);
 
-impl Adjustment for EnvelopeLevel { }
+impl Encoding for EnvelopeLevel { }
 
 /// Velocity control level (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -39,7 +39,7 @@ impl Adjustment for EnvelopeLevel { }
 pub struct VelocityControlLevel(i32);
 ranged_impl!(VelocityControlLevel, 0, 127, 0);
 
-impl Adjustment for VelocityControlLevel { }
+impl Encoding for VelocityControlLevel { }
 
 /// Amplifier envelope.
 #[derive(Debug)]
@@ -94,12 +94,12 @@ impl SystemExclusiveData for Envelope {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.outgoing(),
-            self.decay1_time.outgoing(),
-            self.decay1_level.outgoing(),
-            self.decay2_time.outgoing(),
-            self.decay2_level.outgoing(),
-            self.release_time.outgoing()
+            self.attack_time.encode(),
+            self.decay1_time.encode(),
+            self.decay1_level.encode(),
+            self.decay2_time.encode(),
+            self.decay2_level.encode(),
+            self.release_time.encode()
         ]
     }
 
@@ -146,10 +146,10 @@ impl SystemExclusiveData for KeyScalingControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.level.outgoing(),
-            self.attack_time.outgoing(),
-            self.decay1_time.outgoing(),
-            self.release.outgoing(),
+            self.level.encode(),
+            self.attack_time.encode(),
+            self.decay1_time.encode(),
+            self.release.encode(),
         ]
     }
 
@@ -196,10 +196,10 @@ impl SystemExclusiveData for VelocityControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.level.outgoing(),
-            self.attack_time.outgoing(),
-            self.decay1_time.outgoing(),
-            self.release.outgoing()
+            self.level.encode(),
+            self.attack_time.encode(),
+            self.decay1_time.encode(),
+            self.release.encode()
         ]
     }
 

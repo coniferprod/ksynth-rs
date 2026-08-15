@@ -5,11 +5,16 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
-use rand::Rng;
-
-use crate::{
-    Adjustment, ParseError, Ranged, SystemExclusiveData, parse_or_default, ranged_impl,
+use rand::RngExt;
+use syxpack::{
+    Encoding, 
+    ParseError, 
+    Ranged, 
+    SystemExclusiveData, 
+    parse_or_default, 
+    ranged_impl,
 };
+
 use crate::k5000::EnvelopeTime;
 use crate::k5000::control::VelocityCurve;
 
@@ -19,7 +24,7 @@ use crate::k5000::control::VelocityCurve;
 pub struct VelocityDepth(i32);
 ranged_impl!(VelocityDepth, 0, 127, 0);
 
-impl Adjustment for VelocityDepth { }
+impl Encoding for VelocityDepth { }
 
 /// KeyScalingToGain (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
@@ -28,12 +33,12 @@ impl Adjustment for VelocityDepth { }
 pub struct KeyScalingToGain(i32);
 ranged_impl!(KeyScalingToGain, -63, 63, 0);
 
-impl Adjustment for KeyScalingToGain {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for KeyScalingToGain {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8        
     }
 }
@@ -102,9 +107,9 @@ impl SystemExclusiveData for HarmonicCommon {
             if self.morf_enabled { 1 } else { 0 },
             self.total_gain,
             self.group as u8,
-            self.ks_to_gain.outgoing(),
+            self.ks_to_gain.encode(),
             self.velocity_curve as u8,
-            self.velocity_depth.outgoing(),
+            self.velocity_depth.encode(),
         ]
     }
 
@@ -203,10 +208,10 @@ impl SystemExclusiveData for MorfHarmonicEnvelope {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.time1.outgoing(),
-            self.time2.outgoing(),
-            self.time3.outgoing(),
-            self.time4.outgoing(),
+            self.time1.encode(),
+            self.time2.encode(),
+            self.time3.encode(),
+            self.time4.encode(),
             self.loop_type as u8,
         ]
     }

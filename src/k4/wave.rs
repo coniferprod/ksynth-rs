@@ -4,8 +4,9 @@
 use std::fmt;
 use std::convert::TryInto;
 
+use syxpack::{Ranged, SystemExclusiveData, ParseError};
+
 use crate::k4::WaveNumber;
-use crate::{Ranged, SystemExclusiveData, ParseError};
 
 static WAVE_NAMES: &[&str] = &[
     "(not used)",  // just to bring the index in line with the one-based wave number

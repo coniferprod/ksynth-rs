@@ -4,22 +4,19 @@
 use std::fmt;
 use std::convert::TryFrom;
 
-use rand::Rng;
+use rand::RngExt;
 use num_enum::TryFromPrimitive;
-
-use crate::{
+use syxpack::{
     SystemExclusiveData,
-    ParseError
-};
-use crate::k5000::{
-    KeyScaling
-};
-
-use crate::{
+    ParseError,
     Ranged, 
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
+};
+
+use crate::k5000::{
+    KeyScaling
 };
 
 /// LFO speed (0...127, default 0)
@@ -27,14 +24,14 @@ use crate::{
 pub struct Speed(i32);
 ranged_impl!(Speed, 0, 127, 0);
 
-impl Adjustment for Speed { }
+impl Encoding for Speed { }
 
 /// LFO depth (0...63, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Depth(i32);
 ranged_impl!(Depth, 0, 63, 0);
 
-impl Adjustment for Depth { }
+impl Encoding for Depth { }
 
 /// LFO waveform type.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, TryFromPrimitive, Default)]
@@ -93,8 +90,8 @@ impl SystemExclusiveData for Control {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.depth.outgoing(), 
-            self.key_scaling.outgoing()
+            self.depth.encode(), 
+            self.key_scaling.encode()
         ]
     }
 
@@ -166,10 +163,10 @@ impl SystemExclusiveData for Lfo {
 
         result.extend(vec![
             self.waveform as u8,
-            self.speed.outgoing(),
-            self.delay_onset.outgoing(),
-            self.fade_in_time.outgoing(),
-            self.fade_in_to_speed.outgoing()
+            self.speed.encode(),
+            self.delay_onset.encode(),
+            self.fade_in_time.encode(),
+            self.fade_in_to_speed.encode()
         ]);
         result.extend(self.vibrato.to_bytes());
         result.extend(self.growl.to_bytes());

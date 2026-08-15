@@ -7,9 +7,8 @@ use std::fmt;
 use num_enum::TryFromPrimitive;
 use bit::BitIndex;
 use strum_macros::{self, AsRefStr};
-use rand::Rng;
-
-use crate::{
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged, ranged_impl,

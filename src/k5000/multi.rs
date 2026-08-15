@@ -4,20 +4,20 @@
 use std::fmt;
 
 use bit::BitIndex;
-use rand::Rng;
+use rand::RngExt;
 
-use crate::k5000::control::VelocitySwitchSettings;
-use crate::{
+use syxpack::{
     SystemExclusiveData, 
     ParseError, 
-    Checksum,
-    MIDINote,
-    MIDIChannel,
+    MidiChannel,
     Ranged,
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
 };
+
+use crate::MIDINote;
+use crate::k5000::control::VelocitySwitchSettings;
 use crate::k5000::Volume;
 use crate::k5000::effect::{
     EffectSettings, 
@@ -36,7 +36,7 @@ pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
 pub struct PatchNumber(i32);
 ranged_impl!(PatchNumber, 0, 127, 0);
 
-impl Adjustment for PatchNumber { }
+impl Encoding for PatchNumber { }
 
 /// Transpose (-24...24, default 0) for combi sections.
 /// SysEx storage: one byte, 40(-24)~88(+24)
@@ -45,12 +45,12 @@ impl Adjustment for PatchNumber { }
 pub struct Transpose(i32);
 ranged_impl!(Transpose, -24, 24, 0);
 
-impl Adjustment for Transpose {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for Transpose {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8        
     }
 }
@@ -61,12 +61,12 @@ impl Adjustment for Transpose {
 pub struct Frequency(i32);
 ranged_impl!(Frequency, -6, 6, 0);
 
-impl Adjustment for Frequency {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for Frequency {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8        
     }
 }
@@ -168,12 +168,12 @@ impl SystemExclusiveData for Common {
         result.extend(self.effects.to_bytes());
 
         for i in 0..7 {
-            result.push(self.geq[i].outgoing());
+            result.push(self.geq[i].encode());
         }
         //result.extend(self.geq.to_vec().iter().map(|n| n.into()));
 
         result.extend(self.name.clone().into_bytes());  // note the use of clone() here
-        result.push(self.volume.outgoing());
+        result.push(self.volume.encode());
 
         let mut mute_byte = 0x00;
         for i in 0..SECTION_COUNT {
@@ -201,7 +201,7 @@ pub struct Section {
     pub tune: i32,
     pub zone: Zone,
     pub vel_switch: VelocitySwitchSettings,
-    pub receive_channel: MIDIChannel,
+    pub receive_channel: MidiChannel,
 }
 
 impl fmt::Display for Section {
@@ -221,7 +221,7 @@ impl Default for Section {
             tune: 0,
             zone: Default::default(),
             vel_switch: Default::default(),
-            receive_channel: MIDIChannel::new(1),
+            receive_channel: MidiChannel::new(1),
         }
     }
 }
@@ -267,7 +267,7 @@ impl SystemExclusiveData for Section {
 
         // Stored as 0...15, scale to 1...16, but on the K50000W it is zero.
         // FIXME: Do we need to deal with this?
-        let receive_channel = parse_or_default::<MIDIChannel>(data[offset]);
+        let receive_channel = parse_or_default::<MidiChannel>(data[offset]);
 
         Ok(Section {
             single,
@@ -299,7 +299,7 @@ impl SystemExclusiveData for Section {
         result.extend(self.zone.to_bytes());
         result.extend(self.vel_switch.to_bytes());
 
-        result.push(self.receive_channel.outgoing());
+        result.push(self.receive_channel.encode());
 
         result
     }

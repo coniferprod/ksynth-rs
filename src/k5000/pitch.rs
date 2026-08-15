@@ -3,9 +3,8 @@
 
 use std::fmt;
 
-use rand::Rng;
-
-use crate::{
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged,

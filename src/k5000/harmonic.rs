@@ -4,16 +4,16 @@
 use std::fmt;
 
 use bit::BitIndex;
-use rand::Rng;
-
-use crate::{
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged,
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
 };
+
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
 use crate::k5000::{
@@ -25,7 +25,7 @@ use crate::k5000::{
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, 0, 127, 0);
 
-impl Adjustment for EnvelopeLevel { }
+impl Encoding for EnvelopeLevel { }
 
 pub type Level = u8;
 
@@ -101,8 +101,8 @@ impl SystemExclusiveData for EnvelopeSegment {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.rate.outgoing(), 
-            self.level.outgoing()
+            self.rate.encode(), 
+            self.level.encode()
         ]
     }
 
@@ -188,8 +188,8 @@ impl SystemExclusiveData for Envelope {
         // When emitting decay1 and decay2 data,
         // we need to bake the loop type into the levels.
 
-        let mut decay1_level_byte: u8 = self.decay1.level.outgoing();
-        let mut decay2_level_byte: u8 = self.decay2.level.outgoing();
+        let mut decay1_level_byte: u8 = self.decay1.level.encode();
+        let mut decay2_level_byte: u8 = self.decay2.level.encode();
 
         match self.loop_type {
             Loop::Loop1 => {

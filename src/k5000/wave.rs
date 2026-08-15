@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use crate::{
+use syxpack::{
     SystemExclusiveData,
     ParseError
 };

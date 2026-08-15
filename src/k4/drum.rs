@@ -3,16 +3,17 @@
 
 use std::convert::TryFrom;
 use std::fmt;
+
 use log::debug;
 use bit::BitIndex;
-
-use crate::{
+use syxpack::{
     SystemExclusiveData,
     ParseError,
-    Checksum,
-    MIDIChannel,
-    Ranged
+    MidiChannel,
+    Ranged,
 };
+
+use crate::Checksum;
 use crate::k4::{
     DRUM_NOTE_COUNT,
     Level,
@@ -105,7 +106,7 @@ pub const COMMON_DATA_SIZE: usize = 11;
 
 /// Drum common data.
 pub struct Common {
-    pub channel: MIDIChannel,  // MIDI channel, here 1...16, stored in SysEx as 0...15
+    pub channel: MidiChannel,  // MIDI channel, here 1...16, stored in SysEx as 0...15
     pub volume: Level, // 0~100
     pub velocity_depth: ModulationDepth,  // 0~100
 }
@@ -113,7 +114,7 @@ pub struct Common {
 impl Default for Common {
     fn default() -> Self {
         Common {
-            channel: MIDIChannel::new(10),
+            channel: MidiChannel::new(10),
             volume: Level::new(100),
             velocity_depth: ModulationDepth::new(0),
         }
@@ -161,7 +162,7 @@ impl Checksum for Common {
 impl SystemExclusiveData for Common {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Common {
-            channel: MIDIChannel::new((data[0] + 1) as i32),
+            channel: MidiChannel::new((data[0] + 1) as i32),
             volume: Level::new(data[1] as i32),
             velocity_depth: ModulationDepth::new((data[2] as i32) - 50),
         })

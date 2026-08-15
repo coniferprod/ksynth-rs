@@ -5,16 +5,16 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
-use rand::Rng;
-
-use crate::{
+use rand::RngExt;
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged,
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
 };
+
 use crate::k5000::morf::Loop;
 use crate::k5000::{
     EnvelopeRate,
@@ -28,12 +28,12 @@ use crate::k5000::lfo::{Depth, Speed};
 pub struct Bias(i32);
 ranged_impl!(Bias, -63, 63, 0);
 
-impl Adjustment for Bias {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for Bias {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8        
     }
 }
@@ -74,8 +74,8 @@ impl SystemExclusiveData for EnvelopeSegment {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.rate.outgoing(), 
-            self.level.outgoing()
+            self.rate.encode(), 
+            self.level.encode()
         ]
     }
 
@@ -131,8 +131,8 @@ impl SystemExclusiveData for Envelope {
         result.extend(
             vec![
                 self.decay_loop as u8,
-                self.velocity_depth.outgoing(),
-                self.ks_depth.outgoing()
+                self.velocity_depth.encode(),
+                self.ks_depth.encode()
             ]
         );
 
@@ -190,9 +190,9 @@ impl SystemExclusiveData for Lfo {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.speed.outgoing(), 
+            self.speed.encode(), 
             self.shape as u8, 
-            self.depth.outgoing()
+            self.depth.encode()
         ]
     }
 
@@ -244,9 +244,9 @@ impl SystemExclusiveData for FormantFilter {
 
         result.extend(
             vec![
-                self.bias.outgoing(),
+                self.bias.encode(),
                 self.mode as u8,
-                self.envelope_depth.outgoing()
+                self.envelope_depth.encode()
             ]
         );
         result.extend(self.envelope.to_bytes());

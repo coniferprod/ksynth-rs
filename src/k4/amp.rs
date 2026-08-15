@@ -3,7 +3,9 @@
 
 use std::convert::TryInto;
 use std::fmt;
-use crate::{Ranged, SystemExclusiveData, ParseError};
+
+use syxpack::{Ranged, SystemExclusiveData, ParseError};
+
 use crate::k4::{EnvelopeTime, EnvelopeLevel, ModulationDepth, Level};
 
 #[derive(Copy, Clone)]

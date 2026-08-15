@@ -7,14 +7,14 @@ use std::convert::TryFrom;
 use bit::BitIndex;
 use num_enum::TryFromPrimitive;
 
-use crate::{
+use syxpack::{
     Ranged,
     SystemExclusiveData,
-    Checksum,
     ParseError,
-    MIDIChannel,
-    MIDINote,
+    MidiChannel,
 };
+
+use crate::{Checksum, MIDINote};
 use crate::k4::{
     Level,
     PatchNumber,
@@ -125,7 +125,7 @@ pub struct Section {
     pub single_number: PatchNumber,
     pub zone: Zone,
     pub velocity_switch: VelocitySwitch,
-    pub receive_channel: MIDIChannel,
+    pub receive_channel: MidiChannel,
     pub is_muted: bool,
     pub out_select: u8,
     pub play_mode: PlayMode,
@@ -143,7 +143,7 @@ impl Section {
                 high_key: Key { note: MIDINote::new(127) }
             },
             velocity_switch: VelocitySwitch::All,
-            receive_channel: MIDIChannel::new(1),  // use 1...16 for MIDI channel here
+            receive_channel: MidiChannel::new(1),  // use 1...16 for MIDI channel here
             is_muted: false,
             out_select: 0,
             play_mode: PlayMode::Keyboard,
@@ -167,7 +167,7 @@ impl SystemExclusiveData for Section {
             single_number: PatchNumber::new(data[0].into()),
             zone: Zone::from_bytes(&[data[1], data[2]])?,
             velocity_switch: VelocitySwitch::try_from((data[3] >> 4) & 0b0000_0011).unwrap(),
-            receive_channel: MIDIChannel::new(((data[3] & 0b0000_1111) + 1).into()),  // adjust MIDI channel to 1...16
+            receive_channel: MidiChannel::new(((data[3] & 0b0000_1111) + 1).into()),  // adjust MIDI channel to 1...16
             is_muted: data[3] >> 6 == 1,
             out_select: data[4] & 0b0000_0111,
             play_mode: PlayMode::try_from((data[4] >> 3) & 0b0000_0011).unwrap(),
@@ -292,7 +292,7 @@ impl fmt::Display for PlayMode {
 mod tests {
     use super::{*};
 
-    use crate::Ranged;
+    use syxpack::Ranged;
 
     use crate::k4::{
         bank,
@@ -300,8 +300,6 @@ mod tests {
         single::SinglePatch,
         multi::MultiPatch,
     };
-
-    use super::{*};
 
     static DATA: &'static [u8] = include_bytes!("A401.SYX");
 

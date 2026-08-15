@@ -5,14 +5,14 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
-use rand::Rng;
+use rand::RngExt;
 
-use crate::{
+use syxpack::{
     SystemExclusiveData,
     ParseError,
     Ranged,
     ranged_impl,
-    Adjustment,
+    Encoding,
     parse_or_default,
 };
 use crate::k5000::{
@@ -29,7 +29,7 @@ use crate::k5000::control::VelocityCurve;
 pub struct Cutoff(i32);
 ranged_impl!(Cutoff, 0, 127, 0);
 
-impl Adjustment for Cutoff { }
+impl Encoding for Cutoff { }
 
 /// Resonance (0...31, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -37,7 +37,7 @@ impl Adjustment for Cutoff { }
 pub struct Resonance(i32);
 ranged_impl!(Resonance, 0, 31, 0);
 
-impl Adjustment for Resonance { }
+impl Encoding for Resonance { }
 
 /// Level (0...31, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -45,7 +45,7 @@ impl Adjustment for Resonance { }
 pub struct Level(i32);
 ranged_impl!(Level, 0, 31, 0);
 
-impl Adjustment for Level { }
+impl Encoding for Level { }
 
 /// Filter mode.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromPrimitive)]
@@ -117,12 +117,12 @@ impl SystemExclusiveData for Envelope {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.outgoing(),
-            self.decay1_time.outgoing(),
-            self.decay1_level.outgoing(),
-            self.decay2_time.outgoing(),
-            self.decay2_level.outgoing(),
-            self.release_time.outgoing(),
+            self.attack_time.encode(),
+            self.decay1_time.encode(),
+            self.decay1_level.encode(),
+            self.decay2_time.encode(),
+            self.decay2_level.encode(),
+            self.release_time.encode(),
         ]
     }
 
@@ -161,8 +161,8 @@ impl SystemExclusiveData for KeyScalingControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack_time.outgoing(),
-            self.decay1_time.outgoing(),
+            self.attack_time.encode(),
+            self.decay1_time.encode(),
         ]
     }
 
@@ -205,9 +205,9 @@ impl SystemExclusiveData for VelocityControl {
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.depth.outgoing(),
-            self.attack_time.outgoing(),
-            self.decay1_time.outgoing(),
+            self.depth.encode(),
+            self.attack_time.encode(),
+            self.decay1_time.encode(),
         ]
     }
 
@@ -325,12 +325,12 @@ impl SystemExclusiveData for Filter {
             if self.is_active { 0 } else { 1 },  // is this the right way around?
             self.mode as u8,
             self.velocity_curve as u8,  // raw enum values map to 0~11
-            self.resonance.outgoing(),
-            self.level.outgoing(),
-            self.cutoff.outgoing(),
-            self.ks_to_cutoff.outgoing(),
-            self.vel_to_cutoff.outgoing(),
-            self.envelope_depth.outgoing(),
+            self.resonance.encode(),
+            self.level.encode(),
+            self.cutoff.encode(),
+            self.ks_to_cutoff.encode(),
+            self.vel_to_cutoff.encode(),
+            self.envelope_depth.encode(),
         ];
         result.extend(bs);
         result.extend(self.envelope.to_bytes());

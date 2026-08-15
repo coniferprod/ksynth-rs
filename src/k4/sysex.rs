@@ -3,11 +3,12 @@
 
 use std::convert::TryFrom;
 use std::fmt;
+
 use num_enum::TryFromPrimitive;
-use crate::{
+use syxpack::{
     SystemExclusiveData,
     ParseError,
-    MIDIChannel,
+    MidiChannel,
     Ranged
 };
 
@@ -54,7 +55,7 @@ impl fmt::Display for Function {
 
 /// K4 System Exclusive Message header
 pub struct Header {
-    pub channel: MIDIChannel,
+    pub channel: MidiChannel,
     pub function: Function,
     pub substatus1: u8,
     pub substatus2: u8,
@@ -73,7 +74,7 @@ impl fmt::Display for Header {
 impl SystemExclusiveData for Header {
     fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Header {
-            channel: MIDIChannel::new(data[0] as i32 + 1),
+            channel: MidiChannel::new(data[0] as i32 + 1),
             function: Function::try_from(data[1]).unwrap(),
             substatus1: data[4],
             substatus2: data[5],

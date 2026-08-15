@@ -5,12 +5,12 @@ use std::convert::TryInto;
 use std::fmt;
 
 use bit::BitIndex;
-
-use crate::{
+use syxpack::{
     Ranged,
     SystemExclusiveData,
-    ParseError
+    ParseError,
 };
+
 use crate::k4::{
     EnvelopeTime,
     FilterEnvelopeLevel,

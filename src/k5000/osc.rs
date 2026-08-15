@@ -6,17 +6,17 @@ use std::fmt;
 
 use num_enum::TryFromPrimitive;
 use pretty_hex::*;
-use rand::Rng;
-
-use crate::{
-    Adjustment,
-    MIDINote, 
+use rand::RngExt;
+use syxpack::{
+    Encoding,
     ParseError, 
     Ranged, 
     SystemExclusiveData, 
     parse_or_default, 
     ranged_impl,
 };
+
+use crate::MIDINote;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 use crate::k5000::wave::Wave;
 use crate::k5000::source::Key;
@@ -28,24 +28,12 @@ use crate::k5000::source::Key;
 pub struct Coarse(i32);
 ranged_impl!(Coarse, -24, 24, 0);
 
-impl From<u8> for Coarse {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
-    }
-}
-
-impl Into<u8> for Coarse {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
-    }
-}
-
-impl Adjustment for Coarse {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for Coarse {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -57,24 +45,12 @@ impl Adjustment for Coarse {
 pub struct Fine(i32);
 ranged_impl!(Fine, -63, 63, 0);
 
-impl From<u8> for Fine {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
-    }
-}
-
-impl Into<u8> for Fine {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
-    }
-}
-
-impl Adjustment for Fine {
-    fn incoming(b: u8) -> i32 {
+impl Encoding for Fine {
+    fn decode(b: u8) -> i32 {
         (b as i32) - 64        
     }
 
-    fn outgoing(&self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8        
     }
 }
@@ -111,7 +87,7 @@ impl SystemExclusiveData for FixedKey {
         match self {
             FixedKey::Off => vec![0x00],
             FixedKey::On(key) => {
-                let b: u8 = key.note.outgoing();
+                let b: u8 = key.note.encode();
                 vec![b + 21]
             },
         }
@@ -188,8 +164,8 @@ impl SystemExclusiveData for Oscillator {
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.wave.to_bytes());
-        result.push(self.coarse.outgoing());
-        result.push(self.fine.outgoing());
+        result.push(self.coarse.encode());
+        result.push(self.fine.encode());
         result.extend(self.fixed_key.to_bytes());
         result.push(self.ks_to_pitch as u8);
         result.extend(self.pitch_envelope.to_bytes());

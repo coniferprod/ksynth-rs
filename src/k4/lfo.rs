@@ -6,12 +6,12 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use num_enum::TryFromPrimitive;
-
-use crate::{
+use syxpack::{
     Ranged,
     SystemExclusiveData,
-    ParseError
+    ParseError,
 };
+
 use crate::k4::{
     Level,
     ModulationDepth
