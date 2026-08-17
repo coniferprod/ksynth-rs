@@ -12,6 +12,8 @@ use syxpack::{
     Ranged,
     SystemExclusiveData,
     ParseError,
+    parse_or_default,
+    Encoding,
 };
 
 use crate::k4::{
@@ -122,9 +124,9 @@ impl fmt::Display for EffectPatch {
             f,
             "{}, {} = {}, {} = {}, {} = {}",
             EFFECT_NAMES[self.effect as usize],
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1.value(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2.value(),
-            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3.value()
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[0], self.param1,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[1], self.param2,
+            EFFECT_PARAMETER_NAMES.get(&self.effect).unwrap()[2], self.param3
         )
     }
 }
@@ -133,9 +135,9 @@ impl EffectPatch {
     fn collect_data(&self) -> Vec<u8> {
         let mut buf = vec![
             self.effect as u8 - 1,
-            (self.param1.value() + 7) as u8,
-            (self.param2.value() + 7) as u8,
-            self.param3.value().try_into().unwrap()
+            self.param1.encode(),
+            self.param2.encode(),
+            self.param3.encode(),
         ];
 
         buf.extend(vec![0, 0, 0, 0, 0, 0]); // six dummy bytes
@@ -157,7 +159,7 @@ impl EffectPatch {
 }
 
 impl SystemExclusiveData for EffectPatch {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         // data bytes 4...9 are the dummy bytes,
         // submix settings start at 10 with three bytes each
         let mut submixes = [Default::default(); SUBMIX_COUNT];
@@ -167,8 +169,8 @@ impl SystemExclusiveData for EffectPatch {
         while i < SUBMIX_COUNT {
             submixes[i] = SubmixSettings {
                 pan: data[offset] as i32 - 7,
-                send1: Level::new((data[offset + 1]).into()),
-                send2: Level::new((data[offset + 2]).into()),
+                send1: parse_or_default::<Level>(data[offset + 1]),
+                send2: parse_or_default::<Level>(data[offset + 2]),
             };
             offset += 3;
             i += 1;
@@ -176,9 +178,9 @@ impl SystemExclusiveData for EffectPatch {
 
         Ok(EffectPatch {
             effect: Effect::try_from(data[0] + 1).unwrap(),
-            param1: SmallEffectParameter::new(((data[1] as i8) - 7).into()),
-            param2: SmallEffectParameter::new(((data[2] as i8) - 7).into()),
-            param3: BigEffectParameter::new(data[3].into()),
+            param1: parse_or_default::<SmallEffectParameter>(data[1]),
+            param2: parse_or_default::<SmallEffectParameter>(data[2]),
+            param3: parse_or_default::<BigEffectParameter>(data[3]),
             submixes,
         })
     }
@@ -225,19 +227,19 @@ impl Default for SubmixSettings {
 }
 
 impl SystemExclusiveData for SubmixSettings {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(SubmixSettings {
             pan: data[0] as i32 - 7,
-            send1: Level::new(data[1].into()),
-            send2: Level::new(data[2].into()),
+            send1: parse_or_default::<Level>(data[1]),
+            send2: parse_or_default::<Level>(data[2]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             (self.pan + 7).try_into().unwrap(),
-            self.send1.value().try_into().unwrap(),
-            self.send2.value().try_into().unwrap()
+            self.send1.encode(),
+            self.send2.encode(),
         ]
     }
 
@@ -308,7 +310,7 @@ mod tests {
             bank::MULTI_PATCH_COUNT * MultiPatch::data_size() +
             DrumPatch::data_size());
 
-        let patch = EffectPatch::from_bytes(&DATA[start..]);
+        let patch = EffectPatch::parse(&DATA[start..]);
         assert_eq!(patch.unwrap().effect, Effect::Reverb1);
     }
 

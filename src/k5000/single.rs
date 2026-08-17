@@ -57,7 +57,7 @@ pub struct Portamento {
 
 impl fmt::Display for Portamento {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {}", self.is_on, self.speed.value())
+        write!(f, "{} {}", self.is_on, self.speed)
     }
 }
 
@@ -123,7 +123,7 @@ fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Common data ({} bytes): {:02X?}", data.len(), data);
 
         let mut offset = 0;
@@ -131,7 +131,7 @@ impl SystemExclusiveData for Common {
         let mut start = offset;
         let mut end = offset + size;
         let effects_data = &data[start..end];
-        let effects = EffectSettings::from_bytes(effects_data);
+        let effects = EffectSettings::parse(effects_data);
         offset += size;
 
         eprintln!("GEQ data at offset {}", offset + 1);
@@ -185,7 +185,7 @@ impl SystemExclusiveData for Common {
         start = offset;
         end = start + size;
         let effect_control_data = &data[start..end];
-        let effect_control = EffectControl::from_bytes(effect_control_data);
+        let effect_control = EffectControl::parse(effect_control_data);
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
 
@@ -235,10 +235,10 @@ impl SystemExclusiveData for Common {
         ];
 
         let macros: [MacroController; 4] = [
-            MacroController::from_bytes(&m1_data).unwrap(),
-            MacroController::from_bytes(&m2_data).unwrap(),
-            MacroController::from_bytes(&m3_data).unwrap(),
-            MacroController::from_bytes(&m4_data).unwrap(),
+            MacroController::parse(&m1_data).unwrap(),
+            MacroController::parse(&m2_data).unwrap(),
+            MacroController::parse(&m3_data).unwrap(),
+            MacroController::parse(&m4_data).unwrap(),
         ];
 
         let switches = SwitchControl {
@@ -299,8 +299,8 @@ impl SystemExclusiveData for Common {
         }
 
         for m in &self.macros {
-            result.push(m.uc1.depth.into()); // -31(33)~+31(95)
-            result.push(m.uc2.depth.into());
+            result.push(m.uc1.depth.encode()); // -31(33)~+31(95)
+            result.push(m.uc2.depth.encode());
         }
 
         result.extend(self.switches.to_bytes());
@@ -357,11 +357,11 @@ impl SinglePatch {
         let original_checksum = data[0];
         eprintln!("original checksum = {:#02x}", original_checksum);
 
-        let common = Common::from_bytes(&data[1..82]);
+        let common = Common::parse(&data[1..82]);
         offset += 81;
         let mut sources = Vec::<Source>::new();
         for _i in 0..common.unwrap().source_count {
-            let source = Source::from_bytes(&data[offset..offset + 86]);
+            let source = Source::parse(&data[offset..offset + 86]);
             sources.push(source.unwrap());
             offset += 86;
         }
@@ -451,7 +451,7 @@ impl Default for SinglePatch {
 }
 
 impl SystemExclusiveData for SinglePatch {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -465,7 +465,7 @@ impl SystemExclusiveData for SinglePatch {
         start = offset;
         end = start + size;
         let common_data = &data[start..end];
-        let common = Common::from_bytes(common_data);
+        let common = Common::parse(common_data);
         if common.is_err() {
             return Err(common.unwrap_err());
         }
@@ -483,7 +483,7 @@ impl SystemExclusiveData for SinglePatch {
             let source_data = &data[start..end];
             eprintln!("{:#04X}: parsing source {}, data start={} end={}",
                 offset, i + 1, start, end);
-            let source = Source::from_bytes(source_data);
+            let source = Source::parse(source_data);
             sources.push(source?);
             offset += size;
         }
@@ -498,7 +498,7 @@ impl SystemExclusiveData for SinglePatch {
             start = offset;
             end = start + size;
             let kit_data = &data[start..end];
-            let kit = AdditiveKit::from_bytes(kit_data);
+            let kit = AdditiveKit::parse(kit_data);
             offset += size;
             let kit_name = format!("s{}", kit_index + 1);
             additive_kits.insert(kit_name, kit?);
@@ -614,7 +614,7 @@ mod tests {
             0x00, 0x00, 0x00, 0x00,  // SW1, SW2, F.SW1, F.SW2
         ];
 
-        let common = Common::from_bytes(&data);
+        let common = Common::parse(&data);
         assert_eq!(common.unwrap().name, "WizooIni");
     }
 
@@ -623,7 +623,7 @@ mod tests {
         let data = include_bytes!("WizooIni.syx");
 
         // Skip sysex header but not the checksum
-        let single_patch = SinglePatch::from_bytes(&data[9..]);
+        let single_patch = SinglePatch::parse(&data[9..]);
         assert_eq!(single_patch.unwrap().common.name, "WizooIni");
     }
 

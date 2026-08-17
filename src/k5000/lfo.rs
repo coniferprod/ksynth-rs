@@ -81,7 +81,7 @@ impl fmt::Display for Control {
 }
 
 impl SystemExclusiveData for Control {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             depth: parse_or_default::<Depth>(data[0]),
             key_scaling: parse_or_default::<KeyScaling>(data[1]),
@@ -136,7 +136,7 @@ impl fmt::Display for Lfo {
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             waveform: Waveform::try_from(data[0]).unwrap(),
             speed: parse_or_default::<Speed>(data[1]),

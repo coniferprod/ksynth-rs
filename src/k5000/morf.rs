@@ -91,7 +91,7 @@ impl fmt::Display for HarmonicCommon {
 }
 
 impl SystemExclusiveData for HarmonicCommon {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             morf_enabled: data[0] == 1,
             total_gain: data[1],
@@ -131,7 +131,7 @@ impl fmt::Display for MorfHarmonicCopyParameters {
 }
 
 impl SystemExclusiveData for MorfHarmonicCopyParameters {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             patch_number: data[0],
             source_number: data[1],
@@ -196,7 +196,7 @@ impl fmt::Display for MorfHarmonicEnvelope {
 }
 
 impl SystemExclusiveData for MorfHarmonicEnvelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             time1: parse_or_default::<EnvelopeTime>(data[0]),
             time2: parse_or_default::<EnvelopeTime>(data[1]),
@@ -238,13 +238,13 @@ impl fmt::Display for MorfHarmonic {
 }
 
 impl SystemExclusiveData for MorfHarmonic {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            copy1: MorfHarmonicCopyParameters::from_bytes(&data[..2])?,
-            copy2: MorfHarmonicCopyParameters::from_bytes(&data[2..4])?,
-            copy3: MorfHarmonicCopyParameters::from_bytes(&data[4..6])?,
-            copy4: MorfHarmonicCopyParameters::from_bytes(&data[6..8])?,
-            envelope: MorfHarmonicEnvelope::from_bytes(&data[8..])?,
+            copy1: MorfHarmonicCopyParameters::parse(&data[..2])?,
+            copy2: MorfHarmonicCopyParameters::parse(&data[2..4])?,
+            copy3: MorfHarmonicCopyParameters::parse(&data[4..6])?,
+            copy4: MorfHarmonicCopyParameters::parse(&data[6..8])?,
+            envelope: MorfHarmonicEnvelope::parse(&data[8..])?,
         })
     }
 

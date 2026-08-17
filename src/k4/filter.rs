@@ -9,6 +9,8 @@ use syxpack::{
     Ranged,
     SystemExclusiveData,
     ParseError,
+    parse_or_default,
+    Encoding,
 };
 
 use crate::k4::{
@@ -53,30 +55,30 @@ impl fmt::Display for Envelope {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
             "A={} D={} S={} R={}",
-            self.attack.value(),
-            self.decay.value(),
-            self.sustain.value(),
-            self.release.value()
+            self.attack,
+            self.decay,
+            self.sustain,
+            self.release
         )
     }
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
-            attack: EnvelopeTime::new(data[0].into()),
-            decay: EnvelopeTime::new(data[1].into()),
-            sustain: FilterEnvelopeLevel::new(((data[2] as i8) - 50).into()),
-            release: EnvelopeTime::new(data[3].into()),
+            attack: parse_or_default::<EnvelopeTime>(data[0]),
+            decay: parse_or_default::<EnvelopeTime>(data[1]),
+            sustain: parse_or_default::<FilterEnvelopeLevel>(data[2]),
+            release: parse_or_default::<EnvelopeTime>(data[3]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.attack.value().try_into().unwrap(),
-            self.decay.value().try_into().unwrap(),
-            (self.sustain.value() + 50).try_into().unwrap(),
-            self.release.value().try_into().unwrap(),
+            self.attack.encode(),
+            self.decay.encode(),
+            self.sustain.encode(),
+            self.release.encode(),
         ]
     }
 
@@ -121,19 +123,19 @@ impl fmt::Display for Filter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
             "cutoff = {}, resonance = {}, LFO sw = {}, cutoff mod = {}, env = {}, env depth = {}, env vel.depth = {}",
-            self.cutoff.value(),
-            self.resonance.value(),
+            self.cutoff,
+            self.resonance,
             self.lfo_modulates_cutoff,
             self.cutoff_mod,
             self.envelope,
-            self.env_depth.value(),
-            self.env_vel_depth.value()
+            self.env_depth,
+            self.env_vel_depth
         )
     }
 }
 
 impl SystemExclusiveData for Filter {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize;
         let mut end: usize;
@@ -154,7 +156,7 @@ impl SystemExclusiveData for Filter {
         start = offset;
         end = start + 3;
         let cutoff_mod_bytes = &data[start..end];
-        let cutoff_mod = LevelModulation::from_bytes(&cutoff_mod_bytes);
+        let cutoff_mod = LevelModulation::parse(&cutoff_mod_bytes);
 
         offset += 3;
         b = data[offset];
@@ -168,13 +170,13 @@ impl SystemExclusiveData for Filter {
         start = offset;
         end = start + 4;
         let envelope_bytes = &data[start..end];
-        let envelope = Envelope::from_bytes(&envelope_bytes);
+        let envelope = Envelope::parse(&envelope_bytes);
         offset += 4;
 
         start = offset;
         end = start + 3;
         let time_mod_bytes = &data[start..end];
-        let time_mod = TimeModulation::from_bytes(&time_mod_bytes);
+        let time_mod = TimeModulation::parse(&time_mod_bytes);
 
         Ok(Filter {
             cutoff: Cutoff::new(cutoff.into()),
@@ -191,16 +193,16 @@ impl SystemExclusiveData for Filter {
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.cutoff.value().try_into().unwrap());
-        let mut s104 = self.resonance.value() as u8;
+        buf.push(self.cutoff.encode());
+        let mut s104 = self.resonance.encode();
         if self.lfo_modulates_cutoff {
             s104.set_bit(3, true);
         }
         buf.push(s104);
 
         buf.extend(self.cutoff_mod.to_bytes());
-        buf.push((self.env_depth.value() + 50).try_into().unwrap());
-        buf.push((self.env_vel_depth.value() + 50).try_into().unwrap());
+        buf.push(self.env_depth.encode());
+        buf.push(self.env_vel_depth.encode());
         buf.extend(self.envelope.to_bytes());
         buf.extend(self.time_mod.to_bytes());
 

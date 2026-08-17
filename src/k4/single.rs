@@ -11,6 +11,8 @@ use syxpack::{
     Ranged,
     SystemExclusiveData,
     ParseError,
+    parse_or_default,
+    Encoding,
 };
 
 use crate::{
@@ -134,30 +136,30 @@ impl fmt::Display for AutoBend {
         write!(
             f,
             "time = {}, depth = {}, ks.time = {}, vel.depth = {}",
-            self.time.value(),
-            self.depth.value(),
-            self.key_scaling_time.value(),
-            self.velocity_depth.value()
+            self.time,
+            self.depth,
+            self.key_scaling_time,
+            self.velocity_depth
         )
     }
 }
 
 impl SystemExclusiveData for AutoBend {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(AutoBend {
-            time: Level::new((data[0] & 0x7f).into()),
-            depth: ModulationDepth::new((((data[1] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
-            key_scaling_time: ModulationDepth::new((((data[2] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
-            velocity_depth: ModulationDepth::new((((data[3] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
+            time: parse_or_default::<Level>(data[0] & 0x7f),
+            depth: parse_or_default::<ModulationDepth>(data[1] & 0x7f), // 0~100 to ±50
+            key_scaling_time: parse_or_default::<ModulationDepth>(data[2] & 0x7f), // 0~100 to ±50
+            velocity_depth: parse_or_default::<ModulationDepth>(data[3] & 0x7f), // 0~100 to ±50
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.time.value().try_into().unwrap(),
-            (self.depth.value() + 50).try_into().unwrap(),
-            (self.key_scaling_time.value() + 50).try_into().unwrap(),
-            (self.velocity_depth.value() + 50).try_into().unwrap(),
+            self.time.encode(),
+            self.depth.encode(),
+            self.key_scaling_time.encode(),
+            self.velocity_depth.encode(),
         ]
     }
 
@@ -219,8 +221,8 @@ impl SinglePatch {
         let mut buf: Vec<u8> = Vec::new();
 
         buf.extend(self.name.as_bytes());
-        buf.push(self.volume.value().try_into().unwrap());
-        buf.push((self.effect.value() - 1).try_into().unwrap());  // 1~32 to 0~31
+        buf.push(self.volume.encode());
+        buf.push(self.effect.encode());
         buf.push(self.submix as u8);
 
         let mut s13 = (self.polyphony_mode as u8) << 2;
@@ -323,8 +325,8 @@ impl fmt::Display for SinglePatch {
         write!(f,
             "{} volume={} effect={} submix={} source mode={} polyphony mode={} AM1>2={} AM3>4={}\n{}\n{}",
             self.name,
-            self.volume.value(),
-            self.effect.value(),
+            self.volume,
+            self.effect,
             self.submix,
             self.source_mode,
             self.polyphony_mode,
@@ -337,7 +339,7 @@ impl fmt::Display for SinglePatch {
 }
 
 impl SystemExclusiveData for SinglePatch {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
         let mut start: usize = 0;
 
@@ -358,6 +360,8 @@ impl SystemExclusiveData for SinglePatch {
         b = data[offset];
         offset += 1;
         let effect = get_effect_number(b);
+
+        //let value = b & 0b00011111;
 
         // output select = s12 bits 0...2
         b = data[offset];
@@ -408,7 +412,7 @@ impl SystemExclusiveData for SinglePatch {
 
         start = offset;
         end = offset + 4;
-        let auto_bend = AutoBend::from_bytes(&data[start..end]);
+        let auto_bend = AutoBend::parse(&data[start..end]);
         offset += 4;
 
         b = data[offset];
@@ -419,11 +423,11 @@ impl SystemExclusiveData for SinglePatch {
         offset += 1;
         vibrato_bytes.push(b);  // vib depth
 
-        let vibrato = Vibrato::from_bytes(&vibrato_bytes);
+        let vibrato = Vibrato::parse(&vibrato_bytes);
 
         start = offset;
         end = start + 5;
-        let lfo = Lfo::from_bytes(&data[start..end]);
+        let lfo = Lfo::parse(&data[start..end]);
         offset += 5;
 
         b = data[offset];
@@ -435,10 +439,10 @@ impl SystemExclusiveData for SinglePatch {
         end = start + total_source_data_size;
         let all_source_data = &data[start..end];
 
-        let s1 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 0));
-        let s2 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 1));
-        let s3 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 2));
-        let s4 = Source::from_bytes(&every_nth_byte(&all_source_data, 4, 3));
+        let s1 = Source::parse(&every_nth_byte(&all_source_data, 4, 0));
+        let s2 = Source::parse(&every_nth_byte(&all_source_data, 4, 1));
+        let s3 = Source::parse(&every_nth_byte(&all_source_data, 4, 2));
+        let s4 = Source::parse(&every_nth_byte(&all_source_data, 4, 3));
 
         offset += total_source_data_size;
 
@@ -447,10 +451,10 @@ impl SystemExclusiveData for SinglePatch {
         end = start + total_amp_data_size;
         let all_amp_data = &data[start..end];
 
-        let a1 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 0));
-        let a2 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 1));
-        let a3 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 2));
-        let a4 = Amplifier::from_bytes(&every_nth_byte(&all_amp_data, 4, 3));
+        let a1 = Amplifier::parse(&every_nth_byte(&all_amp_data, 4, 0));
+        let a2 = Amplifier::parse(&every_nth_byte(&all_amp_data, 4, 1));
+        let a3 = Amplifier::parse(&every_nth_byte(&all_amp_data, 4, 2));
+        let a4 = Amplifier::parse(&every_nth_byte(&all_amp_data, 4, 3));
 
         offset += total_amp_data_size;
 
@@ -459,8 +463,8 @@ impl SystemExclusiveData for SinglePatch {
         end = start + total_filter_data_size;
         let all_filter_data = &data[start..end];
 
-        let f1 = Filter::from_bytes(&every_nth_byte(&all_filter_data, 2, 0));
-        let f2 = Filter::from_bytes(&every_nth_byte(&all_filter_data, 2, 1));
+        let f1 = Filter::parse(&every_nth_byte(&all_filter_data, 2, 0));
+        let f2 = Filter::parse(&every_nth_byte(&all_filter_data, 2, 1));
 
         //offset += total_filter_data_size;
 
@@ -528,7 +532,7 @@ mod tests {
     #[test]
     fn test_single_patch_from_bytes() {
         let start: usize = dbg!(2 + Header::data_size());
-        let patch = SinglePatch::from_bytes(&DATA[start..]);
+        let patch = SinglePatch::parse(&DATA[start..]);
         assert_eq!(patch.as_ref().unwrap().name, "Melo Vox 1");
         assert_eq!(patch.as_ref().unwrap().volume.value(), 100);
     }

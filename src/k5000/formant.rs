@@ -65,7 +65,7 @@ impl Default for EnvelopeSegment {
 }
 
 impl SystemExclusiveData for EnvelopeSegment {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             rate: parse_or_default::<EnvelopeRate>(data[0]),
             level: parse_or_default::<EnvelopeLevel>(data[1]),
@@ -109,12 +109,12 @@ impl Default for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            attack: EnvelopeSegment::from_bytes(&data[..2])?,
-            decay1: EnvelopeSegment::from_bytes(&data[2..4])?,
-            decay2: EnvelopeSegment::from_bytes(&data[4..6])?,
-            release: EnvelopeSegment::from_bytes(&data[6..8])?,
+            attack: EnvelopeSegment::parse(&data[..2])?,
+            decay1: EnvelopeSegment::parse(&data[2..4])?,
+            decay2: EnvelopeSegment::parse(&data[4..6])?,
+            release: EnvelopeSegment::parse(&data[6..8])?,
             decay_loop: Loop::try_from(data[8]).unwrap(),
             velocity_depth: parse_or_default::<EnvelopeDepth>(data[9]),
             ks_depth: parse_or_default::<EnvelopeDepth>(data[10]),
@@ -180,7 +180,7 @@ impl Default for Lfo {
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             speed: parse_or_default::<Speed>(data[0]),
             shape: Shape::try_from(data[1]).unwrap(),
@@ -229,13 +229,13 @@ impl fmt::Display for FormantFilter {
 }
 
 impl SystemExclusiveData for FormantFilter {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             bias: parse_or_default::<Bias>(data[0]),
             mode: Mode::try_from(data[1]).unwrap(),
             envelope_depth: parse_or_default::<EnvelopeDepth>(data[2]),
-            envelope: Envelope::from_bytes(&data[3..14])?,
-            lfo: Lfo::from_bytes(&data[14..])?,
+            envelope: Envelope::parse(&data[3..14])?,
+            lfo: Lfo::parse(&data[14..])?,
         })
     }
 

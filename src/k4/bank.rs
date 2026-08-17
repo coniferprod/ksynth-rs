@@ -98,7 +98,7 @@ impl BankData {
 }
 
 impl SystemExclusiveData for BankData {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut result = BankData::new();
 
         let mut offset = 0;
@@ -188,14 +188,14 @@ impl fmt::Display for Bank {
 }
 
 impl SystemExclusiveData for Bank {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         log::debug!("Parsing single patches, offset = {}", offset);
 
         let mut singles = Vec::<single::SinglePatch>::new();
         for i in 0..SINGLE_PATCH_COUNT {
-            let single = single::SinglePatch::from_bytes(&data[offset..]);
+            let single = single::SinglePatch::parse(&data[offset..]);
             log::debug!("{}: {}", i, single.as_ref().unwrap().name);
             offset += single::SinglePatch::data_size();
             singles.push(single?);
@@ -211,7 +211,7 @@ impl SystemExclusiveData for Bank {
 
         let mut multis = Vec::<multi::MultiPatch>::new();
         for i in 0..MULTI_PATCH_COUNT {
-            let multi = multi::MultiPatch::from_bytes(&data[offset..]);
+            let multi = multi::MultiPatch::parse(&data[offset..]);
             log::debug!("{}: {}", i, multi.as_ref().unwrap().name);
             offset += multi::MultiPatch::data_size();
             multis.push(multi?);
@@ -223,7 +223,7 @@ impl SystemExclusiveData for Bank {
 
         log::debug!("Parsing drum patches, offset = {}", offset);
 
-        let drum = drum::DrumPatch::from_bytes(&data[offset..]);
+        let drum = drum::DrumPatch::parse(&data[offset..]);
         offset += drum::DrumPatch::data_size();
 
         block_size = drum::DrumPatch::data_size();
@@ -234,7 +234,7 @@ impl SystemExclusiveData for Bank {
 
         let mut effects = Vec::<effect::EffectPatch>::new();
         for i in 0..EFFECT_PATCH_COUNT {
-            let effect = effect::EffectPatch::from_bytes(&data[offset..]);
+            let effect = effect::EffectPatch::parse(&data[offset..]);
             log::debug!("{}: {}", i, effect.as_ref().unwrap().effect);
             offset += effect::EffectPatch::data_size();
             effects.push(effect?);
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn test_bank_from_bytes() {
         let start = 2 + Header::data_size();  // skip F0 40
-        let bank = Bank::from_bytes(&DATA[start..]);
+        let bank = Bank::parse(&DATA[start..]);
 
         assert_eq!(bank.as_ref().unwrap().singles.len(), SINGLE_PATCH_COUNT);
         assert_eq!(bank.as_ref().unwrap().effects.len(), EFFECT_PATCH_COUNT);

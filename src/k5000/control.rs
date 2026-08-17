@@ -11,7 +11,10 @@ use rand::RngExt;
 use syxpack::{
     SystemExclusiveData,
     ParseError,
-    Ranged, ranged_impl,
+    Ranged, 
+    ranged_impl,
+    Encoding,
+    parse_or_default,
 };
 
 /// Macro parameter depth (-31...31, default 0).
@@ -21,14 +24,12 @@ use syxpack::{
 pub struct ParameterDepth(i32);
 ranged_impl!(ParameterDepth, -31, 31, 0);
 
-impl From<u8> for ParameterDepth {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Encoding for ParameterDepth {
+    fn decode(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for ParameterDepth {
-    fn into(self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -40,14 +41,12 @@ impl Into<u8> for ParameterDepth {
 pub struct ControlDepth(i32);
 ranged_impl!(ControlDepth, -63, 63, 0);
 
-impl From<u8> for ControlDepth {
-    fn from(value: u8) -> Self {
-        ControlDepth::new((value as i32) - 64)
+impl Encoding for ControlDepth {
+    fn decode(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for ControlDepth {
-    fn into(self) -> u8 {
+    fn encode(&self) -> u8 {
         (self.value() + 64) as u8
     }
 }
@@ -108,7 +107,7 @@ impl fmt::Display for VelocitySwitchSettings {
 }
 
 impl SystemExclusiveData for VelocitySwitchSettings {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let vs = data[0].bit_range(5..7) & 0b11;  // bits 5-6
         let t = data[0].bit_range(0..5); // bits 0-4
         eprintln!("VelocitySwitchSettings: vs = 0b{:b} ({}), t = 0b{:b} ({})", vs, vs, t, t);
@@ -295,17 +294,17 @@ impl fmt::Display for MacroController {
 }
 
 impl SystemExclusiveData for MacroController {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("MacroController from bytes {:?}", data);
 
         Ok(MacroController {
             uc1: UserControl {
                 destination: Destination::try_from(data[0]).unwrap(),
-                depth: ParameterDepth::from(data[1]),
+                depth: parse_or_default::<ParameterDepth>(data[1]),
             },
             uc2: UserControl {
                 destination: Destination::try_from(data[2]).unwrap(),
-                depth: ParameterDepth::from(data[3]),
+                depth: parse_or_default::<ParameterDepth>(data[3]),
             }
         })
     }
@@ -313,9 +312,9 @@ impl SystemExclusiveData for MacroController {
     fn to_bytes(&self) -> Vec<u8> {
         vec![
             self.uc1.destination as u8,
-            self.uc1.depth.into(),
+            self.uc1.depth.encode(),
             self.uc2.destination as u8,
-            self.uc2.depth.into()
+            self.uc2.depth.encode()
         ]
     }
 
@@ -331,11 +330,11 @@ pub struct AssignableController {
 }
 
 impl SystemExclusiveData for AssignableController {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(AssignableController {
             source: Source::try_from(data[0]).unwrap(),
             destination: Destination::try_from(data[1]).unwrap(),
-            depth: ControlDepth::from(data[2]),
+            depth: parse_or_default::<ControlDepth>(data[2]),
         })
     }
 
@@ -343,7 +342,7 @@ impl SystemExclusiveData for AssignableController {
         vec![
             self.source as u8, 
             self.destination as u8, 
-            self.depth.into()
+            self.depth.encode()
         ]
     }
 
@@ -361,13 +360,13 @@ pub struct ModulationSettings {
 }
 
 impl SystemExclusiveData for ModulationSettings {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            pressure: MacroController::from_bytes(&data[..4])?,
-            wheel: MacroController::from_bytes(&data[4..8])?,
-            expression: MacroController::from_bytes(&data[8..12])?,
-            assignable1: AssignableController::from_bytes(&data[12..15])?,  // NOTE: only three bytes
-            assignable2: AssignableController::from_bytes(&data[15..18])?,  // not four like macros
+            pressure: MacroController::parse(&data[..4])?,
+            wheel: MacroController::parse(&data[4..8])?,
+            expression: MacroController::parse(&data[8..12])?,
+            assignable1: AssignableController::parse(&data[12..15])?,  // NOTE: only three bytes
+            assignable2: AssignableController::parse(&data[15..18])?,  // not four like macros
         })
     }
 
@@ -396,15 +395,13 @@ impl SystemExclusiveData for ModulationSettings {
 pub struct Pan(i32);
 ranged_impl!(Pan, -63, 63, 0);
 
-impl From<u8> for Pan {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Encoding for Pan {
+    fn decode(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for Pan {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn encode(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -446,15 +443,18 @@ impl Default for PanSettings {
 }
 
 impl SystemExclusiveData for PanSettings {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(PanSettings {
             kind: PanKind::try_from(data[0]).unwrap(),
-            value: Pan::from(data[1]),
+            value: parse_or_default::<Pan>(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        vec![self.kind as u8, self.value.into()]
+        vec![
+            self.kind as u8, 
+            self.value.encode()
+        ]
     }
 
     fn data_size() -> usize { 2 }
@@ -522,7 +522,7 @@ pub struct SwitchControl {
 }
 
 impl SystemExclusiveData for SwitchControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(SwitchControl {
             switch1: Switch::try_from(data[0]).unwrap(),
             switch2: Switch::try_from(data[1]).unwrap(),
@@ -635,7 +635,7 @@ mod tests {
     #[test]
     fn test_macro_controller_from_bytes() {
         let data = vec![0x01, 0x4f, 0x03, 0x40];
-        let mac = MacroController::from_bytes(&data);
+        let mac = MacroController::parse(&data);
         assert_eq!(mac.unwrap().uc1.destination, Destination::CutoffOffset);
     }
 
@@ -668,7 +668,7 @@ mod tests {
             0x02, 0x0d, 0x40,  // assignable: control source 1, destination, depth
             0x02, 0x09, 0x40,  // assignable: control source 2, destination, depth
         ];
-        let modulation_settings = ModulationSettings::from_bytes(data);
+        let modulation_settings = ModulationSettings::parse(data);
         assert_eq!(modulation_settings.pressure,
             MacroController {
                 destination1: ControlDestination::CutoffOffset,

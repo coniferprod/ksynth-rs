@@ -54,29 +54,29 @@ impl AdditiveKit {
 }
 
 impl SystemExclusiveData for AdditiveKit {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
         let checksum = data[offset];
         eprintln!("{:#04X}: additive kit checksum = {:#02x}", offset, checksum);
         offset += 1;
 
         let hc_data = &data[1..7];
-        let common = HarmonicCommon::from_bytes(hc_data)?;
+        let common = HarmonicCommon::parse(hc_data)?;
         eprintln!("{:#04X}: harmonic common = {}", offset, common);
         offset += HarmonicCommon::data_size();
 
         let morf_data = &data[7..20];
-        let morf = MorfHarmonic::from_bytes(morf_data)?;
+        let morf = MorfHarmonic::parse(morf_data)?;
         eprintln!("{:#04X}: MORF harmonic = {}", offset, morf);
         offset += MorfHarmonic::data_size();
 
         let ff_data = &data[20..37];
-        let formant_filter = FormantFilter::from_bytes(ff_data)?;
+        let formant_filter = FormantFilter::parse(ff_data)?;
         eprintln!("{:#04X}: FF = {}", offset, formant_filter);
         offset += FormantFilter::data_size();
 
         let levels_data = &data[37..165];
-        let levels = Levels::from_bytes(levels_data)?;
+        let levels = Levels::parse(levels_data)?;
         offset += Levels::data_size();
 
         eprintln!("{:#04X}: FF bands start here", offset);
@@ -89,7 +89,7 @@ impl SystemExclusiveData for AdditiveKit {
         eprintln!("{:#04X}: Harmonic envelopes start here", offset);
         let mut envelopes: Vec::<HarmonicEnvelope> = vec![HarmonicEnvelope::new(); HARMONIC_COUNT];
         for _ in 0..HARMONIC_COUNT {
-            envelopes.push(HarmonicEnvelope::from_bytes(&data[offset..offset + 8])?);
+            envelopes.push(HarmonicEnvelope::parse(&data[offset..offset + 8])?);
             offset += 8;
         }
 

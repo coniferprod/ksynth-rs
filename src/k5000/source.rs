@@ -14,7 +14,7 @@ use syxpack::{
     parse_or_default,
 };
 
-use crate::MIDINote;
+use crate::MidiNote;
 use crate::k5000::control::{
     VelocitySwitchSettings,
     ModulationSettings,
@@ -38,7 +38,7 @@ impl Encoding for KeyOnDelay { }  // use the default implementations
 #[derive(Debug, Eq, PartialEq)]
 pub struct Key {
     /// MIDI note number for the key.
-    pub note: MIDINote,
+    pub note: MidiNote,
 }
 
 static NOTE_NAMES: &str = "C C#D D#E F F#G G#A A#B ";
@@ -69,17 +69,17 @@ impl fmt::Display for Key {
 #[derive(Debug)]
 pub struct Zone {
     /// Low key of the zone.
-    pub low: Key,
+    pub low: MidiNote,
 
     /// High key of the zone.
-    pub high: Key,
+    pub high: MidiNote,
 }
 
 impl Default for Zone {
     fn default() -> Self {
         Self {
-            low: Key { note: MIDINote::new(0) },
-            high: Key { note: MIDINote::new(127) },
+            low: MidiNote::new(0),
+            high: MidiNote::new(127),
         }
     }
 }
@@ -91,21 +91,17 @@ impl fmt::Display for Zone {
 }
 
 impl SystemExclusiveData for Zone {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self { 
-            low: Key { 
-                note: parse_or_default::<MIDINote>(data[0]),
-            }, 
-            high: Key { 
-                note: parse_or_default::<MIDINote>(data[1]),
-            } 
+            low: parse_or_default::<MidiNote>(data[0]),
+            high: parse_or_default::<MidiNote>(data[1]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.low.note.encode(),
-            self.high.note.encode(),
+            self.low.encode(),
+            self.high.encode(),
         ]
     }
 
@@ -146,8 +142,8 @@ impl Default for SourceControl {
     fn default() -> Self {
         Self {
             zone: Zone { 
-                low: Key { note: MIDINote::new(MIDINote::FIRST) }, 
-                high: Key { note: MIDINote::new(MIDINote::LAST) },
+                low: MidiNote::new(MidiNote::FIRST), 
+                high: MidiNote::new(MidiNote::LAST),
             },
             vel_sw: Default::default(),
             effect_path: 0,
@@ -172,26 +168,22 @@ impl fmt::Display for SourceControl {
 }
 
 impl SystemExclusiveData for SourceControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Source control data = {}", simple_hex(&data));
 
         Ok(Self {
             zone: Zone { 
-                low: Key { 
-                    note: parse_or_default::<MIDINote>(data[0])
-                }, 
-                high: Key { 
-                    note: parse_or_default::<MIDINote>(data[1])
-                },
+                low: parse_or_default::<MidiNote>(data[0]),
+                high: parse_or_default::<MidiNote>(data[1])
             },
-            vel_sw: VelocitySwitchSettings::from_bytes(&[data[2]])?,
+            vel_sw: VelocitySwitchSettings::parse(&[data[2]])?,
             effect_path: data[3],
             volume: parse_or_default::<Volume>(data[4]),
             bender_pitch: parse_or_default::<BenderPitch>(data[5]),
             bender_cutoff: parse_or_default::<BenderCutoff>(data[6]),
-            modulation: ModulationSettings::from_bytes(&data[7..25])?,
+            modulation: ModulationSettings::parse(&data[7..25])?,
             key_on_delay: parse_or_default::<KeyOnDelay>(data[25]),
-            pan: PanSettings::from_bytes(&data[26..28])?,
+            pan: PanSettings::parse(&data[26..28])?,
         })
     }
 
@@ -267,7 +259,7 @@ impl fmt::Display for Source {
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         //eprintln!("Source data ({} bytes): {:?}", data.len(), data);
         eprintln!("Source data size = {} bytes", data.len());
         eprintln!("Reported sizes:");
@@ -291,11 +283,11 @@ impl SystemExclusiveData for Source {
         eprintln!("Total = {} bytes", total_size);
 
         Ok(Self {
-            control: SourceControl::from_bytes(&data[..28])?,
-            oscillator: Oscillator::from_bytes(&data[28..40])?,
-            filter: Filter::from_bytes(&data[40..60])?,
-            amplifier: Amplifier::from_bytes(&data[60..75])?,
-            lfo: Lfo::from_bytes(&data[75..86])?,
+            control: SourceControl::parse(&data[..28])?,
+            oscillator: Oscillator::parse(&data[28..40])?,
+            filter: Filter::parse(&data[40..60])?,
+            amplifier: Amplifier::parse(&data[60..75])?,
+            lfo: Lfo::parse(&data[75..86])?,
         })
     }
 
@@ -327,7 +319,7 @@ mod tests {
 
     #[test]
     fn test_key_name() {
-        let key = Key { note: MIDINote::new(60) };
+        let key = Key { note: MidiNote::new(60) };
         assert_eq!(key.name(), "C4");
     }
 
@@ -348,9 +340,9 @@ mod tests {
             0x00, 0x40,  // pan type and value
         ];
 
-        let source_control = SourceControl::from_bytes(&data);
-        assert_eq!(source_control.as_ref().unwrap().zone.low.note.value(), 0x00);
-        assert_eq!(source_control.as_ref().unwrap().zone.high.note.value(), 0x7f);
+        let source_control = SourceControl::parse(&data);
+        assert_eq!(source_control.as_ref().unwrap().zone.low.value(), 0x00);
+        assert_eq!(source_control.as_ref().unwrap().zone.high.value(), 0x7f);
         assert_eq!(source_control.as_ref().unwrap().volume.value(), 0x78);
     }
 
@@ -405,7 +397,7 @@ mod tests {
             0x00, 0x40,  // DCA (tremolo) depth and KS
         ];
 
-        let source = Source::from_bytes(&data);
+        let source = Source::parse(&data);
         assert_eq!(source.unwrap().lfo.speed.value(), 0x5d);
     }
 }

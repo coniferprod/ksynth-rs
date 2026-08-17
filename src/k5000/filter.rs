@@ -104,7 +104,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             attack_time: parse_or_default::<EnvelopeTime>(data[0]),
             decay1_time: parse_or_default::<EnvelopeTime>(data[1]),
@@ -152,7 +152,7 @@ impl fmt::Display for KeyScalingControl {
 }
 
 impl SystemExclusiveData for KeyScalingControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             attack_time: parse_or_default::<ControlTime>(data[0]),
             decay1_time: parse_or_default::<ControlTime>(data[1]),
@@ -195,7 +195,7 @@ impl fmt::Display for VelocityControl {
 }
 
 impl SystemExclusiveData for VelocityControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             depth: parse_or_default::<EnvelopeDepth>(data[0]),
             attack_time: parse_or_default::<ControlTime>(data[1]),
@@ -228,10 +228,10 @@ impl fmt::Display for Modulation {
 }
 
 impl SystemExclusiveData for Modulation {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            ks_to_env: KeyScalingControl::from_bytes(&data[..2])?,
-            vel_to_env: VelocityControl::from_bytes(&data[2..5])?,
+            ks_to_env: KeyScalingControl::parse(&data[..2])?,
+            vel_to_env: VelocityControl::parse(&data[2..5])?,
         })
     }
 
@@ -302,7 +302,7 @@ impl fmt::Display for Filter {
 }
 
 impl SystemExclusiveData for Filter {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             is_active: data[0] != 1,  // value of 1 means filter is bypassed
             mode: FilterMode::try_from(data[1]).unwrap(),
@@ -313,8 +313,8 @@ impl SystemExclusiveData for Filter {
             ks_to_cutoff: parse_or_default::<EnvelopeDepth>(data[6]),
             vel_to_cutoff: parse_or_default::<EnvelopeDepth>(data[7]),
             envelope_depth: parse_or_default::<EnvelopeDepth>(data[8]),
-            envelope: Envelope::from_bytes(&data[9..15])?,
-            modulation: Modulation::from_bytes(&data[15..20])?,
+            envelope: Envelope::parse(&data[9..15])?,
+            modulation: Modulation::parse(&data[15..20])?,
         })
     }
 

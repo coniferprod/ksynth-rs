@@ -11,6 +11,8 @@ use syxpack::{
     ParseError,
     MidiChannel,
     Ranged,
+    Encoding,
+    parse_or_default,
 };
 
 use crate::Checksum;
@@ -69,15 +71,15 @@ impl fmt::Display for DrumPatch {
 }
 
 impl SystemExclusiveData for DrumPatch {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
-        let common = Common::from_bytes(&data[0..]);
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
+        let common = Common::parse(&data[0..]);
         let mut offset = Common::data_size();
         let mut notes = [Default::default(); DRUM_NOTE_COUNT];
 
         for i in 0..DRUM_NOTE_COUNT {
             debug!("Parsing drum note {}, offset = {}", i, offset);
 
-            let note = Note::from_bytes(&data[offset..])?;
+            let note = Note::parse(&data[offset..])?;
             notes[i] = note;
             offset += Note::data_size();
         }
@@ -132,9 +134,9 @@ impl fmt::Display for Common {
         write!(
             f,
             "channel = {}, volume = {}, vel.depth = {}",
-            self.channel.value(),
-            self.volume.value(),
-            self.velocity_depth.value()
+            self.channel,
+            self.volume,
+            self.velocity_depth
         )
     }
 }
@@ -142,9 +144,9 @@ impl fmt::Display for Common {
 impl Common {
     fn collect_data(&self) -> Vec<u8> {
         vec![
-            self.channel.value() as u8 - 1,
-            self.volume.value() as u8,
-            (self.velocity_depth.value() + 50) as u8,
+            self.channel.encode(),
+            self.volume.encode(),
+            self.velocity_depth.encode(),
             0, 0, 0, 0, 0, 0, 0,  // seven dummy bytes by design
         ]
     }
@@ -160,7 +162,7 @@ impl Checksum for Common {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Common {
             channel: MidiChannel::new((data[0] + 1) as i32),
             volume: Level::new(data[1] as i32),
@@ -241,7 +243,7 @@ impl Checksum for Note {
 }
 
 impl SystemExclusiveData for Note {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         // The bytes have S1 and S2 interleaved, so group them:
         let mut source1_bytes = Vec::<u8>::new();
         let mut source2_bytes = Vec::<u8>::new();
@@ -261,8 +263,8 @@ impl SystemExclusiveData for Note {
 
         Ok(Note {
             submix,
-            source1: Source::from_bytes(&source1_bytes)?,
-            source2: Source::from_bytes(&source2_bytes)?,
+            source1: Source::parse(&source1_bytes)?,
+            source2: Source::parse(&source2_bytes)?,
         })
     }
 
@@ -309,30 +311,30 @@ impl fmt::Display for Source {
         write!(
             f,
             "wave = {} ({}), decay = {}, tune = {}, level = {}",
-            self.wave.name(), self.wave.number.value(),
-            self.decay.value(),
-            self.tune.value(),
-            self.level.value()
+            self.wave.name(), self.wave.number,
+            self.decay,
+            self.tune,
+            self.level
         )
     }
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Source {
-            wave: Wave::from_bytes(&[data[0], data[1]])?,
-            decay: Decay::new(data[2] as i32),
-            tune: ModulationDepth::new((data[3] as i32) - 50),  // adjust to -50~+50
-            level: Level::new(data[4] as i32),
+            wave: Wave::parse(&[data[0], data[1]])?,
+            decay: parse_or_default::<Decay>(data[2]),
+            tune: parse_or_default::<ModulationDepth>(data[3]),  // adjust to -50~+50
+            level: parse_or_default::<Level>(data[4]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
         buf.extend(self.wave.to_bytes());
-        buf.push(self.decay.value() as u8);
-        buf.push((self.tune.value() + 50) as u8);
-        buf.push(self.level.value() as u8);
+        buf.push(self.decay.encode());
+        buf.push(self.tune.encode());
+        buf.push(self.level.encode());
         buf
     }
 
@@ -360,7 +362,7 @@ mod tests {
             Header::data_size() +
             bank::SINGLE_PATCH_COUNT * SinglePatch::data_size() +
             bank::MULTI_PATCH_COUNT * MultiPatch::data_size());
-        let patch = DrumPatch::from_bytes(&DATA[start..]);
+        let patch = DrumPatch::parse(&DATA[start..]);
         assert_eq!(patch.unwrap().common.volume.value(), 0x64);
     }
 

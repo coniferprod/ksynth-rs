@@ -81,7 +81,7 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Envelope {
             attack_time: parse_or_default::<EnvelopeTime>(data[0]),
             decay1_time: parse_or_default::<EnvelopeTime>(data[1]),
@@ -135,7 +135,7 @@ impl fmt::Display for KeyScalingControl {
 }
 
 impl SystemExclusiveData for KeyScalingControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(KeyScalingControl {
             level: parse_or_default::<KeyScaling>(data[0]),
             attack_time: parse_or_default::<ControlTime>(data[1]),
@@ -185,7 +185,7 @@ impl fmt::Display for VelocityControl {
 }
 
 impl SystemExclusiveData for VelocityControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(VelocityControl {
             level: parse_or_default::<VelocityControlLevel>(data[0]),
             attack_time: parse_or_default::<ControlTime>(data[1]),
@@ -222,10 +222,10 @@ impl fmt::Display for Modulation {
 }
 
 impl SystemExclusiveData for Modulation {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Modulation {
-            ks_to_env: KeyScalingControl::from_bytes(&data[..4])?,
-            vel_sens: VelocityControl::from_bytes(&data[4..8])?,
+            ks_to_env: KeyScalingControl::parse(&data[..4])?,
+            vel_sens: VelocityControl::parse(&data[4..8])?,
         })
     }
 
@@ -271,11 +271,11 @@ impl fmt::Display for Amplifier {
 }
 
 impl SystemExclusiveData for Amplifier {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Amplifier {
             velocity_curve: VelocityCurve::try_from(data[0]).unwrap(),  // 0-11 to enum
-            envelope: Envelope::from_bytes(&data[1..7])?,
-            modulation: Modulation::from_bytes(&data[7..15])?,
+            envelope: Envelope::parse(&data[1..7])?,
+            modulation: Modulation::parse(&data[7..15])?,
         })
     }
 

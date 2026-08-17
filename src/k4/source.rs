@@ -7,7 +7,9 @@ use bit::BitIndex;
 use syxpack::{
     Ranged, 
     SystemExclusiveData, 
-    ParseError
+    ParseError,
+    parse_or_default,
+    Encoding,
 };
 
 use crate::k4::{Level, Curve, Coarse, Fine};
@@ -54,21 +56,21 @@ impl fmt::Display for Source {
         write!(
             f,
             "delay = {}, wave = {}, KS curve = {}, coarse = {}, fine = {}, key track = {}, prs>freq = {}, vib>a.bend = {}, vel.curve = {}",
-            self.delay.value(),
+            self.delay,
             self.wave,
-            self.ks_curve.value(),
-            self.coarse.value(),
-            self.fine.value(),
+            self.ks_curve,
+            self.coarse,
+            self.fine,
             self.key_track,
             self.press_freq,
             self.vibrato,
-            self.velocity_curve.value()
+            self.velocity_curve
         )
     }
 }
 
 impl SystemExclusiveData for Source {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset: usize = 0;
 
         let mut b: u8;
@@ -79,11 +81,11 @@ impl SystemExclusiveData for Source {
         b = data[offset];
         offset += 1;
         let wave_high = b & 0x01;
-        let ks_curve = ((b >> 4) & 0x07) + 1; // 0...7 to 1...8
+        let ks_curve = (b >> 4) & 0x07;
         let wave_low = data[offset] & 0x7f;
         offset += 1;
 
-        let wave = Wave::from_bytes(&[wave_high, wave_low]);
+        let wave = Wave::parse(&[wave_high, wave_low]);
 
         b = data[offset];
         offset += 1;
@@ -92,7 +94,7 @@ impl SystemExclusiveData for Source {
         // and b6 is the key tracking bit (b7 is zero).
         let is_key_track = b.bit(6);
 
-        let coarse = ((b & 0x3f) as i8) - 24;  // 00 ~ 48 to ±24
+        let coarse = b & 0x3f;
 
         b = data[offset];
         offset += 1;
@@ -107,32 +109,32 @@ impl SystemExclusiveData for Source {
 
         b = data[offset];
         offset += 1;
-        let fine = ((b & 0x7f) as i8) - 50;
+        let fine = b & 0x7f;
 
         b = data[offset];
         let press_freq = b.bit(0);
         let vibrato = b.bit(1);
-        let velocity_curve = ((b >> 2) & 0x07) + 1;  // 0...7 to 1...8
+        let velocity_curve = (b >> 2) & 0x07;
 
         Ok(Source {
-            delay: Level::new(delay.into()),
+            delay: parse_or_default::<Level>(delay),
             wave: wave?,
-            ks_curve: Curve::new(ks_curve.into()),
-            coarse: Coarse::new(coarse.into()),
+            ks_curve: parse_or_default::<Curve>(ks_curve),
+            coarse: parse_or_default::<Coarse>(coarse),
             key_track,
-            fine: Fine::new(fine.into()),
+            fine: parse_or_default::<Fine>(fine),
             press_freq,
             vibrato,
-            velocity_curve: Curve::new(velocity_curve.into()),
+            velocity_curve: parse_or_default::<Curve>(velocity_curve),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut buf: Vec<u8> = Vec::new();
 
-        buf.push(self.delay.value().try_into().unwrap());
+        buf.push(self.delay.encode());
 
-        let mut s34 = ((self.ks_curve.value() - 1) << 4) as u8;
+        let mut s34 = self.ks_curve.encode() << 4;
         let wave_bytes = self.wave.to_bytes();
         if wave_bytes[0] == 1 {
             s34.set_bit(0, true);
@@ -140,7 +142,7 @@ impl SystemExclusiveData for Source {
         buf.push(s34);
         buf.push(wave_bytes[1]);
 
-        let mut s42 = (self.coarse.value() + 24) as u8;  // bring into 0~48
+        let mut s42 = self.coarse.encode();
         let mut key: u8 = 0;
         match self.key_track {
             KeyTrack::On => {
@@ -153,9 +155,9 @@ impl SystemExclusiveData for Source {
         buf.push(s42);
         buf.push(key);
 
-        buf.push((self.fine.value() + 50) as u8);  // bring into 0~100
+        buf.push(self.fine.encode());
 
-        let mut s54 = ((self.velocity_curve.value() - 1) << 2) as u8;
+        let mut s54 = self.velocity_curve.encode() << 2;
         if self.vibrato {
             s54.set_bit(0, true);
         }

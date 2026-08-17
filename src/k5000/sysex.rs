@@ -12,6 +12,7 @@ use syxpack::{
     SystemExclusiveData,
     ParseError,
     MidiChannel,
+    Encoding,
 };
 
 /// Kawai K5000 System Exclusive functions.
@@ -43,7 +44,7 @@ pub struct Message {
 }
 
 impl SystemExclusiveData for Message {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             channel: MidiChannel::new(data[2].into()),
             function: Function::try_from(data[3]).unwrap(),
@@ -57,7 +58,7 @@ impl SystemExclusiveData for Message {
         let mut result: Vec<u8> = Vec::new();
 
         result.push(0x40); // Kawai manufacturer ID
-        result.push(self.channel.value() as u8);
+        result.push(self.channel.encode());
 
         result.push(self.function as u8);
         result.extend(&self.function_data);
@@ -390,7 +391,7 @@ impl fmt::Display for Header {
 }
 
 impl SystemExclusiveData for Header {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         if let Some(header) = Header::identify_vec(&data) {
             Ok(header)
         }
@@ -402,9 +403,7 @@ impl SystemExclusiveData for Header {
     fn to_bytes(&self) -> Vec<u8> {
         let mut result = vec![
             // Every dump command header has the MIDI channel.
-            // into() converts channel to SysEx-compatible u8
-            // (from 1...16 to 0...15)
-            self.channel.value() as u8,
+            self.channel.encode(),
 
             self.cardinality.into(),
 
@@ -467,7 +466,7 @@ impl fmt::Display for ToneMap {
 }
 
 impl SystemExclusiveData for ToneMap {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut included = [false; MAX_TONE_COUNT as usize];
 
         let mut i = 0;

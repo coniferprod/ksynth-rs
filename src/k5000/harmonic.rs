@@ -45,7 +45,7 @@ impl Default for Levels {
 }
 
 impl SystemExclusiveData for Levels {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let mut offset = 0;
 
         let mut soft: [u8; HARMONIC_COUNT] = [0; HARMONIC_COUNT];
@@ -92,7 +92,7 @@ impl Default for EnvelopeSegment {
 }
 
 impl SystemExclusiveData for EnvelopeSegment {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             rate: parse_or_default::<EnvelopeRate>(data[0]),
             level: parse_or_default::<EnvelopeLevel>(data[1]),
@@ -138,7 +138,7 @@ impl Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let segment0_rate = parse_or_default::<EnvelopeRate>(data[0]);
         let segment0_level = parse_or_default::<EnvelopeLevel>(data[1] & 0b0011_1111);
         let segment1_rate = parse_or_default::<EnvelopeRate>(data[2]);

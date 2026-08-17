@@ -9,6 +9,8 @@ use syxpack::{
     ParseError,
     Ranged,
     ranged_impl,
+    Encoding,
+    parse_or_default,
 };
 
 /// Velocity sensitivity (-63...63, default 0).
@@ -18,15 +20,13 @@ use syxpack::{
 pub struct VelocitySensitivity(i32);
 ranged_impl!(VelocitySensitivity, -63, 63, 0);
 
-impl From<u8> for VelocitySensitivity {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Encoding for VelocitySensitivity {
+    fn decode(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for VelocitySensitivity {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn encode(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -37,15 +37,13 @@ impl Into<u8> for VelocitySensitivity {
 pub struct EnvelopeLevel(i32);
 ranged_impl!(EnvelopeLevel, -63, 63, 0);
 
-impl From<u8> for EnvelopeLevel {
-    fn from(value: u8) -> Self {
-        Self::new((value as i32) - 64)
+impl Encoding for EnvelopeLevel {
+    fn decode(b: u8) -> i32 {
+        (b as i32) - 64
     }
-}
 
-impl Into<u8> for EnvelopeLevel {
-    fn into(self) -> u8 {
-        (self.value() + 64) as u8
+    fn encode(&self) -> u8 {
+        (self.value() + 64) as u8        
     }
 }
 
@@ -55,17 +53,7 @@ impl Into<u8> for EnvelopeLevel {
 pub struct EnvelopeTime(i32);
 ranged_impl!(EnvelopeTime, 0, 127, 0);
 
-impl From<u8> for EnvelopeTime {
-    fn from(value: u8) -> Self {
-        Self::new(value as i32)
-    }
-}
-
-impl Into<u8> for EnvelopeTime {
-    fn into(self) -> u8 {
-        self.value() as u8
-    }
-}
+impl Encoding for EnvelopeTime { }
 
 /// Pitch envelope.
 #[derive(Debug)]
@@ -118,25 +106,25 @@ impl fmt::Display for Envelope {
 }
 
 impl SystemExclusiveData for Envelope {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            start: EnvelopeLevel::from(data[0]),
-            attack_time: EnvelopeTime::from(data[1]),
-            attack_level: EnvelopeLevel::from(data[2]),
-            decay_time: EnvelopeTime::from(data[3]),
-            time_vel_sens: VelocitySensitivity::from(data[4]),
-            level_vel_sens: VelocitySensitivity::from(data[5]),
+            start: parse_or_default::<EnvelopeLevel>(data[0]),
+            attack_time: parse_or_default::<EnvelopeTime>(data[1]),
+            attack_level: parse_or_default::<EnvelopeLevel>(data[2]),
+            decay_time: parse_or_default::<EnvelopeTime>(data[3]),
+            time_vel_sens: parse_or_default::<VelocitySensitivity>(data[4]),
+            level_vel_sens: parse_or_default::<VelocitySensitivity>(data[5]),
         })
     }
 
     fn to_bytes(&self) -> Vec<u8> {
         vec![
-            self.start.into(),
-            self.attack_time.into(),
-            self.attack_level.into(),
-            self.decay_time.into(),
-            self.time_vel_sens.into(),
-            self.level_vel_sens.into()
+            self.start.encode(),
+            self.attack_time.encode(),
+            self.attack_level.encode(),
+            self.decay_time.encode(),
+            self.time_vel_sens.encode(),
+            self.level_vel_sens.encode(),
         ]
     }
 

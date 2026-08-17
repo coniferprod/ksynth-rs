@@ -251,7 +251,7 @@ impl Default for EffectDefinition {
 }
 
 impl SystemExclusiveData for EffectDefinition {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectDefinition, data = {:02X?}", data);
         Ok(EffectDefinition {
             effect: Effect::try_from(data[0]).unwrap(),  // 11~47
@@ -305,16 +305,16 @@ impl Default for EffectSettings {
 }
 
 impl SystemExclusiveData for EffectSettings {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("EffectSettings, data = {:02X?}", data);
         Ok(EffectSettings {
             algorithm: parse_or_default::<EffectAlgorithm>(data[0]),
-            reverb: EffectDefinition::from_bytes(&data[1..7])?,
+            reverb: EffectDefinition::parse(&data[1..7])?,
             effects: [
-                EffectDefinition::from_bytes(&data[7..13])?,
-                EffectDefinition::from_bytes(&data[13..19])?,
-                EffectDefinition::from_bytes(&data[19..25])?,
-                EffectDefinition::from_bytes(&data[25..31])?,
+                EffectDefinition::parse(&data[7..13])?,
+                EffectDefinition::parse(&data[13..19])?,
+                EffectDefinition::parse(&data[19..25])?,
+                EffectDefinition::parse(&data[25..31])?,
             ]
         })
     }
@@ -365,7 +365,7 @@ pub struct ControlSource {
 }
 
 impl SystemExclusiveData for ControlSource {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
             source: Source::try_from(data[0]).unwrap(),
             destination: Destination::try_from(data[1]).unwrap(),
@@ -392,10 +392,10 @@ pub struct EffectControl {
 }
 
 impl SystemExclusiveData for EffectControl {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Self {
-            source1: ControlSource::from_bytes(&data[0..3])?,
-            source2: ControlSource::from_bytes(&data[3..6])?,
+            source1: ControlSource::parse(&data[0..3])?,
+            source2: ControlSource::parse(&data[3..6])?,
         })
     }
 
@@ -456,7 +456,7 @@ mod tests {
             0x2a, 0x00, 0x0c, 0x0c, 0x63, 0x00,  // effect 4 (as above)
         ];
 
-        let effect_settings = EffectSettings::from_bytes(&data);
+        let effect_settings = EffectSettings::parse(&data);
         assert_eq!(effect_settings.unwrap().effects[3].parameters[2].value(), 0x63);
     }
 }

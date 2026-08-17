@@ -27,12 +27,12 @@ impl std::error::Error for ValueError { }
 
 /// MIDI note (0...127)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct MIDINote(i32);
-ranged_impl!(MIDINote, 0, 127, 60);
+pub struct MidiNote(i32);
+ranged_impl!(MidiNote, 0, 127, 60);
 
-impl Encoding for MIDINote {}   // using the default implementations
+impl Encoding for MidiNote {}   // using the default implementations
 
-impl MIDINote {
+impl MidiNote {
     pub fn name(&self) -> String {
         let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ];
         let octave = (self.0 / 12) - 2;

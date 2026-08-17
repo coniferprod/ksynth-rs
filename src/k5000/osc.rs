@@ -16,7 +16,7 @@ use syxpack::{
     ranged_impl,
 };
 
-use crate::MIDINote;
+use crate::MidiNote;
 use crate::k5000::pitch::Envelope as PitchEnvelope;
 use crate::k5000::wave::Wave;
 use crate::k5000::source::Key;
@@ -73,12 +73,12 @@ impl fmt::Display for FixedKey {
 }
 
 impl SystemExclusiveData for FixedKey {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         if data[0] == 0x00 {
             Ok(FixedKey::Off)
         }
         else {
-            let note = parse_or_default::<MIDINote>(data[0] - 21);
+            let note = parse_or_default::<MidiNote>(data[0] - 21);
             Ok(FixedKey::On(Key { note }))
         }
     }
@@ -147,16 +147,16 @@ impl fmt::Display for Oscillator {
 }
 
 impl SystemExclusiveData for Oscillator {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("OSC data = {}", simple_hex(&data));
 
         Ok(Oscillator {
-            wave: Wave::from_bytes(&[data[0], data[1]])?,
+            wave: Wave::parse(&[data[0], data[1]])?,
             coarse: parse_or_default::<Coarse>(data[2]),
             fine: parse_or_default::<Fine>(data[3]),
-            fixed_key: FixedKey::from_bytes(&[data[4]])?,
+            fixed_key: FixedKey::parse(&[data[4]])?,
             ks_to_pitch: KeyScaling::try_from(data[5]).unwrap(),
-            pitch_envelope: PitchEnvelope::from_bytes(&data[6..])?,
+            pitch_envelope: PitchEnvelope::parse(&data[6..])?,
         })
     }
 

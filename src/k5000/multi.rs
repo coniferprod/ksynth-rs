@@ -16,7 +16,7 @@ use syxpack::{
     parse_or_default,
 };
 
-use crate::MIDINote;
+use crate::MidiNote;
 use crate::k5000::control::VelocitySwitchSettings;
 use crate::k5000::Volume;
 use crate::k5000::effect::{
@@ -101,7 +101,7 @@ impl fmt::Display for Common {
 }
 
 impl SystemExclusiveData for Common {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Multi/combi common data ({} bytes): {:?}", data.len(), data);
 
         let mut offset = 0;
@@ -110,7 +110,7 @@ impl SystemExclusiveData for Common {
         let mut end = offset + size;
 
         let effects_data = &data[start..end];
-        let effects = EffectSettings::from_bytes(effects_data);
+        let effects = EffectSettings::parse(effects_data);
         offset += size;
 
         size = 7;
@@ -148,7 +148,7 @@ impl SystemExclusiveData for Common {
         start = offset;
         end = start + size;
         let effect_control_data = &data[start..end];
-        let effect_control = EffectControl::from_bytes(effect_control_data);
+        let effect_control = EffectControl::parse(effect_control_data);
         eprintln!("Effect control = {:?}", effect_control);
         //offset += size;
 
@@ -227,7 +227,7 @@ impl Default for Section {
 }
 
 impl SystemExclusiveData for Section {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Multi section data, {} bytes", data.len());
 
         let mut offset = 0;
@@ -257,12 +257,12 @@ impl SystemExclusiveData for Section {
         offset += 1;
 
         let zone = Zone { 
-            low: Key { note: parse_or_default::<MIDINote>(data[offset]) }, 
-            high: Key { note: parse_or_default::<MIDINote>(data[offset + 1]) }, 
+            low: parse_or_default::<MidiNote>(data[offset]),
+            high: parse_or_default::<MidiNote>(data[offset + 1]), 
         };
         offset += 2;
 
-        let vel_switch = VelocitySwitchSettings::from_bytes(&vec![data[offset]]);
+        let vel_switch = VelocitySwitchSettings::parse(&vec![data[offset]]);
         offset += 2;
 
         // Stored as 0...15, scale to 1...16, but on the K50000W it is zero.
@@ -332,17 +332,17 @@ impl Default for MultiPatch {
 }
 
 impl SystemExclusiveData for MultiPatch {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Multi");
 
         Ok(MultiPatch {
             checksum: data[0],
-            common: Common::from_bytes(&data[1..55]).unwrap(),
+            common: Common::parse(&data[1..55]).unwrap(),
             sections: [
-                Section::from_bytes(&data[55..67]).unwrap(),
-                Section::from_bytes(&data[67..79]).unwrap(),
-                Section::from_bytes(&data[79..91]).unwrap(),
-                Section::from_bytes(&data[91..103]).unwrap(),
+                Section::parse(&data[55..67]).unwrap(),
+                Section::parse(&data[67..79]).unwrap(),
+                Section::parse(&data[79..91]).unwrap(),
+                Section::parse(&data[91..103]).unwrap(),
             ],
         })
     }
@@ -388,7 +388,7 @@ mod tests {
     #[test]
     fn test_multi_patch_from_bytes() {
         let data: [u8; 1070] = include!("WizooIni.in");
-        let multi_patch = MultiPatch::from_bytes(data[9..].to_vec());  // skip sysex header but not checksum
+        let multi_patch = MultiPatch::parse(data[9..].to_vec());  // skip sysex header but not checksum
         assert_eq!(multi_patch.common.name, "WizooIni");
     }
      */

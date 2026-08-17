@@ -10,6 +10,8 @@ use syxpack::{
     Ranged,
     SystemExclusiveData,
     ParseError,
+    parse_or_default,
+    Encoding,
 };
 
 use crate::k4::{
@@ -74,22 +76,22 @@ impl fmt::Display for Lfo {
         write!(f,
             "shape = {}, speed = {}, delay = {}, depth = {}, prs.depth = {}",
             self.shape,
-            self.speed.value(),
-            self.delay.value(),
-            self.depth.value(),
-            self.pressure_depth.value()
+            self.speed,
+            self.delay,
+            self.depth,
+            self.pressure_depth
         )
     }
 }
 
 impl SystemExclusiveData for Lfo {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Lfo {
             shape: Shape::try_from(data[0] & 0x03).unwrap(),
-            speed: Level::new((data[1] & 0x7f).into()),
-            delay: Level::new((data[2] & 0x7f).into()),
-            depth: ModulationDepth::new((((data[3] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
-            pressure_depth: ModulationDepth::new((((data[4] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
+            speed: parse_or_default::<Level>(data[1] & 0x7f),
+            delay: parse_or_default::<Level>(data[2] & 0x7f),
+            depth: parse_or_default::<ModulationDepth>(data[3] & 0x7f), // 0~100 to ±50
+            pressure_depth: parse_or_default::<ModulationDepth>(data[4] & 0x7f), // 0~100 to ±50
         })
     }
 
@@ -98,10 +100,10 @@ impl SystemExclusiveData for Lfo {
 
         let b = vec![
             self.shape as u8,
-            self.speed.value().try_into().unwrap(),
-            self.delay.value().try_into().unwrap(),
-            (self.depth.value() + 50).try_into().unwrap(),
-            (self.pressure_depth.value() + 50).try_into().unwrap(),
+            self.speed.encode(),
+            self.delay.encode(),
+            self.depth.encode(),
+            self.pressure_depth.encode(),
         ];
         buf.extend(b);
 
@@ -142,20 +144,20 @@ impl fmt::Display for Vibrato {
         write!(f,
             "shape = {}, speed = {}, pressure = {}, depth = {}",
             self.shape,
-            self.speed.value(),
-            self.pressure.value(),
-            self.depth.value()
+            self.speed,
+            self.pressure,
+            self.depth
         )
     }
 }
 
 impl SystemExclusiveData for Vibrato {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Vibrato {
             shape: Shape::try_from((data[0] >> 4) & 0x03).unwrap(),
-            speed: Level::new((data[1] & 0x7f).into()),
-            pressure: ModulationDepth::new((((data[2] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
-            depth: ModulationDepth::new((((data[3] & 0x7f) as i8) - 50).into()), // 0~100 to ±50
+            speed: parse_or_default::<Level>(data[1] & 0x7f),
+            pressure: parse_or_default::<ModulationDepth>(data[2] & 0x7f), // 0~100 to ±50
+            depth: parse_or_default::<ModulationDepth>(data[3] & 0x7f), // 0~100 to ±50
         })
     }
 
@@ -164,9 +166,9 @@ impl SystemExclusiveData for Vibrato {
 
         let b = vec![
             self.shape as u8,
-            self.speed.value().try_into().unwrap(),
-            (self.pressure.value() + 50).try_into().unwrap(),
-            (self.depth.value() + 50).try_into().unwrap(),
+            self.speed.encode(),
+            self.pressure.encode(),
+            self.depth.encode(),
         ];
         buf.extend(b);
 

@@ -1,8 +1,8 @@
 [package]
 name = "ksynth"
-version = "0.20.0"
+version = "0.21.0"
 authors = ["Jere Käpyaho <2261936+jerekapyaho@users.noreply.github.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 repository = "https://github.com/coniferprod/ksynth-rs"
 description = """
@@ -15,7 +15,7 @@ bit = "0.1.1"  # https://crates.io/crates/bit
 lazy_static = "1.5.0"  # https://crates.io/crates/lazy_static
 log = "0.4.27"  # https://crates.io/crates/log
 rand = "0.10.2"  # https://crates.io/crates/rand
-syxpack = "0.18.0"  # https://crates.io/crates/syxpack
+syxpack = "0.20.0"  # https://crates.io/crates/syxpack
 pretty-hex = "0.4.1"  # https://crates.io/crates/pretty-hex
 nutype = "0.4.3"  # https://crates.io/crates/nutype
 strum = "0.27.2"  # https://crates.io/crates/strum

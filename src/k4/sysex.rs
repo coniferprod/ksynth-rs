@@ -9,7 +9,8 @@ use syxpack::{
     SystemExclusiveData,
     ParseError,
     MidiChannel,
-    Ranged
+    Ranged,
+    Encoding,
 };
 
 const GROUP: u8 = 0x00;      // synth group
@@ -64,7 +65,7 @@ pub struct Header {
 impl fmt::Display for Header {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Ch: {}  Fn: {}, Sub1: {}, Sub2: {}",
-            self.channel.value(),
+            self.channel,
             self.function,
             self.substatus1,
             self.substatus2)
@@ -72,7 +73,7 @@ impl fmt::Display for Header {
 }
 
 impl SystemExclusiveData for Header {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         Ok(Header {
             channel: MidiChannel::new(data[0] as i32 + 1),
             function: Function::try_from(data[1]).unwrap(),
@@ -82,7 +83,7 @@ impl SystemExclusiveData for Header {
     }
 
     fn to_bytes(&self) -> Vec<u8> {
-        let ch = self.channel.value() - 1; // 1...16 to 0...15
+        let ch = self.channel.encode();
         vec![
             ch as u8,
             self.function as u8,
@@ -145,7 +146,7 @@ impl Dump {
         // Extract the SysEx header from the message payload:
 
         let header_data = &payload[0..Header::data_size() as usize];
-        let header = Header::from_bytes(header_data);
+        let header = Header::parse(header_data);
 
         // The raw data is everything in the payload after the header.
         let raw_data = &payload[Header::data_size() as usize..];
@@ -198,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_dump_identify_all() {
-        match Message::from_bytes(&DATA.to_vec()) {
+        match Message::parse(&DATA.to_vec()) {
             Ok(Message::ManufacturerSpecific { manufacturer: _, payload }) => {
                 match Dump::identify(payload) {
                     Ok(dump) => {
@@ -220,7 +221,23 @@ mod tests {
 
     #[test]
     fn test_dump_identify_single() {
-        let data: [u8; 137] = include!("intsingle.in");
+        let data: [u8; 137] = [
+            0x00, 0x20, 0x00, 0x04, 0x00, 0x00, 0x4d, 0x65,
+            0x6c, 0x6f, 0x20, 0x56, 0x6f, 0x78, 0x20, 0x31, 0x64, 0x20,
+            0x06, 0x04, 0x0c, 0x02, 0x1c, 0x3f, 0x39, 0x31, 0x32, 0x32,
+            0x32, 0x3d, 0x00, 0x30, 0x00, 0x32, 0x32, 0x32, 0x00, 0x00,
+            0x02, 0x03, 0x00, 0x00, 0x50, 0x40, 0x12, 0x12, 0x7e, 0x7f,
+            0x4c, 0x4c, 0x5a, 0x5b, 0x00, 0x34, 0x02, 0x03, 0x2c, 0x37,
+            0x34, 0x35, 0x02, 0x02, 0x15, 0x11, 0x4b, 0x4b, 0x34, 0x35,
+            0x36, 0x36, 0x34, 0x35, 0x48, 0x48, 0x34, 0x35, 0x5a, 0x5a,
+            0x34, 0x35, 0x40, 0x40, 0x02, 0x01, 0x41, 0x41, 0x35, 0x36,
+            0x32, 0x32, 0x35, 0x36, 0x2c, 0x2c, 0x35, 0x36, 0x32, 0x32,
+            0x35, 0x36, 0x32, 0x32, 0x35, 0x36, 0x32, 0x32, 0x33, 0x34,
+            0x31, 0x51, 0x02, 0x07, 0x32, 0x34, 0x5b, 0x34, 0x32, 0x34,
+            0x36, 0x34, 0x32, 0x33, 0x56, 0x01, 0x64, 0x02, 0x32, 0x63,
+            0x56, 0x01, 0x32, 0x33, 0x32, 0x33, 0x32, 0x33, 0x6e
+        ];
+        
         match Dump::identify(data.to_vec()) {
             Ok(dump) => {
                 assert_eq!(dump.kind, Kind::OneSingle(0));

@@ -4,7 +4,11 @@
 use std::fmt;
 use std::convert::TryInto;
 
-use syxpack::{Ranged, SystemExclusiveData, ParseError};
+use syxpack::{
+    Ranged, 
+    SystemExclusiveData, 
+    ParseError
+};
 
 use crate::k4::WaveNumber;
 
@@ -308,14 +312,14 @@ impl fmt::Display for Wave {
         write!(
             f,
             "{} {}",
-            self.number.value(),
+            self.number,
             self.name()
         )
     }
 }
 
 impl SystemExclusiveData for Wave {
-    fn from_bytes(data: &[u8]) -> Result<Self, ParseError> {
+    fn parse(data: &[u8]) -> Result<Self, ParseError> {
         let high = data[0] & 0x01;  // `wave select h` is b0 of s34/s35/s36/s37
         let low = data[1] & 0x7f;   // `wave select l` is bits 0...6 of s38/s39/s40/s41
         Ok(Wave {
@@ -349,7 +353,7 @@ mod tests {
 
     #[test]
     fn test_wave_from_bytes() {
-        let w = Wave::from_bytes(&[0x01, 0x7f]);
+        let w = Wave::parse(&[0x01, 0x7f]);
         assert_eq!(w.unwrap().number.value(), 256);
     }
 
