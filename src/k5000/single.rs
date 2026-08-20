@@ -39,6 +39,7 @@ use crate::k5000::effect::{
 use crate::k5000::addkit::AdditiveKit;
 use crate::k5000::source::Source;
 use crate::k5000::Volume;
+use crate::k5000::geq::GEQ;
 
 /// Portamento speed (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -50,16 +51,21 @@ impl Encoding for PortamentoSpeed { }
 
 /// Portamento setting.
 #[derive(Debug)]
-pub struct Portamento {
-    pub is_on: bool,
-    pub speed: PortamentoSpeed,
+pub enum Portamento {
+    On(PortamentoSpeed),
+    Off,
 }
 
 impl fmt::Display for Portamento {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {}", self.is_on, self.speed)
+        match self {
+            Portamento::On(speed) => write!(f, "On ({})", speed),
+            Portamento::Off => write!(f, "Off"),
+        }
     }
 }
+
+pub const MAX_SOURCE_COUNT: usize = 6;
 
 /// Single patch common data.
 #[derive(Debug)]
@@ -69,13 +75,13 @@ pub struct Common {
     pub volume: Volume,
     pub polyphony: Polyphony,
     pub source_count: u8,
-    pub source_mutes: [bool; 6],
+    pub source_mutes: [bool; MAX_SOURCE_COUNT],
     pub amplitude_modulation: AmplitudeModulation,
     pub effect_control: EffectControl,
     pub portamento: Portamento,
     pub macros: [MacroController; 4],
     pub switches: SwitchControl,
-    pub geq: [i8; 7],
+    pub geq: GEQ,
 }
 
 impl Default for Common {
@@ -89,10 +95,7 @@ impl Default for Common {
             source_mutes: [false, false, true, true, true, true],
             amplitude_modulation: Default::default(),
             effect_control: Default::default(),
-            portamento: Portamento { 
-                is_on: false, 
-                speed: Default::default()
-            },
+            portamento: Portamento::Off,
             macros: [
                 Default::default(), 
                 Default::default(),
@@ -100,7 +103,7 @@ impl Default for Common {
                 Default::default()
             ],
             switches: Default::default(),
-            geq: [0, 0, 0, 0, 0, 0, 0],
+            geq: Default::default(),
         }
     }
 }
@@ -117,11 +120,6 @@ impl fmt::Display for Common {
     }
 }
 
-fn vec_to_array(v: Vec<i8>) -> [i8; 7] {
-    v.try_into()
-        .unwrap_or_else(|v: Vec<i8>| panic!("Expected a Vec of length {} but it was {}", 4, v.len()))
-}
-
 impl SystemExclusiveData for Common {
     fn parse(data: &[u8]) -> Result<Self, ParseError> {
         eprintln!("Common data ({} bytes): {:02X?}", data.len(), data);
@@ -135,11 +133,9 @@ impl SystemExclusiveData for Common {
         offset += size;
 
         eprintln!("GEQ data at offset {}", offset + 1);
-        size = 7;
-        end = start + size;
-        let geq_data = data[start..end].to_vec();
-
-        let geq_values = geq_data.iter().map(|n| *n as i8 - 64).collect();  // 58(-6) ~ 70(+6), so 64 is zero
+        size = GEQ::data_size();
+        let geq_data = data[offset .. offset + size].to_vec();
+        let geq = GEQ::parse(&geq_data).unwrap();
         offset += size;
 
         eprintln!("Drum mark at offset {}", offset + 1);
@@ -171,8 +167,8 @@ impl SystemExclusiveData for Common {
         offset += 1;
 
         let mutes_byte = data[offset];
-        let mut source_mutes: [bool; 6] = [false; 6];
-        for i in 0..6 {
+        let mut source_mutes: [bool; MAX_SOURCE_COUNT] = [false; MAX_SOURCE_COUNT];
+        for i in 0..MAX_SOURCE_COUNT {
             source_mutes[i] = mutes_byte.bit(i);
         }
         offset += 1;
@@ -181,7 +177,7 @@ impl SystemExclusiveData for Common {
         eprintln!("AM = {}", amplitude_modulation);
         offset += 1;
 
-        size = 6;
+        size = EffectControl::data_size();
         start = offset;
         end = start + size;
         let effect_control_data = &data[start..end];
@@ -189,9 +185,10 @@ impl SystemExclusiveData for Common {
         eprintln!("Effect control = {:?}", effect_control);
         offset += size;
 
-        let portamento = Portamento { 
-            is_on: data[offset] == 1,
-            speed: parse_or_default::<PortamentoSpeed>(data[offset + 1])
+        let portamento = if data[offset] == 1 {
+            Portamento::On(parse_or_default::<PortamentoSpeed>(data[offset + 1]))
+        } else {
+            Portamento::Off
         };
         eprintln!("Portamento: {}", portamento);
         offset += 2;
@@ -251,7 +248,7 @@ impl SystemExclusiveData for Common {
 
         Ok(Self {
             effects: effects?,
-            geq: vec_to_array(geq_values),
+            geq,
             name,
             volume,
             polyphony,
@@ -269,7 +266,7 @@ impl SystemExclusiveData for Common {
         let mut result: Vec<u8> = Vec::new();
 
         result.extend(self.effects.to_bytes());
-        result.extend(self.geq.to_vec().iter().map(|n| (n + 64) as u8));
+        result.extend(self.geq.to_bytes());
         result.push(0);  // drum_mark
         result.extend(self.name.clone().into_bytes());  // note clone()
         result.push(self.volume.encode());
@@ -289,8 +286,16 @@ impl SystemExclusiveData for Common {
         result.extend(self.effect_control.to_bytes());
 
         // Portamento status and speed
-        result.push(if self.portamento.is_on { 1 } else { 0 });
-        result.push(self.portamento.speed.encode());
+        match self.portamento {
+            Portamento::On(speed) => {
+                result.push(1);
+                result.push(speed.encode());
+            }
+            Portamento::Off => {
+                result.push(0);
+                result.push(0);
+            }
+        }
 
         // Pick out the destinations and depths as the SysEx spec wants them.
         for m in &self.macros {
@@ -395,12 +400,17 @@ impl SinglePatch {
         common_element.add_child(effect_control_element).unwrap();
 
         let mut portamento_element = XMLElement::new("portamento");
-        let mut p_status_element = XMLElement::new("status");
-        p_status_element.add_text(if self.common.portamento.is_on { "on".to_string() } else { "off".to_string() }).unwrap();
-        let mut p_speed_element = XMLElement::new("speed");
-        p_speed_element.add_text(format!("{}", self.common.portamento.speed.value())).unwrap();
-        portamento_element.add_child(p_status_element).unwrap();
-        portamento_element.add_child(p_speed_element).unwrap();
+        let portamento_attribute_value = match self.common.portamento {
+            Portamento::On(_) => "on",
+            Portamento::Off => "off",
+        };
+        portamento_element.add_attribute("status", portamento_attribute_value);
+        let portamento_speed_value = match self.common.portamento {
+            Portamento::On(speed) => speed.value().to_string(),
+            Portamento::Off => "0".to_string(),
+        };
+        portamento_element.add_attribute("speed", &portamento_speed_value);
+
         common_element.add_child(portamento_element).unwrap();
 
         single_element.add_child(common_element).unwrap();
@@ -614,8 +624,9 @@ mod tests {
             0x00, 0x00, 0x00, 0x00,  // SW1, SW2, F.SW1, F.SW2
         ];
 
-        let common = Common::parse(&data);
-        assert_eq!(common.unwrap().name, "WizooIni");
+        let common = Common::parse(&data).unwrap();
+        assert_eq!(common.name, "WizooIni");
+        assert_eq!(common.volume, Volume::new(115));
     }
 
     #[test]
@@ -623,8 +634,9 @@ mod tests {
         let data = include_bytes!("WizooIni.syx");
 
         // Skip sysex header but not the checksum
-        let single_patch = SinglePatch::parse(&data[9..]);
-        assert_eq!(single_patch.unwrap().common.name, "WizooIni");
+        let single_patch = SinglePatch::parse(&data[9..]).unwrap();
+        assert_eq!(single_patch.common.name, "WizooIni");
+        assert_eq!(single_patch.common.volume, Volume::new(115));
     }
 
     /*

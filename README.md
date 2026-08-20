@@ -76,7 +76,11 @@ value is 1...16, but it is stored as zero-based in the SysEx data, so it
 actually appears as 0...15. Many other parameters are expressed similarly,
 with a varying offset that needs to be added or subtracted.
 
-The `Adjustment` trait is used to make these conversions nicer.
-It has two methods: `incoming` and `outgoing`, which adjust the incoming SysEx bytes
+The `Encoding` trait is used to make these conversions nicer.
+It has two methods: `decode` and `encode`, which adjust the incoming SysEx bytes
 as they are converted into domain types, and adjust the domain type values as they
 are emitted into SysEx.
+
+The `parse_or_default` function applies the methods of the `Encoding` trait,
+but uses the default value of the domain type if the actual SysxEx byte value is
+out of the type's range.

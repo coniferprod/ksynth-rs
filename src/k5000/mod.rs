@@ -15,6 +15,7 @@ pub mod lfo;
 pub mod control;
 pub mod source;
 pub mod effect;
+pub mod geq;
 pub mod single;
 pub mod multi;
 pub mod morf;

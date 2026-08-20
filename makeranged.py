@@ -36,22 +36,12 @@ specs = [
 #ranged_impl!(Depth, 0, 63, 0);
 
 for spec in specs:
+    type_name = spec[0]
     range_string = f'{spec[2]}...{spec[3]}'
     print('/// ' + spec[1] + f' ({range_string}, default {spec[4]}).')
     print(f'#[derive (Debug, Clone, Copy, Eq, PartialEq)]')
-    print(f'pub struct {spec[0]}(i32);')
-    print(f'ranged_impl!({spec[0]}, {spec[2]}, {spec[3]}, {spec[4]});')
+    print(f'pub struct {type_name}(i32);')
+    print(f'ranged_impl!({type_name}, {spec[2]}, {spec[3]}, {spec[4]});')
     print()
-    print('impl From<u8> for ' + spec[0] + ' {')
-    print('    fn from(value: u8) -> Self {')
-    print('        Self::new(value as i32)')
-    print('    }')
-    print('}')
-    print()
-    print(f'impl From<{spec[0]}> for u8' + ' {')
-    print(f'    fn from(value: {spec[0]}) -> Self' + ' {')
-    print(f'        value.value() as u8    // used as such in SysEx, redefine if necessary')
-    print('    }')
-    print('}')
-
+    print(f'impl Encoding for {type_name} ' + '{ }  // use the default implementations')
     print()
