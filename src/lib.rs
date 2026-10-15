@@ -47,16 +47,6 @@ pub trait Checksum {
     fn checksum(&self) -> u8;
 }
 
-trait StringUtils {
-    fn substring(&self, start: usize, len: usize) -> Self;
-}
-
-impl StringUtils for String {
-    fn substring(&self, start: usize, len: usize) -> Self {
-        self.chars().skip(start).take(len).collect()
-    }
-}
-
 fn every_nth_byte(v: &[u8], n: usize, start: usize) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
 

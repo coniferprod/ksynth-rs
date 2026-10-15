@@ -1,7 +1,6 @@
 //! Data model for LFO.
 //!
 
-use std::convert::TryInto;
 use std::convert::TryFrom;
 use std::fmt;
 

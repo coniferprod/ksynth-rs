@@ -16,9 +16,7 @@ use syxpack::{
 
 use crate::k5000::morf::Loop;
 use crate::k5000::addkit::HARMONIC_COUNT;
-use crate::k5000::{
-    EnvelopeRate,
-};
+use crate::k5000::EnvelopeRate;
 
 /// Harmonic envelope level (0...127, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

@@ -36,6 +36,12 @@ ranged_impl!(Volume, 0, 127, 0);
 
 impl Encoding for Volume { }  // use the default implementations
 
+// Envelope time and envelope level are used both in amp and filter.
+// NOTE: Harmonic envelope level is different from the other envelope 
+// levels; it goes from 0 to 127, while the others are -63 to 63. 
+// So we define our own type in harmonic.rs, and *don't* import the 
+// normal envelope level type.
+
 /// Envelope time (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
 #[derive (Debug, Clone, Copy, Eq, PartialEq)]
@@ -60,6 +66,9 @@ impl Encoding for EnvelopeLevel {
         (self.value() + 64) as u8        
     }
 }
+
+// Envelope rate is used in formant filter and 
+// harmonic envelope segments.
 
 /// Envelope rate (0...127, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -86,6 +95,9 @@ impl Encoding for ControlTime {
     }
 }
 
+// Envelope depth is used in filter velocity control
+// and in the formant filter envelope.
+
 /// Envelope depth (-63...63, default 0).
 /// SysEx storage: one byte, (-63)1~(+63)127.
 /// Adjustment: incoming -64, outgoing +64. 
@@ -102,6 +114,9 @@ impl Encoding for EnvelopeDepth {
         (self.value() + 64) as u8
     }
 }
+
+// Depth is used in effect definitions and effect control source,
+// but also in the LFO (both formant and regular).
 
 /// Depth (0...100, default 0).
 /// SysEx storage: one byte, no adjustment.
@@ -125,5 +140,21 @@ impl Encoding for KeyScaling {
 
     fn encode(&self) -> u8 {
         (self.value() + 64) as u8
+    }
+}
+
+/// Effect path (1...4, default 1)
+/// SysEx storage: one byte, 1...4, incoming -1, outgoing +1.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct EffectPath(i32);
+ranged_impl!(EffectPath, 1, 4, 1);
+
+impl Encoding for EffectPath {
+    fn decode(b: u8) -> i32 {
+        (b as i32) + 1
+    }
+
+    fn encode(&self) -> u8 {
+        (self.value() - 1) as u8
     }
 }

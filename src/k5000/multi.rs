@@ -18,15 +18,15 @@ use syxpack::{
 
 use crate::MidiNote;
 use crate::k5000::control::VelocitySwitchSettings;
-use crate::k5000::Volume;
+use crate::k5000::{
+    Volume, 
+    EffectPath,
+};
 use crate::k5000::effect::{
     EffectSettings, 
     EffectControl
 };
-use crate::k5000::source::{
-    Zone,
-    Key,
-};
+use crate::k5000::source::Zone;
 
 pub const SECTION_COUNT: usize = 4; // number of sections in a multi patch
 
@@ -194,10 +194,10 @@ impl SystemExclusiveData for Common {
 /// Multi section.
 pub struct Section {
     pub single: u32,  // inst no.
-    pub volume: u32,
+    pub volume: Volume,
     pub pan: u32,
-    pub effect_path: u32,
-    pub transpose: i32,
+    pub effect_path: EffectPath,
+    pub transpose: Transpose,
     pub tune: i32,
     pub zone: Zone,
     pub vel_switch: VelocitySwitchSettings,
@@ -214,10 +214,10 @@ impl Default for Section {
     fn default() -> Self {
         Section {
             single: 0,
-            volume: 127,
+            volume: Default::default(),
             pan: 0,
-            effect_path: 0,
-            transpose: 0,
+            effect_path: Default::default(),
+            transpose: Default::default(),
             tune: 0,
             zone: Default::default(),
             vel_switch: Default::default(),
@@ -236,7 +236,7 @@ impl SystemExclusiveData for Section {
         let single = u32::from_str_radix(&bit_str, 2).unwrap();
         offset += 2;
 
-        let volume = data[offset] as u32;
+        let volume = parse_or_default::<Volume>(data[offset]);
         eprintln!("Volume = {}", volume);
         offset += 1;
 
@@ -244,11 +244,11 @@ impl SystemExclusiveData for Section {
         eprintln!("Pan = {}", pan);
         offset += 1;
 
-        let effect_path = data[offset] as u32;
+        let effect_path = parse_or_default::<EffectPath>(data[offset]);
         eprintln!("Effect path = {}", effect_path);
         offset += 1;
 
-        let transpose = data[offset] as i32 - 64;  // stored as 40...88, scale to -24...+24
+        let transpose = parse_or_default::<Transpose>(data[offset]);
         eprintln!("Transpose = {}", transpose);
         offset += 1;
 
@@ -290,10 +290,10 @@ impl SystemExclusiveData for Section {
         let lsb = u8::from_str_radix(&bit_str[2..9], 2).unwrap();
         result.extend(vec![msb, lsb]);
 
-        result.push(self.volume as u8);
+        result.push(self.volume.encode());
         result.push(self.pan as u8);
-        result.push(self.effect_path as u8);
-        result.push((self.transpose + 64) as u8);
+        result.push(self.effect_path.encode());
+        result.push(self.transpose.encode());
         result.push((self.tune + 64) as u8);
 
         result.extend(self.zone.to_bytes());
@@ -369,20 +369,6 @@ impl SystemExclusiveData for MultiPatch {
 #[cfg(test)]
 mod tests {
     use super::{*};
-
-    /*
-    #[test]
-    fn test_common_from_bytes() {
-        let data = vec![
-
-        ];
-    }
- */
-
-    #[test]
-    fn test_section_from_bytes() {
-
-    }
 
     /*
     #[test]

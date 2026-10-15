@@ -1,7 +1,6 @@
 //! Data model for DCA.
 //!
 
-use std::convert::TryInto;
 use std::fmt;
 
 use syxpack::{
@@ -12,7 +11,12 @@ use syxpack::{
     Encoding,
 };
 
-use crate::k4::{EnvelopeTime, EnvelopeLevel, ModulationDepth, Level};
+use crate::k4::{
+    EnvelopeTime, 
+    EnvelopeLevel, 
+    ModulationDepth, 
+    Level
+};
 
 #[derive(Copy, Clone)]
 pub struct Envelope {

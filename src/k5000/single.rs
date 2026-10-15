@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 
 use bit::BitIndex;
 use xml_builder::{
-    XML, 
     XMLBuilder, 
     XMLElement, 
     XMLVersion
@@ -29,7 +28,6 @@ use crate::k5000::control::{
     AmplitudeModulation,
     MacroController,
     SwitchControl,
-    Destination,
     Switch
 };
 use crate::k5000::effect::{

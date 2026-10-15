@@ -9,7 +9,12 @@ use syxpack::{
     ParseError
 };
 
-use crate::k4::{drum, single, multi, effect};
+use crate::k4::{
+    drum, 
+    single, 
+    multi, 
+    effect
+};
 
 /// Number of single patches in a bank.
 pub const SINGLE_PATCH_COUNT: usize = 64;

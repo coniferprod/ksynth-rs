@@ -1,8 +1,7 @@
 //! Data model for single patches.
 //!
 
-use std::convert::TryInto;
-use std::convert::TryFrom;
+use std::convert::{TryInto, TryFrom};
 use std::fmt;
 
 use bit::BitIndex;

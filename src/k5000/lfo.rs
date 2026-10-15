@@ -15,9 +15,7 @@ use syxpack::{
     parse_or_default,
 };
 
-use crate::k5000::{
-    KeyScaling
-};
+use crate::k5000::KeyScaling;
 
 /// LFO speed (0...127, default 0)
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

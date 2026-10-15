@@ -1,7 +1,6 @@
 //! Data model for DCF.
 //!
 
-use std::convert::TryInto;
 use std::fmt;
 
 use bit::BitIndex;
